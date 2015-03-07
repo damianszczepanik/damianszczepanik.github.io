@@ -1,0 +1,509 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head><meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+<title>AbstractPollingMessageListenerContainer xref</title>
+<link type="text/css" rel="stylesheet" href="../../../../stylesheet.css" />
+</head>
+<body>
+<div id="overview"><a href="../../../../../../../../../../apidocs/org/springframework/jms/listener/AbstractPollingMessageListenerContainer.html">View Javadoc</a></div><pre>
+<a class="jxr_linenumber" name="L1" href="#L1">1</a>   <em class="jxr_comment">/*</em>
+<a class="jxr_linenumber" name="L2" href="#L2">2</a>   <em class="jxr_comment"> * Copyright 2002-2012 the original author or authors.</em>
+<a class="jxr_linenumber" name="L3" href="#L3">3</a>   <em class="jxr_comment"> *</em>
+<a class="jxr_linenumber" name="L4" href="#L4">4</a>   <em class="jxr_comment"> * Licensed under the Apache License, Version 2.0 (the "License");</em>
+<a class="jxr_linenumber" name="L5" href="#L5">5</a>   <em class="jxr_comment"> * you may not use this file except in compliance with the License.</em>
+<a class="jxr_linenumber" name="L6" href="#L6">6</a>   <em class="jxr_comment"> * You may obtain a copy of the License at</em>
+<a class="jxr_linenumber" name="L7" href="#L7">7</a>   <em class="jxr_comment"> *</em>
+<a class="jxr_linenumber" name="L8" href="#L8">8</a>   <em class="jxr_comment"> *      <a href="http://www.apache.org/licenses/LICENSE-2." target="alexandria_uri">http://www.apache.org/licenses/LICENSE-2.</a>0</em>
+<a class="jxr_linenumber" name="L9" href="#L9">9</a>   <em class="jxr_comment"> *</em>
+<a class="jxr_linenumber" name="L10" href="#L10">10</a>  <em class="jxr_comment"> * Unless required by applicable law or agreed to in writing, software</em>
+<a class="jxr_linenumber" name="L11" href="#L11">11</a>  <em class="jxr_comment"> * distributed under the License is distributed on an "AS IS" BASIS,</em>
+<a class="jxr_linenumber" name="L12" href="#L12">12</a>  <em class="jxr_comment"> * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</em>
+<a class="jxr_linenumber" name="L13" href="#L13">13</a>  <em class="jxr_comment"> * See the License for the specific language governing permissions and</em>
+<a class="jxr_linenumber" name="L14" href="#L14">14</a>  <em class="jxr_comment"> * limitations under the License.</em>
+<a class="jxr_linenumber" name="L15" href="#L15">15</a>  <em class="jxr_comment"> */</em>
+<a class="jxr_linenumber" name="L16" href="#L16">16</a>  
+<a class="jxr_linenumber" name="L17" href="#L17">17</a>  <strong class="jxr_keyword">package</strong> org.springframework.jms.listener;
+<a class="jxr_linenumber" name="L18" href="#L18">18</a>  
+<a class="jxr_linenumber" name="L19" href="#L19">19</a>  <strong class="jxr_keyword">import</strong> javax.jms.Connection;
+<a class="jxr_linenumber" name="L20" href="#L20">20</a>  <strong class="jxr_keyword">import</strong> javax.jms.Destination;
+<a class="jxr_linenumber" name="L21" href="#L21">21</a>  <strong class="jxr_keyword">import</strong> javax.jms.JMSException;
+<a class="jxr_linenumber" name="L22" href="#L22">22</a>  <strong class="jxr_keyword">import</strong> javax.jms.Message;
+<a class="jxr_linenumber" name="L23" href="#L23">23</a>  <strong class="jxr_keyword">import</strong> javax.jms.MessageConsumer;
+<a class="jxr_linenumber" name="L24" href="#L24">24</a>  <strong class="jxr_keyword">import</strong> javax.jms.Session;
+<a class="jxr_linenumber" name="L25" href="#L25">25</a>  
+<a class="jxr_linenumber" name="L26" href="#L26">26</a>  <strong class="jxr_keyword">import</strong> org.springframework.jms.connection.ConnectionFactoryUtils;
+<a class="jxr_linenumber" name="L27" href="#L27">27</a>  <strong class="jxr_keyword">import</strong> org.springframework.jms.connection.JmsResourceHolder;
+<a class="jxr_linenumber" name="L28" href="#L28">28</a>  <strong class="jxr_keyword">import</strong> org.springframework.jms.connection.SingleConnectionFactory;
+<a class="jxr_linenumber" name="L29" href="#L29">29</a>  <strong class="jxr_keyword">import</strong> org.springframework.jms.support.JmsUtils;
+<a class="jxr_linenumber" name="L30" href="#L30">30</a>  <strong class="jxr_keyword">import</strong> org.springframework.transaction.PlatformTransactionManager;
+<a class="jxr_linenumber" name="L31" href="#L31">31</a>  <strong class="jxr_keyword">import</strong> org.springframework.transaction.TransactionStatus;
+<a class="jxr_linenumber" name="L32" href="#L32">32</a>  <strong class="jxr_keyword">import</strong> org.springframework.transaction.support.DefaultTransactionDefinition;
+<a class="jxr_linenumber" name="L33" href="#L33">33</a>  <strong class="jxr_keyword">import</strong> org.springframework.transaction.support.ResourceTransactionManager;
+<a class="jxr_linenumber" name="L34" href="#L34">34</a>  <strong class="jxr_keyword">import</strong> org.springframework.transaction.support.TransactionSynchronizationManager;
+<a class="jxr_linenumber" name="L35" href="#L35">35</a>  <strong class="jxr_keyword">import</strong> org.springframework.transaction.support.TransactionSynchronizationUtils;
+<a class="jxr_linenumber" name="L36" href="#L36">36</a>  
+<a class="jxr_linenumber" name="L37" href="#L37">37</a>  <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="L38" href="#L38">38</a>  <em class="jxr_javadoccomment"> * Base class for listener container implementations which are based on polling.</em>
+<a class="jxr_linenumber" name="L39" href="#L39">39</a>  <em class="jxr_javadoccomment"> * Provides support for listener handling based on {@link javax.jms.MessageConsumer},</em>
+<a class="jxr_linenumber" name="L40" href="#L40">40</a>  <em class="jxr_javadoccomment"> * optionally participating in externally managed transactions.</em>
+<a class="jxr_linenumber" name="L41" href="#L41">41</a>  <em class="jxr_javadoccomment"> *</em>
+<a class="jxr_linenumber" name="L42" href="#L42">42</a>  <em class="jxr_javadoccomment"> * &lt;p&gt;This listener container variant is built for repeated polling attempts,</em>
+<a class="jxr_linenumber" name="L43" href="#L43">43</a>  <em class="jxr_javadoccomment"> * each invoking the {@link #receiveAndExecute} method. The MessageConsumer used</em>
+<a class="jxr_linenumber" name="L44" href="#L44">44</a>  <em class="jxr_javadoccomment"> * may be reobtained fo reach attempt or cached in between attempts; this is up</em>
+<a class="jxr_linenumber" name="L45" href="#L45">45</a>  <em class="jxr_javadoccomment"> * to the concrete implementation. The receive timeout for each attempt can be</em>
+<a class="jxr_linenumber" name="L46" href="#L46">46</a>  <em class="jxr_javadoccomment"> * configured through the {@link #setReceiveTimeout "receiveTimeout"} property.</em>
+<a class="jxr_linenumber" name="L47" href="#L47">47</a>  <em class="jxr_javadoccomment"> *</em>
+<a class="jxr_linenumber" name="L48" href="#L48">48</a>  <em class="jxr_javadoccomment"> * &lt;p&gt;The underlying mechanism is based on standard JMS MessageConsumer handling,</em>
+<a class="jxr_linenumber" name="L49" href="#L49">49</a>  <em class="jxr_javadoccomment"> * which is perfectly compatible with both native JMS and JMS in a J2EE environment.</em>
+<a class="jxr_linenumber" name="L50" href="#L50">50</a>  <em class="jxr_javadoccomment"> * Neither the JMS {@code MessageConsumer.setMessageListener} facility</em>
+<a class="jxr_linenumber" name="L51" href="#L51">51</a>  <em class="jxr_javadoccomment"> * nor the JMS ServerSessionPool facility is required. A further advantage</em>
+<a class="jxr_linenumber" name="L52" href="#L52">52</a>  <em class="jxr_javadoccomment"> * of this approach is full control over the listening process, allowing for</em>
+<a class="jxr_linenumber" name="L53" href="#L53">53</a>  <em class="jxr_javadoccomment"> * custom scaling and throttling and of concurrent message processing</em>
+<a class="jxr_linenumber" name="L54" href="#L54">54</a>  <em class="jxr_javadoccomment"> * (which is up to concrete subclasses).</em>
+<a class="jxr_linenumber" name="L55" href="#L55">55</a>  <em class="jxr_javadoccomment"> *</em>
+<a class="jxr_linenumber" name="L56" href="#L56">56</a>  <em class="jxr_javadoccomment"> * &lt;p&gt;Message reception and listener execution can automatically be wrapped</em>
+<a class="jxr_linenumber" name="L57" href="#L57">57</a>  <em class="jxr_javadoccomment"> * in transactions through passing a Spring</em>
+<a class="jxr_linenumber" name="L58" href="#L58">58</a>  <em class="jxr_javadoccomment"> * {@link org.springframework.transaction.PlatformTransactionManager} into the</em>
+<a class="jxr_linenumber" name="L59" href="#L59">59</a>  <em class="jxr_javadoccomment"> * {@link #setTransactionManager "transactionManager"} property. This will usually</em>
+<a class="jxr_linenumber" name="L60" href="#L60">60</a>  <em class="jxr_javadoccomment"> * be a {@link org.springframework.transaction.jta.JtaTransactionManager} in a</em>
+<a class="jxr_linenumber" name="L61" href="#L61">61</a>  <em class="jxr_javadoccomment"> * J2EE enviroment, in combination with a JTA-aware JMS ConnectionFactory obtained</em>
+<a class="jxr_linenumber" name="L62" href="#L62">62</a>  <em class="jxr_javadoccomment"> * from JNDI (check your J2EE server's documentation).</em>
+<a class="jxr_linenumber" name="L63" href="#L63">63</a>  <em class="jxr_javadoccomment"> *</em>
+<a class="jxr_linenumber" name="L64" href="#L64">64</a>  <em class="jxr_javadoccomment"> * &lt;p&gt;This base class does not assume any specific mechanism for asynchronous</em>
+<a class="jxr_linenumber" name="L65" href="#L65">65</a>  <em class="jxr_javadoccomment"> * execution of polling invokers. Check out {@link DefaultMessageListenerContainer}</em>
+<a class="jxr_linenumber" name="L66" href="#L66">66</a>  <em class="jxr_javadoccomment"> * for a concrete implementation which is based on Spring's</em>
+<a class="jxr_linenumber" name="L67" href="#L67">67</a>  <em class="jxr_javadoccomment"> * {@link org.springframework.core.task.TaskExecutor} abstraction,</em>
+<a class="jxr_linenumber" name="L68" href="#L68">68</a>  <em class="jxr_javadoccomment"> * including dynamic scaling of concurrent consumers and automatic self recovery.</em>
+<a class="jxr_linenumber" name="L69" href="#L69">69</a>  <em class="jxr_javadoccomment"> *</em>
+<a class="jxr_linenumber" name="L70" href="#L70">70</a>  <em class="jxr_javadoccomment"> * @author Juergen Hoeller</em>
+<a class="jxr_linenumber" name="L71" href="#L71">71</a>  <em class="jxr_javadoccomment"> * @since 2.0.3</em>
+<a class="jxr_linenumber" name="L72" href="#L72">72</a>  <em class="jxr_javadoccomment"> * @see #createListenerConsumer</em>
+<a class="jxr_linenumber" name="L73" href="#L73">73</a>  <em class="jxr_javadoccomment"> * @see #receiveAndExecute</em>
+<a class="jxr_linenumber" name="L74" href="#L74">74</a>  <em class="jxr_javadoccomment"> * @see #setTransactionManager</em>
+<a class="jxr_linenumber" name="L75" href="#L75">75</a>  <em class="jxr_javadoccomment"> */</em>
+<a class="jxr_linenumber" name="L76" href="#L76">76</a>  <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">abstract</strong> <strong class="jxr_keyword">class</strong> <a href="../../../../org/springframework/jms/listener/AbstractPollingMessageListenerContainer.html">AbstractPollingMessageListenerContainer</a> <strong class="jxr_keyword">extends</strong> <a href="../../../../org/springframework/jms/listener/AbstractMessageListenerContainer.html">AbstractMessageListenerContainer</a> {
+<a class="jxr_linenumber" name="L77" href="#L77">77</a>  
+<a class="jxr_linenumber" name="L78" href="#L78">78</a>  	<em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="L79" href="#L79">79</a>  <em class="jxr_javadoccomment">	 * The default receive timeout: 1000 ms = 1 second.</em>
+<a class="jxr_linenumber" name="L80" href="#L80">80</a>  <em class="jxr_javadoccomment">	 */</em>
+<a class="jxr_linenumber" name="L81" href="#L81">81</a>  	<strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">final</strong> <strong class="jxr_keyword">long</strong> DEFAULT_RECEIVE_TIMEOUT = 1000;
+<a class="jxr_linenumber" name="L82" href="#L82">82</a>  
+<a class="jxr_linenumber" name="L83" href="#L83">83</a>  
+<a class="jxr_linenumber" name="L84" href="#L84">84</a>  	<strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">final</strong> <a href="../../../../org/springframework/jms/listener/AbstractPollingMessageListenerContainer.html">MessageListenerContainerResourceFactory</a> transactionalResourceFactory =
+<a class="jxr_linenumber" name="L85" href="#L85">85</a>  			<strong class="jxr_keyword">new</strong> <a href="../../../../org/springframework/jms/listener/AbstractPollingMessageListenerContainer.html">MessageListenerContainerResourceFactory</a>();
+<a class="jxr_linenumber" name="L86" href="#L86">86</a>  
+<a class="jxr_linenumber" name="L87" href="#L87">87</a>  	<strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">boolean</strong> sessionTransactedCalled = false;
+<a class="jxr_linenumber" name="L88" href="#L88">88</a>  
+<a class="jxr_linenumber" name="L89" href="#L89">89</a>  	<strong class="jxr_keyword">private</strong> <a href="../../../../org/springframework/transaction/PlatformTransactionManager.html">PlatformTransactionManager</a> transactionManager;
+<a class="jxr_linenumber" name="L90" href="#L90">90</a>  
+<a class="jxr_linenumber" name="L91" href="#L91">91</a>  	<strong class="jxr_keyword">private</strong> <a href="../../../../org/springframework/transaction/support/DefaultTransactionDefinition.html">DefaultTransactionDefinition</a> transactionDefinition = <strong class="jxr_keyword">new</strong> <a href="../../../../org/springframework/transaction/support/DefaultTransactionDefinition.html">DefaultTransactionDefinition</a>();
+<a class="jxr_linenumber" name="L92" href="#L92">92</a>  
+<a class="jxr_linenumber" name="L93" href="#L93">93</a>  	<strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">long</strong> receiveTimeout = DEFAULT_RECEIVE_TIMEOUT;
+<a class="jxr_linenumber" name="L94" href="#L94">94</a>  
+<a class="jxr_linenumber" name="L95" href="#L95">95</a>  	<strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">volatile</strong> Boolean commitAfterNoMessageReceived;
+<a class="jxr_linenumber" name="L96" href="#L96">96</a>  
+<a class="jxr_linenumber" name="L97" href="#L97">97</a>  
+<a class="jxr_linenumber" name="L98" href="#L98">98</a>  	@Override
+<a class="jxr_linenumber" name="L99" href="#L99">99</a>  	<strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> setSessionTransacted(<strong class="jxr_keyword">boolean</strong> sessionTransacted) {
+<a class="jxr_linenumber" name="L100" href="#L100">100</a> 		<strong class="jxr_keyword">super</strong>.setSessionTransacted(sessionTransacted);
+<a class="jxr_linenumber" name="L101" href="#L101">101</a> 		<strong class="jxr_keyword">this</strong>.sessionTransactedCalled = <strong class="jxr_keyword">true</strong>;
+<a class="jxr_linenumber" name="L102" href="#L102">102</a> 	}
+<a class="jxr_linenumber" name="L103" href="#L103">103</a> 
+<a class="jxr_linenumber" name="L104" href="#L104">104</a> 	<em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="L105" href="#L105">105</a> <em class="jxr_javadoccomment">	 * Specify the Spring {@link org.springframework.transaction.PlatformTransactionManager}</em>
+<a class="jxr_linenumber" name="L106" href="#L106">106</a> <em class="jxr_javadoccomment">	 * to use for transactional wrapping of message reception plus listener execution.</em>
+<a class="jxr_linenumber" name="L107" href="#L107">107</a> <em class="jxr_javadoccomment">	 * &lt;p&gt;Default is none, not performing any transactional wrapping.</em>
+<a class="jxr_linenumber" name="L108" href="#L108">108</a> <em class="jxr_javadoccomment">	 * If specified, this will usually be a Spring</em>
+<a class="jxr_linenumber" name="L109" href="#L109">109</a> <em class="jxr_javadoccomment">	 * {@link org.springframework.transaction.jta.JtaTransactionManager} or one</em>
+<a class="jxr_linenumber" name="L110" href="#L110">110</a> <em class="jxr_javadoccomment">	 * of its subclasses, in combination with a JTA-aware ConnectionFactory that</em>
+<a class="jxr_linenumber" name="L111" href="#L111">111</a> <em class="jxr_javadoccomment">	 * this message listener container obtains its Connections from.</em>
+<a class="jxr_linenumber" name="L112" href="#L112">112</a> <em class="jxr_javadoccomment">	 * &lt;p&gt;&lt;b&gt;Note: Consider the use of local JMS transactions instead.&lt;/b&gt;</em>
+<a class="jxr_linenumber" name="L113" href="#L113">113</a> <em class="jxr_javadoccomment">	 * Simply switch the {@link #setSessionTransacted "sessionTransacted"} flag</em>
+<a class="jxr_linenumber" name="L114" href="#L114">114</a> <em class="jxr_javadoccomment">	 * to "true" in order to use a locally transacted JMS Session for the entire</em>
+<a class="jxr_linenumber" name="L115" href="#L115">115</a> <em class="jxr_javadoccomment">	 * receive processing, including any Session operations performed by a</em>
+<a class="jxr_linenumber" name="L116" href="#L116">116</a> <em class="jxr_javadoccomment">	 * {@link SessionAwareMessageListener} (e.g. sending a response message). This</em>
+<a class="jxr_linenumber" name="L117" href="#L117">117</a> <em class="jxr_javadoccomment">	 * allows for fully synchronized Spring transactions based on local JMS</em>
+<a class="jxr_linenumber" name="L118" href="#L118">118</a> <em class="jxr_javadoccomment">	 * transactions, similar to what</em>
+<a class="jxr_linenumber" name="L119" href="#L119">119</a> <em class="jxr_javadoccomment">	 * {@link org.springframework.jms.connection.JmsTransactionManager} provides. Check</em>
+<a class="jxr_linenumber" name="L120" href="#L120">120</a> <em class="jxr_javadoccomment">	 * {@link AbstractMessageListenerContainer}'s javadoc for</em>
+<a class="jxr_linenumber" name="L121" href="#L121">121</a> <em class="jxr_javadoccomment">	 * a discussion of transaction choices and message redelivery scenarios.</em>
+<a class="jxr_linenumber" name="L122" href="#L122">122</a> <em class="jxr_javadoccomment">	 * @see #setSessionTransacted(boolean)</em>
+<a class="jxr_linenumber" name="L123" href="#L123">123</a> <em class="jxr_javadoccomment">	 * @see org.springframework.transaction.jta.JtaTransactionManager</em>
+<a class="jxr_linenumber" name="L124" href="#L124">124</a> <em class="jxr_javadoccomment">	 * @see org.springframework.jms.connection.JmsTransactionManager</em>
+<a class="jxr_linenumber" name="L125" href="#L125">125</a> <em class="jxr_javadoccomment">	 */</em>
+<a class="jxr_linenumber" name="L126" href="#L126">126</a> 	<strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> setTransactionManager(<a href="../../../../org/springframework/transaction/PlatformTransactionManager.html">PlatformTransactionManager</a> transactionManager) {
+<a class="jxr_linenumber" name="L127" href="#L127">127</a> 		<strong class="jxr_keyword">this</strong>.transactionManager = transactionManager;
+<a class="jxr_linenumber" name="L128" href="#L128">128</a> 	}
+<a class="jxr_linenumber" name="L129" href="#L129">129</a> 
+<a class="jxr_linenumber" name="L130" href="#L130">130</a> 	<em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="L131" href="#L131">131</a> <em class="jxr_javadoccomment">	 * Return the Spring PlatformTransactionManager to use for transactional</em>
+<a class="jxr_linenumber" name="L132" href="#L132">132</a> <em class="jxr_javadoccomment">	 * wrapping of message reception plus listener execution.</em>
+<a class="jxr_linenumber" name="L133" href="#L133">133</a> <em class="jxr_javadoccomment">	 */</em>
+<a class="jxr_linenumber" name="L134" href="#L134">134</a> 	<strong class="jxr_keyword">protected</strong> <strong class="jxr_keyword">final</strong> <a href="../../../../org/springframework/transaction/PlatformTransactionManager.html">PlatformTransactionManager</a> getTransactionManager() {
+<a class="jxr_linenumber" name="L135" href="#L135">135</a> 		<strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">this</strong>.transactionManager;
+<a class="jxr_linenumber" name="L136" href="#L136">136</a> 	}
+<a class="jxr_linenumber" name="L137" href="#L137">137</a> 
+<a class="jxr_linenumber" name="L138" href="#L138">138</a> 	<em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="L139" href="#L139">139</a> <em class="jxr_javadoccomment">	 * Specify the transaction name to use for transactional wrapping.</em>
+<a class="jxr_linenumber" name="L140" href="#L140">140</a> <em class="jxr_javadoccomment">	 * Default is the bean name of this listener container, if any.</em>
+<a class="jxr_linenumber" name="L141" href="#L141">141</a> <em class="jxr_javadoccomment">	 * @see org.springframework.transaction.TransactionDefinition#getName()</em>
+<a class="jxr_linenumber" name="L142" href="#L142">142</a> <em class="jxr_javadoccomment">	 */</em>
+<a class="jxr_linenumber" name="L143" href="#L143">143</a> 	<strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> setTransactionName(String transactionName) {
+<a class="jxr_linenumber" name="L144" href="#L144">144</a> 		<strong class="jxr_keyword">this</strong>.transactionDefinition.setName(transactionName);
+<a class="jxr_linenumber" name="L145" href="#L145">145</a> 	}
+<a class="jxr_linenumber" name="L146" href="#L146">146</a> 
+<a class="jxr_linenumber" name="L147" href="#L147">147</a> 	<em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="L148" href="#L148">148</a> <em class="jxr_javadoccomment">	 * Specify the transaction timeout to use for transactional wrapping, in &lt;b&gt;seconds&lt;/b&gt;.</em>
+<a class="jxr_linenumber" name="L149" href="#L149">149</a> <em class="jxr_javadoccomment">	 * Default is none, using the transaction manager's default timeout.</em>
+<a class="jxr_linenumber" name="L150" href="#L150">150</a> <em class="jxr_javadoccomment">	 * @see org.springframework.transaction.TransactionDefinition#getTimeout()</em>
+<a class="jxr_linenumber" name="L151" href="#L151">151</a> <em class="jxr_javadoccomment">	 * @see #setReceiveTimeout</em>
+<a class="jxr_linenumber" name="L152" href="#L152">152</a> <em class="jxr_javadoccomment">	 */</em>
+<a class="jxr_linenumber" name="L153" href="#L153">153</a> 	<strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> setTransactionTimeout(<strong class="jxr_keyword">int</strong> transactionTimeout) {
+<a class="jxr_linenumber" name="L154" href="#L154">154</a> 		<strong class="jxr_keyword">this</strong>.transactionDefinition.setTimeout(transactionTimeout);
+<a class="jxr_linenumber" name="L155" href="#L155">155</a> 	}
+<a class="jxr_linenumber" name="L156" href="#L156">156</a> 
+<a class="jxr_linenumber" name="L157" href="#L157">157</a> 	<em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="L158" href="#L158">158</a> <em class="jxr_javadoccomment">	 * Set the timeout to use for receive calls, in &lt;b&gt;milliseconds&lt;/b&gt;.</em>
+<a class="jxr_linenumber" name="L159" href="#L159">159</a> <em class="jxr_javadoccomment">	 * The default is 1000 ms, that is, 1 second.</em>
+<a class="jxr_linenumber" name="L160" href="#L160">160</a> <em class="jxr_javadoccomment">	 * &lt;p&gt;&lt;b&gt;NOTE:&lt;/b&gt; This value needs to be smaller than the transaction</em>
+<a class="jxr_linenumber" name="L161" href="#L161">161</a> <em class="jxr_javadoccomment">	 * timeout used by the transaction manager (in the appropriate unit,</em>
+<a class="jxr_linenumber" name="L162" href="#L162">162</a> <em class="jxr_javadoccomment">	 * of course). -1 indicates no timeout at all; however, this is only</em>
+<a class="jxr_linenumber" name="L163" href="#L163">163</a> <em class="jxr_javadoccomment">	 * feasible if not running within a transaction manager.</em>
+<a class="jxr_linenumber" name="L164" href="#L164">164</a> <em class="jxr_javadoccomment">	 * @see javax.jms.MessageConsumer#receive(long)</em>
+<a class="jxr_linenumber" name="L165" href="#L165">165</a> <em class="jxr_javadoccomment">	 * @see javax.jms.MessageConsumer#receive()</em>
+<a class="jxr_linenumber" name="L166" href="#L166">166</a> <em class="jxr_javadoccomment">	 * @see #setTransactionTimeout</em>
+<a class="jxr_linenumber" name="L167" href="#L167">167</a> <em class="jxr_javadoccomment">	 */</em>
+<a class="jxr_linenumber" name="L168" href="#L168">168</a> 	<strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> setReceiveTimeout(<strong class="jxr_keyword">long</strong> receiveTimeout) {
+<a class="jxr_linenumber" name="L169" href="#L169">169</a> 		<strong class="jxr_keyword">this</strong>.receiveTimeout = receiveTimeout;
+<a class="jxr_linenumber" name="L170" href="#L170">170</a> 	}
+<a class="jxr_linenumber" name="L171" href="#L171">171</a> 
+<a class="jxr_linenumber" name="L172" href="#L172">172</a> 
+<a class="jxr_linenumber" name="L173" href="#L173">173</a> 	@Override
+<a class="jxr_linenumber" name="L174" href="#L174">174</a> 	<strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> initialize() {
+<a class="jxr_linenumber" name="L175" href="#L175">175</a> 		<em class="jxr_comment">// Set sessionTransacted=true in case of a non-JTA transaction manager.</em>
+<a class="jxr_linenumber" name="L176" href="#L176">176</a> 		<strong class="jxr_keyword">if</strong> (!<strong class="jxr_keyword">this</strong>.sessionTransactedCalled &amp;&amp;
+<a class="jxr_linenumber" name="L177" href="#L177">177</a> 				<strong class="jxr_keyword">this</strong>.transactionManager instanceof <a href="../../../../org/springframework/transaction/support/ResourceTransactionManager.html">ResourceTransactionManager</a> &amp;&amp;
+<a class="jxr_linenumber" name="L178" href="#L178">178</a> 				!TransactionSynchronizationUtils.sameResourceFactory(
+<a class="jxr_linenumber" name="L179" href="#L179">179</a> 						(<a href="../../../../org/springframework/transaction/support/ResourceTransactionManager.html">ResourceTransactionManager</a>) <strong class="jxr_keyword">this</strong>.transactionManager, getConnectionFactory())) {
+<a class="jxr_linenumber" name="L180" href="#L180">180</a> 			<strong class="jxr_keyword">super</strong>.setSessionTransacted(<strong class="jxr_keyword">true</strong>);
+<a class="jxr_linenumber" name="L181" href="#L181">181</a> 		}
+<a class="jxr_linenumber" name="L182" href="#L182">182</a> 
+<a class="jxr_linenumber" name="L183" href="#L183">183</a> 		<em class="jxr_comment">// Use bean name as default transaction name.</em>
+<a class="jxr_linenumber" name="L184" href="#L184">184</a> 		<strong class="jxr_keyword">if</strong> (<strong class="jxr_keyword">this</strong>.transactionDefinition.getName() == <strong class="jxr_keyword">null</strong>) {
+<a class="jxr_linenumber" name="L185" href="#L185">185</a> 			<strong class="jxr_keyword">this</strong>.transactionDefinition.setName(getBeanName());
+<a class="jxr_linenumber" name="L186" href="#L186">186</a> 		}
+<a class="jxr_linenumber" name="L187" href="#L187">187</a> 
+<a class="jxr_linenumber" name="L188" href="#L188">188</a> 		<em class="jxr_comment">// Proceed with superclass initialization.</em>
+<a class="jxr_linenumber" name="L189" href="#L189">189</a> 		<strong class="jxr_keyword">super</strong>.initialize();
+<a class="jxr_linenumber" name="L190" href="#L190">190</a> 	}
+<a class="jxr_linenumber" name="L191" href="#L191">191</a> 
+<a class="jxr_linenumber" name="L192" href="#L192">192</a> 
+<a class="jxr_linenumber" name="L193" href="#L193">193</a> 	<em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="L194" href="#L194">194</a> <em class="jxr_javadoccomment">	 * Create a MessageConsumer for the given JMS Session,</em>
+<a class="jxr_linenumber" name="L195" href="#L195">195</a> <em class="jxr_javadoccomment">	 * registering a MessageListener for the specified listener.</em>
+<a class="jxr_linenumber" name="L196" href="#L196">196</a> <em class="jxr_javadoccomment">	 * @param session the JMS Session to work on</em>
+<a class="jxr_linenumber" name="L197" href="#L197">197</a> <em class="jxr_javadoccomment">	 * @return the MessageConsumer</em>
+<a class="jxr_linenumber" name="L198" href="#L198">198</a> <em class="jxr_javadoccomment">	 * @throws javax.jms.JMSException if thrown by JMS methods</em>
+<a class="jxr_linenumber" name="L199" href="#L199">199</a> <em class="jxr_javadoccomment">	 * @see #receiveAndExecute</em>
+<a class="jxr_linenumber" name="L200" href="#L200">200</a> <em class="jxr_javadoccomment">	 */</em>
+<a class="jxr_linenumber" name="L201" href="#L201">201</a> 	<strong class="jxr_keyword">protected</strong> MessageConsumer createListenerConsumer(Session session) <strong class="jxr_keyword">throws</strong> JMSException {
+<a class="jxr_linenumber" name="L202" href="#L202">202</a> 		Destination destination = getDestination();
+<a class="jxr_linenumber" name="L203" href="#L203">203</a> 		<strong class="jxr_keyword">if</strong> (destination == <strong class="jxr_keyword">null</strong>) {
+<a class="jxr_linenumber" name="L204" href="#L204">204</a> 			destination = resolveDestinationName(session, getDestinationName());
+<a class="jxr_linenumber" name="L205" href="#L205">205</a> 		}
+<a class="jxr_linenumber" name="L206" href="#L206">206</a> 		<strong class="jxr_keyword">return</strong> createConsumer(session, destination);
+<a class="jxr_linenumber" name="L207" href="#L207">207</a> 	}
+<a class="jxr_linenumber" name="L208" href="#L208">208</a> 
+<a class="jxr_linenumber" name="L209" href="#L209">209</a> 	<em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="L210" href="#L210">210</a> <em class="jxr_javadoccomment">	 * Execute the listener for a message received from the given consumer,</em>
+<a class="jxr_linenumber" name="L211" href="#L211">211</a> <em class="jxr_javadoccomment">	 * wrapping the entire operation in an external transaction if demanded.</em>
+<a class="jxr_linenumber" name="L212" href="#L212">212</a> <em class="jxr_javadoccomment">	 * @param session the JMS Session to work on</em>
+<a class="jxr_linenumber" name="L213" href="#L213">213</a> <em class="jxr_javadoccomment">	 * @param consumer the MessageConsumer to work on</em>
+<a class="jxr_linenumber" name="L214" href="#L214">214</a> <em class="jxr_javadoccomment">	 * @return whether a message has been received</em>
+<a class="jxr_linenumber" name="L215" href="#L215">215</a> <em class="jxr_javadoccomment">	 * @throws JMSException if thrown by JMS methods</em>
+<a class="jxr_linenumber" name="L216" href="#L216">216</a> <em class="jxr_javadoccomment">	 * @see #doReceiveAndExecute</em>
+<a class="jxr_linenumber" name="L217" href="#L217">217</a> <em class="jxr_javadoccomment">	 */</em>
+<a class="jxr_linenumber" name="L218" href="#L218">218</a> 	<strong class="jxr_keyword">protected</strong> <strong class="jxr_keyword">boolean</strong> receiveAndExecute(Object invoker, Session session, MessageConsumer consumer)
+<a class="jxr_linenumber" name="L219" href="#L219">219</a> 			<strong class="jxr_keyword">throws</strong> JMSException {
+<a class="jxr_linenumber" name="L220" href="#L220">220</a> 
+<a class="jxr_linenumber" name="L221" href="#L221">221</a> 		<strong class="jxr_keyword">if</strong> (<strong class="jxr_keyword">this</strong>.transactionManager != <strong class="jxr_keyword">null</strong>) {
+<a class="jxr_linenumber" name="L222" href="#L222">222</a> 			<em class="jxr_comment">// Execute receive within transaction.</em>
+<a class="jxr_linenumber" name="L223" href="#L223">223</a> 			TransactionStatus status = <strong class="jxr_keyword">this</strong>.transactionManager.getTransaction(<strong class="jxr_keyword">this</strong>.transactionDefinition);
+<a class="jxr_linenumber" name="L224" href="#L224">224</a> 			<strong class="jxr_keyword">boolean</strong> messageReceived;
+<a class="jxr_linenumber" name="L225" href="#L225">225</a> 			<strong class="jxr_keyword">try</strong> {
+<a class="jxr_linenumber" name="L226" href="#L226">226</a> 				messageReceived = doReceiveAndExecute(invoker, session, consumer, status);
+<a class="jxr_linenumber" name="L227" href="#L227">227</a> 			}
+<a class="jxr_linenumber" name="L228" href="#L228">228</a> 			<strong class="jxr_keyword">catch</strong> (JMSException ex) {
+<a class="jxr_linenumber" name="L229" href="#L229">229</a> 				rollbackOnException(status, ex);
+<a class="jxr_linenumber" name="L230" href="#L230">230</a> 				<strong class="jxr_keyword">throw</strong> ex;
+<a class="jxr_linenumber" name="L231" href="#L231">231</a> 			}
+<a class="jxr_linenumber" name="L232" href="#L232">232</a> 			<strong class="jxr_keyword">catch</strong> (RuntimeException ex) {
+<a class="jxr_linenumber" name="L233" href="#L233">233</a> 				rollbackOnException(status, ex);
+<a class="jxr_linenumber" name="L234" href="#L234">234</a> 				<strong class="jxr_keyword">throw</strong> ex;
+<a class="jxr_linenumber" name="L235" href="#L235">235</a> 			}
+<a class="jxr_linenumber" name="L236" href="#L236">236</a> 			<strong class="jxr_keyword">catch</strong> (Error err) {
+<a class="jxr_linenumber" name="L237" href="#L237">237</a> 				rollbackOnException(status, err);
+<a class="jxr_linenumber" name="L238" href="#L238">238</a> 				<strong class="jxr_keyword">throw</strong> err;
+<a class="jxr_linenumber" name="L239" href="#L239">239</a> 			}
+<a class="jxr_linenumber" name="L240" href="#L240">240</a> 			<strong class="jxr_keyword">this</strong>.transactionManager.commit(status);
+<a class="jxr_linenumber" name="L241" href="#L241">241</a> 			<strong class="jxr_keyword">return</strong> messageReceived;
+<a class="jxr_linenumber" name="L242" href="#L242">242</a> 		}
+<a class="jxr_linenumber" name="L243" href="#L243">243</a> 
+<a class="jxr_linenumber" name="L244" href="#L244">244</a> 		<strong class="jxr_keyword">else</strong> {
+<a class="jxr_linenumber" name="L245" href="#L245">245</a> 			<em class="jxr_comment">// Execute receive outside of transaction.</em>
+<a class="jxr_linenumber" name="L246" href="#L246">246</a> 			<strong class="jxr_keyword">return</strong> doReceiveAndExecute(invoker, session, consumer, <strong class="jxr_keyword">null</strong>);
+<a class="jxr_linenumber" name="L247" href="#L247">247</a> 		}
+<a class="jxr_linenumber" name="L248" href="#L248">248</a> 	}
+<a class="jxr_linenumber" name="L249" href="#L249">249</a> 
+<a class="jxr_linenumber" name="L250" href="#L250">250</a> 	<em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="L251" href="#L251">251</a> <em class="jxr_javadoccomment">	 * Actually execute the listener for a message received from the given consumer,</em>
+<a class="jxr_linenumber" name="L252" href="#L252">252</a> <em class="jxr_javadoccomment">	 * fetching all requires resources and invoking the listener.</em>
+<a class="jxr_linenumber" name="L253" href="#L253">253</a> <em class="jxr_javadoccomment">	 * @param session the JMS Session to work on</em>
+<a class="jxr_linenumber" name="L254" href="#L254">254</a> <em class="jxr_javadoccomment">	 * @param consumer the MessageConsumer to work on</em>
+<a class="jxr_linenumber" name="L255" href="#L255">255</a> <em class="jxr_javadoccomment">	 * @param status the TransactionStatus (may be {@code null})</em>
+<a class="jxr_linenumber" name="L256" href="#L256">256</a> <em class="jxr_javadoccomment">	 * @return whether a message has been received</em>
+<a class="jxr_linenumber" name="L257" href="#L257">257</a> <em class="jxr_javadoccomment">	 * @throws JMSException if thrown by JMS methods</em>
+<a class="jxr_linenumber" name="L258" href="#L258">258</a> <em class="jxr_javadoccomment">	 * @see #doExecuteListener(javax.jms.Session, javax.jms.Message)</em>
+<a class="jxr_linenumber" name="L259" href="#L259">259</a> <em class="jxr_javadoccomment">	 */</em>
+<a class="jxr_linenumber" name="L260" href="#L260">260</a> 	<strong class="jxr_keyword">protected</strong> <strong class="jxr_keyword">boolean</strong> doReceiveAndExecute(
+<a class="jxr_linenumber" name="L261" href="#L261">261</a> 			Object invoker, Session session, MessageConsumer consumer, <a href="../../../../org/springframework/transaction/TransactionStatus.html">TransactionStatus</a> status)
+<a class="jxr_linenumber" name="L262" href="#L262">262</a> 			<strong class="jxr_keyword">throws</strong> JMSException {
+<a class="jxr_linenumber" name="L263" href="#L263">263</a> 
+<a class="jxr_linenumber" name="L264" href="#L264">264</a> 		Connection conToClose = <strong class="jxr_keyword">null</strong>;
+<a class="jxr_linenumber" name="L265" href="#L265">265</a> 		Session sessionToClose = <strong class="jxr_keyword">null</strong>;
+<a class="jxr_linenumber" name="L266" href="#L266">266</a> 		MessageConsumer consumerToClose = <strong class="jxr_keyword">null</strong>;
+<a class="jxr_linenumber" name="L267" href="#L267">267</a> 		<strong class="jxr_keyword">try</strong> {
+<a class="jxr_linenumber" name="L268" href="#L268">268</a> 			Session sessionToUse = session;
+<a class="jxr_linenumber" name="L269" href="#L269">269</a> 			<strong class="jxr_keyword">boolean</strong> transactional = false;
+<a class="jxr_linenumber" name="L270" href="#L270">270</a> 			<strong class="jxr_keyword">if</strong> (sessionToUse == <strong class="jxr_keyword">null</strong>) {
+<a class="jxr_linenumber" name="L271" href="#L271">271</a> 				sessionToUse = ConnectionFactoryUtils.doGetTransactionalSession(
+<a class="jxr_linenumber" name="L272" href="#L272">272</a> 						getConnectionFactory(), <strong class="jxr_keyword">this</strong>.transactionalResourceFactory, <strong class="jxr_keyword">true</strong>);
+<a class="jxr_linenumber" name="L273" href="#L273">273</a> 				transactional = (sessionToUse != <strong class="jxr_keyword">null</strong>);
+<a class="jxr_linenumber" name="L274" href="#L274">274</a> 			}
+<a class="jxr_linenumber" name="L275" href="#L275">275</a> 			<strong class="jxr_keyword">if</strong> (sessionToUse == <strong class="jxr_keyword">null</strong>) {
+<a class="jxr_linenumber" name="L276" href="#L276">276</a> 				Connection conToUse;
+<a class="jxr_linenumber" name="L277" href="#L277">277</a> 				<strong class="jxr_keyword">if</strong> (sharedConnectionEnabled()) {
+<a class="jxr_linenumber" name="L278" href="#L278">278</a> 					conToUse = getSharedConnection();
+<a class="jxr_linenumber" name="L279" href="#L279">279</a> 				}
+<a class="jxr_linenumber" name="L280" href="#L280">280</a> 				<strong class="jxr_keyword">else</strong> {
+<a class="jxr_linenumber" name="L281" href="#L281">281</a> 					conToUse = createConnection();
+<a class="jxr_linenumber" name="L282" href="#L282">282</a> 					conToClose = conToUse;
+<a class="jxr_linenumber" name="L283" href="#L283">283</a> 					conToUse.start();
+<a class="jxr_linenumber" name="L284" href="#L284">284</a> 				}
+<a class="jxr_linenumber" name="L285" href="#L285">285</a> 				sessionToUse = createSession(conToUse);
+<a class="jxr_linenumber" name="L286" href="#L286">286</a> 				sessionToClose = sessionToUse;
+<a class="jxr_linenumber" name="L287" href="#L287">287</a> 			}
+<a class="jxr_linenumber" name="L288" href="#L288">288</a> 			MessageConsumer consumerToUse = consumer;
+<a class="jxr_linenumber" name="L289" href="#L289">289</a> 			<strong class="jxr_keyword">if</strong> (consumerToUse == <strong class="jxr_keyword">null</strong>) {
+<a class="jxr_linenumber" name="L290" href="#L290">290</a> 				consumerToUse = createListenerConsumer(sessionToUse);
+<a class="jxr_linenumber" name="L291" href="#L291">291</a> 				consumerToClose = consumerToUse;
+<a class="jxr_linenumber" name="L292" href="#L292">292</a> 			}
+<a class="jxr_linenumber" name="L293" href="#L293">293</a> 			Message message = receiveMessage(consumerToUse);
+<a class="jxr_linenumber" name="L294" href="#L294">294</a> 			<strong class="jxr_keyword">if</strong> (message != <strong class="jxr_keyword">null</strong>) {
+<a class="jxr_linenumber" name="L295" href="#L295">295</a> 				<strong class="jxr_keyword">if</strong> (logger.isDebugEnabled()) {
+<a class="jxr_linenumber" name="L296" href="#L296">296</a> 					logger.debug(<span class="jxr_string">"Received message of type ["</span> + message.getClass() + <span class="jxr_string">"] from consumer ["</span> +
+<a class="jxr_linenumber" name="L297" href="#L297">297</a> 							consumerToUse + <span class="jxr_string">"] of "</span> + (transactional ? <span class="jxr_string">"transactional "</span> : <span class="jxr_string">""</span>) + <span class="jxr_string">"session ["</span> +
+<a class="jxr_linenumber" name="L298" href="#L298">298</a> 							sessionToUse + <span class="jxr_string">"]"</span>);
+<a class="jxr_linenumber" name="L299" href="#L299">299</a> 				}
+<a class="jxr_linenumber" name="L300" href="#L300">300</a> 				messageReceived(invoker, sessionToUse);
+<a class="jxr_linenumber" name="L301" href="#L301">301</a> 				<strong class="jxr_keyword">boolean</strong> exposeResource = (!transactional &amp;&amp; isExposeListenerSession() &amp;&amp;
+<a class="jxr_linenumber" name="L302" href="#L302">302</a> 						!TransactionSynchronizationManager.hasResource(getConnectionFactory()));
+<a class="jxr_linenumber" name="L303" href="#L303">303</a> 				<strong class="jxr_keyword">if</strong> (exposeResource) {
+<a class="jxr_linenumber" name="L304" href="#L304">304</a> 					TransactionSynchronizationManager.bindResource(
+<a class="jxr_linenumber" name="L305" href="#L305">305</a> 							getConnectionFactory(), <strong class="jxr_keyword">new</strong> LocallyExposedJmsResourceHolder(sessionToUse));
+<a class="jxr_linenumber" name="L306" href="#L306">306</a> 				}
+<a class="jxr_linenumber" name="L307" href="#L307">307</a> 				<strong class="jxr_keyword">try</strong> {
+<a class="jxr_linenumber" name="L308" href="#L308">308</a> 					doExecuteListener(sessionToUse, message);
+<a class="jxr_linenumber" name="L309" href="#L309">309</a> 				}
+<a class="jxr_linenumber" name="L310" href="#L310">310</a> 				<strong class="jxr_keyword">catch</strong> (Throwable ex) {
+<a class="jxr_linenumber" name="L311" href="#L311">311</a> 					<strong class="jxr_keyword">if</strong> (status != <strong class="jxr_keyword">null</strong>) {
+<a class="jxr_linenumber" name="L312" href="#L312">312</a> 						<strong class="jxr_keyword">if</strong> (logger.isDebugEnabled()) {
+<a class="jxr_linenumber" name="L313" href="#L313">313</a> 							logger.debug(<span class="jxr_string">"Rolling back transaction because of listener exception thrown: "</span> + ex);
+<a class="jxr_linenumber" name="L314" href="#L314">314</a> 						}
+<a class="jxr_linenumber" name="L315" href="#L315">315</a> 						status.setRollbackOnly();
+<a class="jxr_linenumber" name="L316" href="#L316">316</a> 					}
+<a class="jxr_linenumber" name="L317" href="#L317">317</a> 					handleListenerException(ex);
+<a class="jxr_linenumber" name="L318" href="#L318">318</a> 					<em class="jxr_comment">// Rethrow JMSException to indicate an infrastructure problem</em>
+<a class="jxr_linenumber" name="L319" href="#L319">319</a> 					<em class="jxr_comment">// that may have to trigger recovery...</em>
+<a class="jxr_linenumber" name="L320" href="#L320">320</a> 					<strong class="jxr_keyword">if</strong> (ex instanceof JMSException) {
+<a class="jxr_linenumber" name="L321" href="#L321">321</a> 						<strong class="jxr_keyword">throw</strong> (JMSException) ex;
+<a class="jxr_linenumber" name="L322" href="#L322">322</a> 					}
+<a class="jxr_linenumber" name="L323" href="#L323">323</a> 				}
+<a class="jxr_linenumber" name="L324" href="#L324">324</a> 				<strong class="jxr_keyword">finally</strong> {
+<a class="jxr_linenumber" name="L325" href="#L325">325</a> 					<strong class="jxr_keyword">if</strong> (exposeResource) {
+<a class="jxr_linenumber" name="L326" href="#L326">326</a> 						TransactionSynchronizationManager.unbindResource(getConnectionFactory());
+<a class="jxr_linenumber" name="L327" href="#L327">327</a> 					}
+<a class="jxr_linenumber" name="L328" href="#L328">328</a> 				}
+<a class="jxr_linenumber" name="L329" href="#L329">329</a> 				<em class="jxr_comment">// Indicate that a message has been received.</em>
+<a class="jxr_linenumber" name="L330" href="#L330">330</a> 				<strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">true</strong>;
+<a class="jxr_linenumber" name="L331" href="#L331">331</a> 			}
+<a class="jxr_linenumber" name="L332" href="#L332">332</a> 			<strong class="jxr_keyword">else</strong> {
+<a class="jxr_linenumber" name="L333" href="#L333">333</a> 				<strong class="jxr_keyword">if</strong> (logger.isTraceEnabled()) {
+<a class="jxr_linenumber" name="L334" href="#L334">334</a> 					logger.trace(<span class="jxr_string">"Consumer ["</span> + consumerToUse + <span class="jxr_string">"] of "</span> + (transactional ? <span class="jxr_string">"transactional "</span> : <span class="jxr_string">""</span>) +
+<a class="jxr_linenumber" name="L335" href="#L335">335</a> 							<span class="jxr_string">"session ["</span> + sessionToUse + <span class="jxr_string">"] did not receive a message"</span>);
+<a class="jxr_linenumber" name="L336" href="#L336">336</a> 				}
+<a class="jxr_linenumber" name="L337" href="#L337">337</a> 				noMessageReceived(invoker, sessionToUse);
+<a class="jxr_linenumber" name="L338" href="#L338">338</a> 				<em class="jxr_comment">// Nevertheless call commit, in order to reset the transaction timeout (if any).</em>
+<a class="jxr_linenumber" name="L339" href="#L339">339</a> 				<em class="jxr_comment">// However, don't do this on Tibco since this may lead to a deadlock there.</em>
+<a class="jxr_linenumber" name="L340" href="#L340">340</a> 				<strong class="jxr_keyword">if</strong> (shouldCommitAfterNoMessageReceived(sessionToUse)) {
+<a class="jxr_linenumber" name="L341" href="#L341">341</a> 					commitIfNecessary(sessionToUse, message);
+<a class="jxr_linenumber" name="L342" href="#L342">342</a> 				}
+<a class="jxr_linenumber" name="L343" href="#L343">343</a> 				<em class="jxr_comment">// Indicate that no message has been received.</em>
+<a class="jxr_linenumber" name="L344" href="#L344">344</a> 				<strong class="jxr_keyword">return</strong> false;
+<a class="jxr_linenumber" name="L345" href="#L345">345</a> 			}
+<a class="jxr_linenumber" name="L346" href="#L346">346</a> 		}
+<a class="jxr_linenumber" name="L347" href="#L347">347</a> 		<strong class="jxr_keyword">finally</strong> {
+<a class="jxr_linenumber" name="L348" href="#L348">348</a> 			JmsUtils.closeMessageConsumer(consumerToClose);
+<a class="jxr_linenumber" name="L349" href="#L349">349</a> 			JmsUtils.closeSession(sessionToClose);
+<a class="jxr_linenumber" name="L350" href="#L350">350</a> 			ConnectionFactoryUtils.releaseConnection(conToClose, getConnectionFactory(), <strong class="jxr_keyword">true</strong>);
+<a class="jxr_linenumber" name="L351" href="#L351">351</a> 		}
+<a class="jxr_linenumber" name="L352" href="#L352">352</a> 	}
+<a class="jxr_linenumber" name="L353" href="#L353">353</a> 
+<a class="jxr_linenumber" name="L354" href="#L354">354</a> 	<em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="L355" href="#L355">355</a> <em class="jxr_javadoccomment">	 * This implementation checks whether the Session is externally synchronized.</em>
+<a class="jxr_linenumber" name="L356" href="#L356">356</a> <em class="jxr_javadoccomment">	 * In this case, the Session is not locally transacted, despite the listener</em>
+<a class="jxr_linenumber" name="L357" href="#L357">357</a> <em class="jxr_javadoccomment">	 * container's "sessionTransacted" flag being set to "true".</em>
+<a class="jxr_linenumber" name="L358" href="#L358">358</a> <em class="jxr_javadoccomment">	 * @see org.springframework.jms.connection.JmsResourceHolder</em>
+<a class="jxr_linenumber" name="L359" href="#L359">359</a> <em class="jxr_javadoccomment">	 */</em>
+<a class="jxr_linenumber" name="L360" href="#L360">360</a> 	@Override
+<a class="jxr_linenumber" name="L361" href="#L361">361</a> 	<strong class="jxr_keyword">protected</strong> <strong class="jxr_keyword">boolean</strong> isSessionLocallyTransacted(Session session) {
+<a class="jxr_linenumber" name="L362" href="#L362">362</a> 		<strong class="jxr_keyword">if</strong> (!<strong class="jxr_keyword">super</strong>.isSessionLocallyTransacted(session)) {
+<a class="jxr_linenumber" name="L363" href="#L363">363</a> 			<strong class="jxr_keyword">return</strong> false;
+<a class="jxr_linenumber" name="L364" href="#L364">364</a> 		}
+<a class="jxr_linenumber" name="L365" href="#L365">365</a> 		JmsResourceHolder resourceHolder =
+<a class="jxr_linenumber" name="L366" href="#L366">366</a> 				(<a href="../../../../org/springframework/jms/connection/JmsResourceHolder.html">JmsResourceHolder</a>) TransactionSynchronizationManager.getResource(getConnectionFactory());
+<a class="jxr_linenumber" name="L367" href="#L367">367</a> 		<strong class="jxr_keyword">return</strong> (resourceHolder == <strong class="jxr_keyword">null</strong> || resourceHolder instanceof LocallyExposedJmsResourceHolder ||
+<a class="jxr_linenumber" name="L368" href="#L368">368</a> 				!resourceHolder.containsSession(session));
+<a class="jxr_linenumber" name="L369" href="#L369">369</a> 	}
+<a class="jxr_linenumber" name="L370" href="#L370">370</a> 
+<a class="jxr_linenumber" name="L371" href="#L371">371</a> 	<em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="L372" href="#L372">372</a> <em class="jxr_javadoccomment">	 * Determine whether to trigger a commit after no message has been received.</em>
+<a class="jxr_linenumber" name="L373" href="#L373">373</a> <em class="jxr_javadoccomment">	 * This is a good idea on any JMS provider other than Tibco, which is what</em>
+<a class="jxr_linenumber" name="L374" href="#L374">374</a> <em class="jxr_javadoccomment">	 * this default implementation checks for.</em>
+<a class="jxr_linenumber" name="L375" href="#L375">375</a> <em class="jxr_javadoccomment">	 * @param session the current JMS Session which received no message</em>
+<a class="jxr_linenumber" name="L376" href="#L376">376</a> <em class="jxr_javadoccomment">	 * @return whether to call {@link #commitIfNecessary} on the given Session</em>
+<a class="jxr_linenumber" name="L377" href="#L377">377</a> <em class="jxr_javadoccomment">	 */</em>
+<a class="jxr_linenumber" name="L378" href="#L378">378</a> 	<strong class="jxr_keyword">protected</strong> <strong class="jxr_keyword">boolean</strong> shouldCommitAfterNoMessageReceived(Session session) {
+<a class="jxr_linenumber" name="L379" href="#L379">379</a> 		<strong class="jxr_keyword">if</strong> (<strong class="jxr_keyword">this</strong>.commitAfterNoMessageReceived == <strong class="jxr_keyword">null</strong>) {
+<a class="jxr_linenumber" name="L380" href="#L380">380</a> 			Session target = ConnectionFactoryUtils.getTargetSession(session);
+<a class="jxr_linenumber" name="L381" href="#L381">381</a> 			<strong class="jxr_keyword">this</strong>.commitAfterNoMessageReceived = !target.getClass().getName().startsWith(<span class="jxr_string">"com.tibco.tibjms."</span>);
+<a class="jxr_linenumber" name="L382" href="#L382">382</a> 		}
+<a class="jxr_linenumber" name="L383" href="#L383">383</a> 		<strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">this</strong>.commitAfterNoMessageReceived;
+<a class="jxr_linenumber" name="L384" href="#L384">384</a> 	}
+<a class="jxr_linenumber" name="L385" href="#L385">385</a> 
+<a class="jxr_linenumber" name="L386" href="#L386">386</a> 	<em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="L387" href="#L387">387</a> <em class="jxr_javadoccomment">	 * Perform a rollback, handling rollback exceptions properly.</em>
+<a class="jxr_linenumber" name="L388" href="#L388">388</a> <em class="jxr_javadoccomment">	 * @param status object representing the transaction</em>
+<a class="jxr_linenumber" name="L389" href="#L389">389</a> <em class="jxr_javadoccomment">	 * @param ex the thrown listener exception or error</em>
+<a class="jxr_linenumber" name="L390" href="#L390">390</a> <em class="jxr_javadoccomment">	 */</em>
+<a class="jxr_linenumber" name="L391" href="#L391">391</a> 	<strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">void</strong> rollbackOnException(<a href="../../../../org/springframework/transaction/TransactionStatus.html">TransactionStatus</a> status, Throwable ex) {
+<a class="jxr_linenumber" name="L392" href="#L392">392</a> 		logger.debug(<span class="jxr_string">"Initiating transaction rollback on listener exception"</span>, ex);
+<a class="jxr_linenumber" name="L393" href="#L393">393</a> 		<strong class="jxr_keyword">try</strong> {
+<a class="jxr_linenumber" name="L394" href="#L394">394</a> 			<strong class="jxr_keyword">this</strong>.transactionManager.rollback(status);
+<a class="jxr_linenumber" name="L395" href="#L395">395</a> 		}
+<a class="jxr_linenumber" name="L396" href="#L396">396</a> 		<strong class="jxr_keyword">catch</strong> (RuntimeException ex2) {
+<a class="jxr_linenumber" name="L397" href="#L397">397</a> 			logger.error(<span class="jxr_string">"Listener exception overridden by rollback exception"</span>, ex);
+<a class="jxr_linenumber" name="L398" href="#L398">398</a> 			<strong class="jxr_keyword">throw</strong> ex2;
+<a class="jxr_linenumber" name="L399" href="#L399">399</a> 		}
+<a class="jxr_linenumber" name="L400" href="#L400">400</a> 		<strong class="jxr_keyword">catch</strong> (Error err) {
+<a class="jxr_linenumber" name="L401" href="#L401">401</a> 			logger.error(<span class="jxr_string">"Listener exception overridden by rollback error"</span>, ex);
+<a class="jxr_linenumber" name="L402" href="#L402">402</a> 			<strong class="jxr_keyword">throw</strong> err;
+<a class="jxr_linenumber" name="L403" href="#L403">403</a> 		}
+<a class="jxr_linenumber" name="L404" href="#L404">404</a> 	}
+<a class="jxr_linenumber" name="L405" href="#L405">405</a> 
+<a class="jxr_linenumber" name="L406" href="#L406">406</a> 	<em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="L407" href="#L407">407</a> <em class="jxr_javadoccomment">	 * Receive a message from the given consumer.</em>
+<a class="jxr_linenumber" name="L408" href="#L408">408</a> <em class="jxr_javadoccomment">	 * @param consumer the MessageConsumer to use</em>
+<a class="jxr_linenumber" name="L409" href="#L409">409</a> <em class="jxr_javadoccomment">	 * @return the Message, or {@code null} if none</em>
+<a class="jxr_linenumber" name="L410" href="#L410">410</a> <em class="jxr_javadoccomment">	 * @throws JMSException if thrown by JMS methods</em>
+<a class="jxr_linenumber" name="L411" href="#L411">411</a> <em class="jxr_javadoccomment">	 */</em>
+<a class="jxr_linenumber" name="L412" href="#L412">412</a> 	<strong class="jxr_keyword">protected</strong> Message receiveMessage(MessageConsumer consumer) <strong class="jxr_keyword">throws</strong> JMSException {
+<a class="jxr_linenumber" name="L413" href="#L413">413</a> 		<strong class="jxr_keyword">return</strong> (<strong class="jxr_keyword">this</strong>.receiveTimeout &lt; 0 ? consumer.receive() : consumer.receive(<strong class="jxr_keyword">this</strong>.receiveTimeout));
+<a class="jxr_linenumber" name="L414" href="#L414">414</a> 	}
+<a class="jxr_linenumber" name="L415" href="#L415">415</a> 
+<a class="jxr_linenumber" name="L416" href="#L416">416</a> 	<em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="L417" href="#L417">417</a> <em class="jxr_javadoccomment">	 * Template method that gets called right when a new message has been received,</em>
+<a class="jxr_linenumber" name="L418" href="#L418">418</a> <em class="jxr_javadoccomment">	 * before attempting to process it. Allows subclasses to react to the event</em>
+<a class="jxr_linenumber" name="L419" href="#L419">419</a> <em class="jxr_javadoccomment">	 * of an actual incoming message, for example adapting their consumer count.</em>
+<a class="jxr_linenumber" name="L420" href="#L420">420</a> <em class="jxr_javadoccomment">	 * @param invoker the invoker object (passed through)</em>
+<a class="jxr_linenumber" name="L421" href="#L421">421</a> <em class="jxr_javadoccomment">	 * @param session the receiving JMS Session</em>
+<a class="jxr_linenumber" name="L422" href="#L422">422</a> <em class="jxr_javadoccomment">	 */</em>
+<a class="jxr_linenumber" name="L423" href="#L423">423</a> 	<strong class="jxr_keyword">protected</strong> <strong class="jxr_keyword">void</strong> messageReceived(Object invoker, Session session) {
+<a class="jxr_linenumber" name="L424" href="#L424">424</a> 	}
+<a class="jxr_linenumber" name="L425" href="#L425">425</a> 
+<a class="jxr_linenumber" name="L426" href="#L426">426</a> 	<em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="L427" href="#L427">427</a> <em class="jxr_javadoccomment">	 * Template method that gets called when &lt;i&gt;no&lt;/i&gt; message has been received,</em>
+<a class="jxr_linenumber" name="L428" href="#L428">428</a> <em class="jxr_javadoccomment">	 * before returning to the receive loop again. Allows subclasses to react to</em>
+<a class="jxr_linenumber" name="L429" href="#L429">429</a> <em class="jxr_javadoccomment">	 * the event of no incoming message, for example marking the invoker as idle.</em>
+<a class="jxr_linenumber" name="L430" href="#L430">430</a> <em class="jxr_javadoccomment">	 * @param invoker the invoker object (passed through)</em>
+<a class="jxr_linenumber" name="L431" href="#L431">431</a> <em class="jxr_javadoccomment">	 * @param session the receiving JMS Session</em>
+<a class="jxr_linenumber" name="L432" href="#L432">432</a> <em class="jxr_javadoccomment">	 */</em>
+<a class="jxr_linenumber" name="L433" href="#L433">433</a> 	<strong class="jxr_keyword">protected</strong> <strong class="jxr_keyword">void</strong> noMessageReceived(Object invoker, Session session) {
+<a class="jxr_linenumber" name="L434" href="#L434">434</a> 	}
+<a class="jxr_linenumber" name="L435" href="#L435">435</a> 
+<a class="jxr_linenumber" name="L436" href="#L436">436</a> 	<em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="L437" href="#L437">437</a> <em class="jxr_javadoccomment">	 * Fetch an appropriate Connection from the given JmsResourceHolder.</em>
+<a class="jxr_linenumber" name="L438" href="#L438">438</a> <em class="jxr_javadoccomment">	 * &lt;p&gt;This implementation accepts any JMS 1.1 Connection.</em>
+<a class="jxr_linenumber" name="L439" href="#L439">439</a> <em class="jxr_javadoccomment">	 * @param holder the JmsResourceHolder</em>
+<a class="jxr_linenumber" name="L440" href="#L440">440</a> <em class="jxr_javadoccomment">	 * @return an appropriate Connection fetched from the holder,</em>
+<a class="jxr_linenumber" name="L441" href="#L441">441</a> <em class="jxr_javadoccomment">	 * or {@code null} if none found</em>
+<a class="jxr_linenumber" name="L442" href="#L442">442</a> <em class="jxr_javadoccomment">	 */</em>
+<a class="jxr_linenumber" name="L443" href="#L443">443</a> 	<strong class="jxr_keyword">protected</strong> Connection getConnection(<a href="../../../../org/springframework/jms/connection/JmsResourceHolder.html">JmsResourceHolder</a> holder) {
+<a class="jxr_linenumber" name="L444" href="#L444">444</a> 		<strong class="jxr_keyword">return</strong> holder.getConnection();
+<a class="jxr_linenumber" name="L445" href="#L445">445</a> 	}
+<a class="jxr_linenumber" name="L446" href="#L446">446</a> 
+<a class="jxr_linenumber" name="L447" href="#L447">447</a> 	<em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="L448" href="#L448">448</a> <em class="jxr_javadoccomment">	 * Fetch an appropriate Session from the given JmsResourceHolder.</em>
+<a class="jxr_linenumber" name="L449" href="#L449">449</a> <em class="jxr_javadoccomment">	 * &lt;p&gt;This implementation accepts any JMS 1.1 Session.</em>
+<a class="jxr_linenumber" name="L450" href="#L450">450</a> <em class="jxr_javadoccomment">	 * @param holder the JmsResourceHolder</em>
+<a class="jxr_linenumber" name="L451" href="#L451">451</a> <em class="jxr_javadoccomment">	 * @return an appropriate Session fetched from the holder,</em>
+<a class="jxr_linenumber" name="L452" href="#L452">452</a> <em class="jxr_javadoccomment">	 * or {@code null} if none found</em>
+<a class="jxr_linenumber" name="L453" href="#L453">453</a> <em class="jxr_javadoccomment">	 */</em>
+<a class="jxr_linenumber" name="L454" href="#L454">454</a> 	<strong class="jxr_keyword">protected</strong> Session getSession(<a href="../../../../org/springframework/jms/connection/JmsResourceHolder.html">JmsResourceHolder</a> holder) {
+<a class="jxr_linenumber" name="L455" href="#L455">455</a> 		<strong class="jxr_keyword">return</strong> holder.getSession();
+<a class="jxr_linenumber" name="L456" href="#L456">456</a> 	}
+<a class="jxr_linenumber" name="L457" href="#L457">457</a> 
+<a class="jxr_linenumber" name="L458" href="#L458">458</a> 
+<a class="jxr_linenumber" name="L459" href="#L459">459</a> 	<em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="L460" href="#L460">460</a> <em class="jxr_javadoccomment">	 * ResourceFactory implementation that delegates to this listener container's protected callback methods.</em>
+<a class="jxr_linenumber" name="L461" href="#L461">461</a> <em class="jxr_javadoccomment">	 */</em>
+<a class="jxr_linenumber" name="L462" href="#L462">462</a> 	<strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">class</strong> <a href="../../../../org/springframework/jms/listener/AbstractPollingMessageListenerContainer.html">MessageListenerContainerResourceFactory</a> <strong class="jxr_keyword">implements</strong> ConnectionFactoryUtils.ResourceFactory {
+<a class="jxr_linenumber" name="L463" href="#L463">463</a> 
+<a class="jxr_linenumber" name="L464" href="#L464">464</a> 		@Override
+<a class="jxr_linenumber" name="L465" href="#L465">465</a> 		<strong class="jxr_keyword">public</strong> Connection getConnection(<a href="../../../../org/springframework/jms/connection/JmsResourceHolder.html">JmsResourceHolder</a> holder) {
+<a class="jxr_linenumber" name="L466" href="#L466">466</a> 			<strong class="jxr_keyword">return</strong> AbstractPollingMessageListenerContainer.<strong class="jxr_keyword">this</strong>.getConnection(holder);
+<a class="jxr_linenumber" name="L467" href="#L467">467</a> 		}
+<a class="jxr_linenumber" name="L468" href="#L468">468</a> 
+<a class="jxr_linenumber" name="L469" href="#L469">469</a> 		@Override
+<a class="jxr_linenumber" name="L470" href="#L470">470</a> 		<strong class="jxr_keyword">public</strong> Session getSession(<a href="../../../../org/springframework/jms/connection/JmsResourceHolder.html">JmsResourceHolder</a> holder) {
+<a class="jxr_linenumber" name="L471" href="#L471">471</a> 			<strong class="jxr_keyword">return</strong> AbstractPollingMessageListenerContainer.<strong class="jxr_keyword">this</strong>.getSession(holder);
+<a class="jxr_linenumber" name="L472" href="#L472">472</a> 		}
+<a class="jxr_linenumber" name="L473" href="#L473">473</a> 
+<a class="jxr_linenumber" name="L474" href="#L474">474</a> 		@Override
+<a class="jxr_linenumber" name="L475" href="#L475">475</a> 		<strong class="jxr_keyword">public</strong> Connection createConnection() <strong class="jxr_keyword">throws</strong> JMSException {
+<a class="jxr_linenumber" name="L476" href="#L476">476</a> 			<strong class="jxr_keyword">if</strong> (AbstractPollingMessageListenerContainer.<strong class="jxr_keyword">this</strong>.sharedConnectionEnabled()) {
+<a class="jxr_linenumber" name="L477" href="#L477">477</a> 				Connection sharedCon = AbstractPollingMessageListenerContainer.<strong class="jxr_keyword">this</strong>.getSharedConnection();
+<a class="jxr_linenumber" name="L478" href="#L478">478</a> 				<strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> <a href="../../../../org/springframework/jms/connection/SingleConnectionFactory.html">SingleConnectionFactory</a>(sharedCon).createConnection();
+<a class="jxr_linenumber" name="L479" href="#L479">479</a> 			}
+<a class="jxr_linenumber" name="L480" href="#L480">480</a> 			<strong class="jxr_keyword">else</strong> {
+<a class="jxr_linenumber" name="L481" href="#L481">481</a> 				<strong class="jxr_keyword">return</strong> AbstractPollingMessageListenerContainer.<strong class="jxr_keyword">this</strong>.createConnection();
+<a class="jxr_linenumber" name="L482" href="#L482">482</a> 			}
+<a class="jxr_linenumber" name="L483" href="#L483">483</a> 		}
+<a class="jxr_linenumber" name="L484" href="#L484">484</a> 
+<a class="jxr_linenumber" name="L485" href="#L485">485</a> 		@Override
+<a class="jxr_linenumber" name="L486" href="#L486">486</a> 		<strong class="jxr_keyword">public</strong> Session createSession(Connection con) <strong class="jxr_keyword">throws</strong> JMSException {
+<a class="jxr_linenumber" name="L487" href="#L487">487</a> 			<strong class="jxr_keyword">return</strong> AbstractPollingMessageListenerContainer.<strong class="jxr_keyword">this</strong>.createSession(con);
+<a class="jxr_linenumber" name="L488" href="#L488">488</a> 		}
+<a class="jxr_linenumber" name="L489" href="#L489">489</a> 
+<a class="jxr_linenumber" name="L490" href="#L490">490</a> 		@Override
+<a class="jxr_linenumber" name="L491" href="#L491">491</a> 		<strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">boolean</strong> isSynchedLocalTransactionAllowed() {
+<a class="jxr_linenumber" name="L492" href="#L492">492</a> 			<strong class="jxr_keyword">return</strong> AbstractPollingMessageListenerContainer.<strong class="jxr_keyword">this</strong>.isSessionTransacted();
+<a class="jxr_linenumber" name="L493" href="#L493">493</a> 		}
+<a class="jxr_linenumber" name="L494" href="#L494">494</a> 	}
+<a class="jxr_linenumber" name="L495" href="#L495">495</a> 
+<a class="jxr_linenumber" name="L496" href="#L496">496</a> }
+</pre>
+<hr/>
+<div id="footer">Copyright &#169; 2015. All rights reserved.</div>
+</body>
+</html>

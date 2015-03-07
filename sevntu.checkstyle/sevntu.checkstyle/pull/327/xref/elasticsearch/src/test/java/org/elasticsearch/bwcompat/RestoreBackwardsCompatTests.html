@@ -1,0 +1,171 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head><meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+<title>RestoreBackwardsCompatTests xref</title>
+<link type="text/css" rel="stylesheet" href="../../../stylesheet.css" />
+</head>
+<body>
+<div id="overview"><a href="../../../../../../../../apidocs/org/elasticsearch/bwcompat/RestoreBackwardsCompatTests.html">View Javadoc</a></div><pre>
+<a class="jxr_linenumber" name="L1" href="#L1">1</a>   <em class="jxr_comment">/*</em>
+<a class="jxr_linenumber" name="L2" href="#L2">2</a>   <em class="jxr_comment"> * Licensed to Elasticsearch under one or more contributor</em>
+<a class="jxr_linenumber" name="L3" href="#L3">3</a>   <em class="jxr_comment"> * license agreements. See the NOTICE file distributed with</em>
+<a class="jxr_linenumber" name="L4" href="#L4">4</a>   <em class="jxr_comment"> * this work for additional information regarding copyright</em>
+<a class="jxr_linenumber" name="L5" href="#L5">5</a>   <em class="jxr_comment"> * ownership. Elasticsearch licenses this file to you under</em>
+<a class="jxr_linenumber" name="L6" href="#L6">6</a>   <em class="jxr_comment"> * the Apache License, Version 2.0 (the "License"); you may</em>
+<a class="jxr_linenumber" name="L7" href="#L7">7</a>   <em class="jxr_comment"> * not use this file except in compliance with the License.</em>
+<a class="jxr_linenumber" name="L8" href="#L8">8</a>   <em class="jxr_comment"> * You may obtain a copy of the License at</em>
+<a class="jxr_linenumber" name="L9" href="#L9">9</a>   <em class="jxr_comment"> *</em>
+<a class="jxr_linenumber" name="L10" href="#L10">10</a>  <em class="jxr_comment"> *    <a href="http://www.apache.org/licenses/LICENSE-2." target="alexandria_uri">http://www.apache.org/licenses/LICENSE-2.</a>0</em>
+<a class="jxr_linenumber" name="L11" href="#L11">11</a>  <em class="jxr_comment"> *</em>
+<a class="jxr_linenumber" name="L12" href="#L12">12</a>  <em class="jxr_comment"> * Unless required by applicable law or agreed to in writing,</em>
+<a class="jxr_linenumber" name="L13" href="#L13">13</a>  <em class="jxr_comment"> * software distributed under the License is distributed on an</em>
+<a class="jxr_linenumber" name="L14" href="#L14">14</a>  <em class="jxr_comment"> * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY</em>
+<a class="jxr_linenumber" name="L15" href="#L15">15</a>  <em class="jxr_comment"> * KIND, either express or implied.  See the License for the</em>
+<a class="jxr_linenumber" name="L16" href="#L16">16</a>  <em class="jxr_comment"> * specific language governing permissions and limitations</em>
+<a class="jxr_linenumber" name="L17" href="#L17">17</a>  <em class="jxr_comment"> * under the License.</em>
+<a class="jxr_linenumber" name="L18" href="#L18">18</a>  <em class="jxr_comment"> */</em>
+<a class="jxr_linenumber" name="L19" href="#L19">19</a>  <strong class="jxr_keyword">package</strong> org.elasticsearch.bwcompat;
+<a class="jxr_linenumber" name="L20" href="#L20">20</a>  
+<a class="jxr_linenumber" name="L21" href="#L21">21</a>  <strong class="jxr_keyword">import</strong> org.apache.lucene.util.LuceneTestCase.Slow;
+<a class="jxr_linenumber" name="L22" href="#L22">22</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.Version;
+<a class="jxr_linenumber" name="L23" href="#L23">23</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.action.admin.cluster.snapshots.restore.RestoreSnapshotResponse;
+<a class="jxr_linenumber" name="L24" href="#L24">24</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.action.search.SearchResponse;
+<a class="jxr_linenumber" name="L25" href="#L25">25</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.cluster.ClusterState;
+<a class="jxr_linenumber" name="L26" href="#L26">26</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.cluster.metadata.IndexMetaData;
+<a class="jxr_linenumber" name="L27" href="#L27">27</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.cluster.metadata.IndexTemplateMetaData;
+<a class="jxr_linenumber" name="L28" href="#L28">28</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.cluster.routing.allocation.decider.FilterAllocationDecider;
+<a class="jxr_linenumber" name="L29" href="#L29">29</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.common.settings.ImmutableSettings;
+<a class="jxr_linenumber" name="L30" href="#L30">30</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.<strong class="jxr_keyword">rest</strong>.RestStatus;
+<a class="jxr_linenumber" name="L31" href="#L31">31</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.snapshots.AbstractSnapshotTests;
+<a class="jxr_linenumber" name="L32" href="#L32">32</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.snapshots.RestoreInfo;
+<a class="jxr_linenumber" name="L33" href="#L33">33</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.test.ElasticsearchIntegrationTest.ClusterScope;
+<a class="jxr_linenumber" name="L34" href="#L34">34</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.test.ElasticsearchIntegrationTest.Scope;
+<a class="jxr_linenumber" name="L35" href="#L35">35</a>  <strong class="jxr_keyword">import</strong> org.junit.Test;
+<a class="jxr_linenumber" name="L36" href="#L36">36</a>  
+<a class="jxr_linenumber" name="L37" href="#L37">37</a>  <strong class="jxr_keyword">import</strong> java.io.IOException;
+<a class="jxr_linenumber" name="L38" href="#L38">38</a>  <strong class="jxr_keyword">import</strong> java.lang.reflect.Modifier;
+<a class="jxr_linenumber" name="L39" href="#L39">39</a>  <strong class="jxr_keyword">import</strong> java.net.URI;
+<a class="jxr_linenumber" name="L40" href="#L40">40</a>  <strong class="jxr_keyword">import</strong> java.nio.file.DirectoryStream;
+<a class="jxr_linenumber" name="L41" href="#L41">41</a>  <strong class="jxr_keyword">import</strong> java.nio.file.Files;
+<a class="jxr_linenumber" name="L42" href="#L42">42</a>  <strong class="jxr_keyword">import</strong> java.nio.file.Path;
+<a class="jxr_linenumber" name="L43" href="#L43">43</a>  <strong class="jxr_keyword">import</strong> java.nio.file.Paths;
+<a class="jxr_linenumber" name="L44" href="#L44">44</a>  <strong class="jxr_keyword">import</strong> java.util.List;
+<a class="jxr_linenumber" name="L45" href="#L45">45</a>  <strong class="jxr_keyword">import</strong> java.util.Locale;
+<a class="jxr_linenumber" name="L46" href="#L46">46</a>  <strong class="jxr_keyword">import</strong> java.util.SortedSet;
+<a class="jxr_linenumber" name="L47" href="#L47">47</a>  <strong class="jxr_keyword">import</strong> java.util.TreeSet;
+<a class="jxr_linenumber" name="L48" href="#L48">48</a>  
+<a class="jxr_linenumber" name="L49" href="#L49">49</a>  <strong class="jxr_keyword">import</strong> <strong class="jxr_keyword">static</strong> com.google.common.collect.Lists.newArrayList;
+<a class="jxr_linenumber" name="L50" href="#L50">50</a>  <strong class="jxr_keyword">import</strong> <strong class="jxr_keyword">static</strong> org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertAcked;
+<a class="jxr_linenumber" name="L51" href="#L51">51</a>  <strong class="jxr_keyword">import</strong> <strong class="jxr_keyword">static</strong> org.hamcrest.Matchers.*;
+<a class="jxr_linenumber" name="L52" href="#L52">52</a>  
+<a class="jxr_linenumber" name="L53" href="#L53">53</a>  @Slow
+<a class="jxr_linenumber" name="L54" href="#L54">54</a>  @ClusterScope(scope = Scope.TEST)
+<a class="jxr_linenumber" name="L55" href="#L55">55</a>  <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">class</strong> <a href="../../../org/elasticsearch/bwcompat/RestoreBackwardsCompatTests.html">RestoreBackwardsCompatTests</a> <strong class="jxr_keyword">extends</strong> <a href="../../../org/elasticsearch/snapshots/AbstractSnapshotTests.html">AbstractSnapshotTests</a> {
+<a class="jxr_linenumber" name="L56" href="#L56">56</a>  
+<a class="jxr_linenumber" name="L57" href="#L57">57</a>  
+<a class="jxr_linenumber" name="L58" href="#L58">58</a>      @Test
+<a class="jxr_linenumber" name="L59" href="#L59">59</a>      <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> restoreOldSnapshots() <strong class="jxr_keyword">throws</strong> Exception {
+<a class="jxr_linenumber" name="L60" href="#L60">60</a>          String repo = <span class="jxr_string">"test_repo"</span>;
+<a class="jxr_linenumber" name="L61" href="#L61">61</a>          String snapshot = <span class="jxr_string">"test_1"</span>;
+<a class="jxr_linenumber" name="L62" href="#L62">62</a>          List&lt;String&gt; repoVersions = repoVersions();
+<a class="jxr_linenumber" name="L63" href="#L63">63</a>          assertThat(repoVersions.size(), greaterThan(0));
+<a class="jxr_linenumber" name="L64" href="#L64">64</a>          <strong class="jxr_keyword">for</strong> (String version : repoVersions) {
+<a class="jxr_linenumber" name="L65" href="#L65">65</a>              createRepo(version, repo);
+<a class="jxr_linenumber" name="L66" href="#L66">66</a>              testOldSnapshot(version, repo, snapshot);
+<a class="jxr_linenumber" name="L67" href="#L67">67</a>          }
+<a class="jxr_linenumber" name="L68" href="#L68">68</a>  
+<a class="jxr_linenumber" name="L69" href="#L69">69</a>          SortedSet&lt;String&gt; expectedVersions = <strong class="jxr_keyword">new</strong> TreeSet&lt;&gt;();
+<a class="jxr_linenumber" name="L70" href="#L70">70</a>          <strong class="jxr_keyword">for</strong> (java.lang.reflect.Field field : Version.<strong class="jxr_keyword">class</strong>.getDeclaredFields()) {
+<a class="jxr_linenumber" name="L71" href="#L71">71</a>              <strong class="jxr_keyword">if</strong> (Modifier.isStatic(field.getModifiers()) &amp;&amp; field.getType() == Version.<strong class="jxr_keyword">class</strong>) {
+<a class="jxr_linenumber" name="L72" href="#L72">72</a>                  <a href="../../../org/elasticsearch/Version.html">Version</a> v = (Version) field.get(Version.<strong class="jxr_keyword">class</strong>);
+<a class="jxr_linenumber" name="L73" href="#L73">73</a>                  <strong class="jxr_keyword">if</strong> (v.snapshot()) <strong class="jxr_keyword">continue</strong>;
+<a class="jxr_linenumber" name="L74" href="#L74">74</a>                  <strong class="jxr_keyword">if</strong> (v.onOrBefore(Version.V_1_0_0_Beta1)) <strong class="jxr_keyword">continue</strong>;
+<a class="jxr_linenumber" name="L75" href="#L75">75</a>  
+<a class="jxr_linenumber" name="L76" href="#L76">76</a>                  expectedVersions.add(v.toString());
+<a class="jxr_linenumber" name="L77" href="#L77">77</a>              }
+<a class="jxr_linenumber" name="L78" href="#L78">78</a>          }
+<a class="jxr_linenumber" name="L79" href="#L79">79</a>  
+<a class="jxr_linenumber" name="L80" href="#L80">80</a>          <strong class="jxr_keyword">for</strong> (String repoVersion : repoVersions) {
+<a class="jxr_linenumber" name="L81" href="#L81">81</a>              <strong class="jxr_keyword">if</strong> (expectedVersions.remove(repoVersion) == false) {
+<a class="jxr_linenumber" name="L82" href="#L82">82</a>                  logger.warn(<span class="jxr_string">"Old repositories tests contain extra repo: "</span> + repoVersion);
+<a class="jxr_linenumber" name="L83" href="#L83">83</a>              }
+<a class="jxr_linenumber" name="L84" href="#L84">84</a>          }
+<a class="jxr_linenumber" name="L85" href="#L85">85</a>          <strong class="jxr_keyword">if</strong> (expectedVersions.isEmpty() == false) {
+<a class="jxr_linenumber" name="L86" href="#L86">86</a>              StringBuilder msg = <strong class="jxr_keyword">new</strong> StringBuilder(<span class="jxr_string">"Old repositories tests are missing versions:"</span>);
+<a class="jxr_linenumber" name="L87" href="#L87">87</a>              <strong class="jxr_keyword">for</strong> (String expected : expectedVersions) {
+<a class="jxr_linenumber" name="L88" href="#L88">88</a>                  msg.append(<span class="jxr_string">"\n"</span> + expected);
+<a class="jxr_linenumber" name="L89" href="#L89">89</a>              }
+<a class="jxr_linenumber" name="L90" href="#L90">90</a>              fail(msg.toString());
+<a class="jxr_linenumber" name="L91" href="#L91">91</a>          }
+<a class="jxr_linenumber" name="L92" href="#L92">92</a>      }
+<a class="jxr_linenumber" name="L93" href="#L93">93</a>  
+<a class="jxr_linenumber" name="L94" href="#L94">94</a>      <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">static</strong> List&lt;String&gt; repoVersions() <strong class="jxr_keyword">throws</strong> Exception {
+<a class="jxr_linenumber" name="L95" href="#L95">95</a>          List&lt;String&gt; repoVersions = newArrayList();
+<a class="jxr_linenumber" name="L96" href="#L96">96</a>          Path repoFiles = Paths.get(RestoreBackwardsCompatTests.<strong class="jxr_keyword">class</strong>.getResource(<span class="jxr_string">"."</span>).toURI());
+<a class="jxr_linenumber" name="L97" href="#L97">97</a>          <strong class="jxr_keyword">try</strong> (DirectoryStream&lt;Path&gt; stream = Files.newDirectoryStream(repoFiles, <span class="jxr_string">"repo-*.zip"</span>)) {
+<a class="jxr_linenumber" name="L98" href="#L98">98</a>              <strong class="jxr_keyword">for</strong> (Path entry : stream) {
+<a class="jxr_linenumber" name="L99" href="#L99">99</a>                  String fileName = entry.getFileName().toString();
+<a class="jxr_linenumber" name="L100" href="#L100">100</a>                 String version = fileName.substring(<span class="jxr_string">"repo-"</span>.length());
+<a class="jxr_linenumber" name="L101" href="#L101">101</a>                 version = version.substring(0, version.length() - <span class="jxr_string">".zip"</span>.length());
+<a class="jxr_linenumber" name="L102" href="#L102">102</a>                 repoVersions.add(version);
+<a class="jxr_linenumber" name="L103" href="#L103">103</a>             }
+<a class="jxr_linenumber" name="L104" href="#L104">104</a>         }
+<a class="jxr_linenumber" name="L105" href="#L105">105</a>         <strong class="jxr_keyword">return</strong> repoVersions;
+<a class="jxr_linenumber" name="L106" href="#L106">106</a>     }
+<a class="jxr_linenumber" name="L107" href="#L107">107</a> 
+<a class="jxr_linenumber" name="L108" href="#L108">108</a>     <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">void</strong> createRepo(String version, String repo) <strong class="jxr_keyword">throws</strong> Exception {
+<a class="jxr_linenumber" name="L109" href="#L109">109</a>         String repoFile = <span class="jxr_string">"repo-"</span> + version + <span class="jxr_string">".zip"</span>;
+<a class="jxr_linenumber" name="L110" href="#L110">110</a>         URI repoFileUri = getClass().getResource(repoFile).toURI();
+<a class="jxr_linenumber" name="L111" href="#L111">111</a>         URI repoJarUri = <strong class="jxr_keyword">new</strong> URI(<span class="jxr_string">"jar:"</span> + repoFileUri.toString() + <span class="jxr_string">"!/repo/"</span>);
+<a class="jxr_linenumber" name="L112" href="#L112">112</a>         logger.info(<span class="jxr_string">"--&gt;  creating repository [{}] for version [{}]"</span>, repo, version);
+<a class="jxr_linenumber" name="L113" href="#L113">113</a>         assertAcked(client().admin().cluster().preparePutRepository(repo)
+<a class="jxr_linenumber" name="L114" href="#L114">114</a>                 .setType(<span class="jxr_string">"url"</span>).setSettings(ImmutableSettings.settingsBuilder()
+<a class="jxr_linenumber" name="L115" href="#L115">115</a>                         .put(<span class="jxr_string">"url"</span>, repoJarUri.toString())));
+<a class="jxr_linenumber" name="L116" href="#L116">116</a>     }
+<a class="jxr_linenumber" name="L117" href="#L117">117</a> 
+<a class="jxr_linenumber" name="L118" href="#L118">118</a>     <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">void</strong> testOldSnapshot(String version, String repo, String snapshot) <strong class="jxr_keyword">throws</strong> IOException {
+<a class="jxr_linenumber" name="L119" href="#L119">119</a>         logger.info(<span class="jxr_string">"--&gt; restoring snapshot"</span>);
+<a class="jxr_linenumber" name="L120" href="#L120">120</a>         <a href="../../../org/elasticsearch/action/admin/cluster/snapshots/restore/RestoreSnapshotResponse.html">RestoreSnapshotResponse</a> response = client().admin().cluster().prepareRestoreSnapshot(repo, snapshot).setRestoreGlobalState(<strong class="jxr_keyword">true</strong>).setWaitForCompletion(<strong class="jxr_keyword">true</strong>).get();
+<a class="jxr_linenumber" name="L121" href="#L121">121</a>         assertThat(response.status(), equalTo(RestStatus.OK));
+<a class="jxr_linenumber" name="L122" href="#L122">122</a>         <a href="../../../org/elasticsearch/snapshots/RestoreInfo.html">RestoreInfo</a> restoreInfo = response.getRestoreInfo();
+<a class="jxr_linenumber" name="L123" href="#L123">123</a>         assertThat(restoreInfo.successfulShards(), greaterThan(0));
+<a class="jxr_linenumber" name="L124" href="#L124">124</a>         assertThat(restoreInfo.successfulShards(), equalTo(restoreInfo.totalShards()));
+<a class="jxr_linenumber" name="L125" href="#L125">125</a>         assertThat(restoreInfo.failedShards(), equalTo(0));
+<a class="jxr_linenumber" name="L126" href="#L126">126</a>         String index = restoreInfo.indices().get(0);
+<a class="jxr_linenumber" name="L127" href="#L127">127</a> 
+<a class="jxr_linenumber" name="L128" href="#L128">128</a>         logger.info(<span class="jxr_string">"--&gt; check search"</span>);
+<a class="jxr_linenumber" name="L129" href="#L129">129</a>         <a href="../../../org/elasticsearch/action/search/SearchResponse.html">SearchResponse</a> searchResponse = client().prepareSearch(index).get();
+<a class="jxr_linenumber" name="L130" href="#L130">130</a>         assertThat(searchResponse.getHits().totalHits(), greaterThan(1L));
+<a class="jxr_linenumber" name="L131" href="#L131">131</a> 
+<a class="jxr_linenumber" name="L132" href="#L132">132</a>         logger.info(<span class="jxr_string">"--&gt; check settings"</span>);
+<a class="jxr_linenumber" name="L133" href="#L133">133</a>         <a href="../../../org/elasticsearch/cluster/ClusterState.html">ClusterState</a> clusterState = client().admin().cluster().prepareState().get().getState();
+<a class="jxr_linenumber" name="L134" href="#L134">134</a>         assertThat(clusterState.metaData().persistentSettings().get(FilterAllocationDecider.CLUSTER_ROUTING_EXCLUDE_GROUP + <span class="jxr_string">"version_attr"</span>), equalTo(version));
+<a class="jxr_linenumber" name="L135" href="#L135">135</a> 
+<a class="jxr_linenumber" name="L136" href="#L136">136</a>         logger.info(<span class="jxr_string">"--&gt; check templates"</span>);
+<a class="jxr_linenumber" name="L137" href="#L137">137</a>         <a href="../../../org/elasticsearch/cluster/metadata/IndexTemplateMetaData.html">IndexTemplateMetaData</a> template = clusterState.getMetaData().templates().get(<span class="jxr_string">"template_"</span> + version.toLowerCase(Locale.ROOT));
+<a class="jxr_linenumber" name="L138" href="#L138">138</a>         assertThat(template, notNullValue());
+<a class="jxr_linenumber" name="L139" href="#L139">139</a>         assertThat(template.template(), equalTo(<span class="jxr_string">"te*"</span>));
+<a class="jxr_linenumber" name="L140" href="#L140">140</a>         assertThat(template.settings().getAsInt(IndexMetaData.SETTING_NUMBER_OF_SHARDS, -1), equalTo(1));
+<a class="jxr_linenumber" name="L141" href="#L141">141</a>         assertThat(template.mappings().size(), equalTo(1));
+<a class="jxr_linenumber" name="L142" href="#L142">142</a>         assertThat(template.mappings().get(<span class="jxr_string">"type1"</span>).string(), equalTo(<span class="jxr_string">"{\&quot;type1\&quot;:{\&quot;_source\&quot;:{\&quot;enabled\&quot;:false}}}"</span>));
+<a class="jxr_linenumber" name="L143" href="#L143">143</a>         <strong class="jxr_keyword">if</strong> (Version.fromString(version).onOrAfter(Version.V_1_1_0)) {
+<a class="jxr_linenumber" name="L144" href="#L144">144</a>             <em class="jxr_comment">// Support for aliases in templates was added in v1.1.0</em>
+<a class="jxr_linenumber" name="L145" href="#L145">145</a>             assertThat(template.aliases().size(), equalTo(3));
+<a class="jxr_linenumber" name="L146" href="#L146">146</a>             assertThat(template.aliases().get(<span class="jxr_string">"alias1"</span>), notNullValue());
+<a class="jxr_linenumber" name="L147" href="#L147">147</a>             assertThat(template.aliases().get(<span class="jxr_string">"alias2"</span>).filter().string(), containsString(version));
+<a class="jxr_linenumber" name="L148" href="#L148">148</a>             assertThat(template.aliases().get(<span class="jxr_string">"alias2"</span>).indexRouting(), equalTo(<span class="jxr_string">"kimchy"</span>));
+<a class="jxr_linenumber" name="L149" href="#L149">149</a>             assertThat(template.aliases().get(<span class="jxr_string">"{index}-alias"</span>), notNullValue());
+<a class="jxr_linenumber" name="L150" href="#L150">150</a>         }
+<a class="jxr_linenumber" name="L151" href="#L151">151</a> 
+<a class="jxr_linenumber" name="L152" href="#L152">152</a>         logger.info(<span class="jxr_string">"--&gt; cleanup"</span>);
+<a class="jxr_linenumber" name="L153" href="#L153">153</a>         cluster().wipeIndices(restoreInfo.indices().toArray(<strong class="jxr_keyword">new</strong> String[restoreInfo.indices().size()]));
+<a class="jxr_linenumber" name="L154" href="#L154">154</a>         cluster().wipeTemplates();
+<a class="jxr_linenumber" name="L155" href="#L155">155</a> 
+<a class="jxr_linenumber" name="L156" href="#L156">156</a>     }
+<a class="jxr_linenumber" name="L157" href="#L157">157</a> }
+<a class="jxr_linenumber" name="L158" href="#L158">158</a> 
+</pre>
+<hr/>
+<div id="footer">Copyright &#169; 2015. All rights reserved.</div>
+</body>
+</html>

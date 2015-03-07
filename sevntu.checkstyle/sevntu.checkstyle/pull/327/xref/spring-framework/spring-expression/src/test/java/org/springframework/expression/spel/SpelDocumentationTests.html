@@ -1,0 +1,534 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head><meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+<title>SpelDocumentationTests xref</title>
+<link type="text/css" rel="stylesheet" href="../../../../stylesheet.css" />
+</head>
+<body>
+<div id="overview"><a href="../../../../../../../../../../apidocs/org/springframework/expression/spel/SpelDocumentationTests.html">View Javadoc</a></div><pre>
+<a class="jxr_linenumber" name="L1" href="#L1">1</a>   <em class="jxr_comment">/*</em>
+<a class="jxr_linenumber" name="L2" href="#L2">2</a>   <em class="jxr_comment"> * Copyright 2002-2014 the original author or authors.</em>
+<a class="jxr_linenumber" name="L3" href="#L3">3</a>   <em class="jxr_comment"> *</em>
+<a class="jxr_linenumber" name="L4" href="#L4">4</a>   <em class="jxr_comment"> * Licensed under the Apache License, Version 2.0 (the "License");</em>
+<a class="jxr_linenumber" name="L5" href="#L5">5</a>   <em class="jxr_comment"> * you may not use this file except in compliance with the License.</em>
+<a class="jxr_linenumber" name="L6" href="#L6">6</a>   <em class="jxr_comment"> * You may obtain a copy of the License at</em>
+<a class="jxr_linenumber" name="L7" href="#L7">7</a>   <em class="jxr_comment"> *</em>
+<a class="jxr_linenumber" name="L8" href="#L8">8</a>   <em class="jxr_comment"> *      <a href="http://www.apache.org/licenses/LICENSE-2." target="alexandria_uri">http://www.apache.org/licenses/LICENSE-2.</a>0</em>
+<a class="jxr_linenumber" name="L9" href="#L9">9</a>   <em class="jxr_comment"> *</em>
+<a class="jxr_linenumber" name="L10" href="#L10">10</a>  <em class="jxr_comment"> * Unless required by applicable law or agreed to in writing, software</em>
+<a class="jxr_linenumber" name="L11" href="#L11">11</a>  <em class="jxr_comment"> * distributed under the License is distributed on an "AS IS" BASIS,</em>
+<a class="jxr_linenumber" name="L12" href="#L12">12</a>  <em class="jxr_comment"> * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</em>
+<a class="jxr_linenumber" name="L13" href="#L13">13</a>  <em class="jxr_comment"> * See the License for the specific language governing permissions and</em>
+<a class="jxr_linenumber" name="L14" href="#L14">14</a>  <em class="jxr_comment"> * limitations under the License.</em>
+<a class="jxr_linenumber" name="L15" href="#L15">15</a>  <em class="jxr_comment"> */</em>
+<a class="jxr_linenumber" name="L16" href="#L16">16</a>  
+<a class="jxr_linenumber" name="L17" href="#L17">17</a>  <strong class="jxr_keyword">package</strong> org.springframework.expression.spel;
+<a class="jxr_linenumber" name="L18" href="#L18">18</a>  
+<a class="jxr_linenumber" name="L19" href="#L19">19</a>  <strong class="jxr_keyword">import</strong> java.util.ArrayList;
+<a class="jxr_linenumber" name="L20" href="#L20">20</a>  <strong class="jxr_keyword">import</strong> java.util.Arrays;
+<a class="jxr_linenumber" name="L21" href="#L21">21</a>  <strong class="jxr_keyword">import</strong> java.util.Date;
+<a class="jxr_linenumber" name="L22" href="#L22">22</a>  <strong class="jxr_keyword">import</strong> java.util.GregorianCalendar;
+<a class="jxr_linenumber" name="L23" href="#L23">23</a>  <strong class="jxr_keyword">import</strong> java.util.HashMap;
+<a class="jxr_linenumber" name="L24" href="#L24">24</a>  <strong class="jxr_keyword">import</strong> java.util.List;
+<a class="jxr_linenumber" name="L25" href="#L25">25</a>  <strong class="jxr_keyword">import</strong> java.util.Map;
+<a class="jxr_linenumber" name="L26" href="#L26">26</a>  
+<a class="jxr_linenumber" name="L27" href="#L27">27</a>  <strong class="jxr_keyword">import</strong> org.junit.Test;
+<a class="jxr_linenumber" name="L28" href="#L28">28</a>  
+<a class="jxr_linenumber" name="L29" href="#L29">29</a>  <strong class="jxr_keyword">import</strong> org.springframework.expression.EvaluationContext;
+<a class="jxr_linenumber" name="L30" href="#L30">30</a>  <strong class="jxr_keyword">import</strong> org.springframework.expression.Expression;
+<a class="jxr_linenumber" name="L31" href="#L31">31</a>  <strong class="jxr_keyword">import</strong> org.springframework.expression.ExpressionParser;
+<a class="jxr_linenumber" name="L32" href="#L32">32</a>  <strong class="jxr_keyword">import</strong> org.springframework.expression.ParserContext;
+<a class="jxr_linenumber" name="L33" href="#L33">33</a>  <strong class="jxr_keyword">import</strong> org.springframework.expression.spel.standard.SpelExpressionParser;
+<a class="jxr_linenumber" name="L34" href="#L34">34</a>  <strong class="jxr_keyword">import</strong> org.springframework.expression.spel.support.StandardEvaluationContext;
+<a class="jxr_linenumber" name="L35" href="#L35">35</a>  <strong class="jxr_keyword">import</strong> org.springframework.expression.spel.testresources.Inventor;
+<a class="jxr_linenumber" name="L36" href="#L36">36</a>  <strong class="jxr_keyword">import</strong> org.springframework.expression.spel.testresources.PlaceOfBirth;
+<a class="jxr_linenumber" name="L37" href="#L37">37</a>  
+<a class="jxr_linenumber" name="L38" href="#L38">38</a>  <strong class="jxr_keyword">import</strong> <strong class="jxr_keyword">static</strong> org.junit.Assert.*;
+<a class="jxr_linenumber" name="L39" href="#L39">39</a>  
+<a class="jxr_linenumber" name="L40" href="#L40">40</a>  <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="L41" href="#L41">41</a>  <em class="jxr_javadoccomment"> * Test the examples specified in the documentation.</em>
+<a class="jxr_linenumber" name="L42" href="#L42">42</a>  <em class="jxr_javadoccomment"> *</em>
+<a class="jxr_linenumber" name="L43" href="#L43">43</a>  <em class="jxr_javadoccomment"> * NOTE: any outgoing changes from this file upon synchronizing with the repo may indicate that</em>
+<a class="jxr_linenumber" name="L44" href="#L44">44</a>  <em class="jxr_javadoccomment"> * you need to update the documentation too !</em>
+<a class="jxr_linenumber" name="L45" href="#L45">45</a>  <em class="jxr_javadoccomment"> *</em>
+<a class="jxr_linenumber" name="L46" href="#L46">46</a>  <em class="jxr_javadoccomment"> * @author Andy Clement</em>
+<a class="jxr_linenumber" name="L47" href="#L47">47</a>  <em class="jxr_javadoccomment"> */</em>
+<a class="jxr_linenumber" name="L48" href="#L48">48</a>  <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">class</strong> <a href="../../../../org/springframework/expression/spel/SpelDocumentationTests.html">SpelDocumentationTests</a> <strong class="jxr_keyword">extends</strong> <a href="../../../../org/springframework/expression/spel/AbstractExpressionTests.html">AbstractExpressionTests</a> {
+<a class="jxr_linenumber" name="L49" href="#L49">49</a>  
+<a class="jxr_linenumber" name="L50" href="#L50">50</a>  	<strong class="jxr_keyword">static</strong> <a href="../../../../org/springframework/expression/spel/testresources/Inventor.html">Inventor</a> tesla ;
+<a class="jxr_linenumber" name="L51" href="#L51">51</a>  	<strong class="jxr_keyword">static</strong> <a href="../../../../org/springframework/expression/spel/testresources/Inventor.html">Inventor</a> pupin ;
+<a class="jxr_linenumber" name="L52" href="#L52">52</a>  
+<a class="jxr_linenumber" name="L53" href="#L53">53</a>  	<strong class="jxr_keyword">static</strong> {
+<a class="jxr_linenumber" name="L54" href="#L54">54</a>  		GregorianCalendar c = <strong class="jxr_keyword">new</strong> GregorianCalendar();
+<a class="jxr_linenumber" name="L55" href="#L55">55</a>  		c.set(1856, 7, 9);
+<a class="jxr_linenumber" name="L56" href="#L56">56</a>  		tesla = <strong class="jxr_keyword">new</strong> <a href="../../../../org/springframework/expression/spel/testresources/Inventor.html">Inventor</a>(<span class="jxr_string">"Nikola Tesla"</span>, c.getTime(), <span class="jxr_string">"Serbian"</span>);
+<a class="jxr_linenumber" name="L57" href="#L57">57</a>  		tesla.setPlaceOfBirth(<strong class="jxr_keyword">new</strong> <a href="../../../../org/springframework/expression/spel/testresources/PlaceOfBirth.html">PlaceOfBirth</a>(<span class="jxr_string">"SmilJan"</span>));
+<a class="jxr_linenumber" name="L58" href="#L58">58</a>  		tesla.setInventions(<strong class="jxr_keyword">new</strong> String[] { <span class="jxr_string">"Telephone repeater"</span>, <span class="jxr_string">"Rotating magnetic field principle"</span>,
+<a class="jxr_linenumber" name="L59" href="#L59">59</a>  				<span class="jxr_string">"Polyphase alternating-current system"</span>, <span class="jxr_string">"Induction motor"</span>, <span class="jxr_string">"Alternating-current power transmission"</span>,
+<a class="jxr_linenumber" name="L60" href="#L60">60</a>  				<span class="jxr_string">"Tesla coil transformer"</span>, <span class="jxr_string">"Wireless communication"</span>, <span class="jxr_string">"Radio"</span>, <span class="jxr_string">"Fluorescent lights"</span> });
+<a class="jxr_linenumber" name="L61" href="#L61">61</a>  
+<a class="jxr_linenumber" name="L62" href="#L62">62</a>  		pupin = <strong class="jxr_keyword">new</strong> <a href="../../../../org/springframework/expression/spel/testresources/Inventor.html">Inventor</a>(<span class="jxr_string">"Pupin"</span>, c.getTime(), <span class="jxr_string">"Idvor"</span>);
+<a class="jxr_linenumber" name="L63" href="#L63">63</a>  		pupin.setPlaceOfBirth(<strong class="jxr_keyword">new</strong> <a href="../../../../org/springframework/expression/spel/testresources/PlaceOfBirth.html">PlaceOfBirth</a>(<span class="jxr_string">"Idvor"</span>));
+<a class="jxr_linenumber" name="L64" href="#L64">64</a>  
+<a class="jxr_linenumber" name="L65" href="#L65">65</a>  	}
+<a class="jxr_linenumber" name="L66" href="#L66">66</a>  	<strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">class</strong> <a href="../../../../org/springframework/expression/spel/SpelDocumentationTests.html">IEEE</a> {
+<a class="jxr_linenumber" name="L67" href="#L67">67</a>  		<strong class="jxr_keyword">private</strong> String name;
+<a class="jxr_linenumber" name="L68" href="#L68">68</a>  
+<a class="jxr_linenumber" name="L69" href="#L69">69</a>  
+<a class="jxr_linenumber" name="L70" href="#L70">70</a>  		<strong class="jxr_keyword">public</strong> <a href="../../../../org/springframework/expression/spel/testresources/Inventor.html">Inventor</a>[] Members = <strong class="jxr_keyword">new</strong> <a href="../../../../org/springframework/expression/spel/testresources/Inventor.html">Inventor</a>[1];
+<a class="jxr_linenumber" name="L71" href="#L71">71</a>  		<strong class="jxr_keyword">public</strong> List Members2 = <strong class="jxr_keyword">new</strong> ArrayList();
+<a class="jxr_linenumber" name="L72" href="#L72">72</a>  		<strong class="jxr_keyword">public</strong> Map&lt;String,Object&gt; officers = <strong class="jxr_keyword">new</strong> HashMap&lt;String,Object&gt;();
+<a class="jxr_linenumber" name="L73" href="#L73">73</a>  
+<a class="jxr_linenumber" name="L74" href="#L74">74</a>  		<strong class="jxr_keyword">public</strong> List&lt;Map&lt;String, Object&gt;&gt; reverse = <strong class="jxr_keyword">new</strong> ArrayList&lt;Map&lt;String, Object&gt;&gt;();
+<a class="jxr_linenumber" name="L75" href="#L75">75</a>  
+<a class="jxr_linenumber" name="L76" href="#L76">76</a>  		@SuppressWarnings(<span class="jxr_string">"unchecked"</span>)
+<a class="jxr_linenumber" name="L77" href="#L77">77</a>  		IEEE() {
+<a class="jxr_linenumber" name="L78" href="#L78">78</a>  			officers.put(<span class="jxr_string">"president"</span>,pupin);
+<a class="jxr_linenumber" name="L79" href="#L79">79</a>  			List linv = <strong class="jxr_keyword">new</strong> ArrayList();
+<a class="jxr_linenumber" name="L80" href="#L80">80</a>  			linv.add(tesla);
+<a class="jxr_linenumber" name="L81" href="#L81">81</a>  			officers.put(<span class="jxr_string">"advisors"</span>,linv);
+<a class="jxr_linenumber" name="L82" href="#L82">82</a>  			Members2.add(tesla);
+<a class="jxr_linenumber" name="L83" href="#L83">83</a>  			Members2.add(pupin);
+<a class="jxr_linenumber" name="L84" href="#L84">84</a>  
+<a class="jxr_linenumber" name="L85" href="#L85">85</a>  			reverse.add(officers);
+<a class="jxr_linenumber" name="L86" href="#L86">86</a>  		}
+<a class="jxr_linenumber" name="L87" href="#L87">87</a>  
+<a class="jxr_linenumber" name="L88" href="#L88">88</a>  		<strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">boolean</strong> isMember(String name) {
+<a class="jxr_linenumber" name="L89" href="#L89">89</a>  			<strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">true</strong>;
+<a class="jxr_linenumber" name="L90" href="#L90">90</a>  		}
+<a class="jxr_linenumber" name="L91" href="#L91">91</a>  
+<a class="jxr_linenumber" name="L92" href="#L92">92</a>  		<strong class="jxr_keyword">public</strong> String getName() { <strong class="jxr_keyword">return</strong> name; }
+<a class="jxr_linenumber" name="L93" href="#L93">93</a>  		<strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> setName(String n) { <strong class="jxr_keyword">this</strong>.name = n; }
+<a class="jxr_linenumber" name="L94" href="#L94">94</a>  	}
+<a class="jxr_linenumber" name="L95" href="#L95">95</a>  
+<a class="jxr_linenumber" name="L96" href="#L96">96</a>  	@Test
+<a class="jxr_linenumber" name="L97" href="#L97">97</a>  	<strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testMethodInvocation() {
+<a class="jxr_linenumber" name="L98" href="#L98">98</a>  		evaluate(<span class="jxr_string">"'Hello World'.concat('!')"</span>,<span class="jxr_string">"Hello World!"</span>,String.<strong class="jxr_keyword">class</strong>);
+<a class="jxr_linenumber" name="L99" href="#L99">99</a>  	}
+<a class="jxr_linenumber" name="L100" href="#L100">100</a> 
+<a class="jxr_linenumber" name="L101" href="#L101">101</a> 	@Test
+<a class="jxr_linenumber" name="L102" href="#L102">102</a> 	<strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testBeanPropertyAccess() {
+<a class="jxr_linenumber" name="L103" href="#L103">103</a> 		evaluate(<span class="jxr_string">"new String('Hello World'.bytes)"</span>,<span class="jxr_string">"Hello World"</span>,String.<strong class="jxr_keyword">class</strong>);
+<a class="jxr_linenumber" name="L104" href="#L104">104</a> 	}
+<a class="jxr_linenumber" name="L105" href="#L105">105</a> 
+<a class="jxr_linenumber" name="L106" href="#L106">106</a> 	@Test
+<a class="jxr_linenumber" name="L107" href="#L107">107</a> 	<strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testArrayLengthAccess() {
+<a class="jxr_linenumber" name="L108" href="#L108">108</a> 		evaluate(<span class="jxr_string">"'Hello World'.bytes.length"</span>,11,Integer.<strong class="jxr_keyword">class</strong>);
+<a class="jxr_linenumber" name="L109" href="#L109">109</a> 	}
+<a class="jxr_linenumber" name="L110" href="#L110">110</a> 
+<a class="jxr_linenumber" name="L111" href="#L111">111</a> 	@Test
+<a class="jxr_linenumber" name="L112" href="#L112">112</a> 	<strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testRootObject() <strong class="jxr_keyword">throws</strong> Exception {
+<a class="jxr_linenumber" name="L113" href="#L113">113</a> 		GregorianCalendar c = <strong class="jxr_keyword">new</strong> GregorianCalendar();
+<a class="jxr_linenumber" name="L114" href="#L114">114</a> 		c.set(1856, 7, 9);
+<a class="jxr_linenumber" name="L115" href="#L115">115</a> 
+<a class="jxr_linenumber" name="L116" href="#L116">116</a> 		<em class="jxr_comment">//  The constructor arguments are name, birthday, and nationaltiy.</em>
+<a class="jxr_linenumber" name="L117" href="#L117">117</a> 		Inventor tesla = <strong class="jxr_keyword">new</strong> <a href="../../../../org/springframework/expression/spel/testresources/Inventor.html">Inventor</a>(<span class="jxr_string">"Nikola Tesla"</span>, c.getTime(), <span class="jxr_string">"Serbian"</span>);
+<a class="jxr_linenumber" name="L118" href="#L118">118</a> 
+<a class="jxr_linenumber" name="L119" href="#L119">119</a> 		ExpressionParser parser = <strong class="jxr_keyword">new</strong> <a href="../../../../org/springframework/expression/spel/standard/SpelExpressionParser.html">SpelExpressionParser</a>();
+<a class="jxr_linenumber" name="L120" href="#L120">120</a> 		Expression exp = parser.parseExpression(<span class="jxr_string">"name"</span>);
+<a class="jxr_linenumber" name="L121" href="#L121">121</a> 
+<a class="jxr_linenumber" name="L122" href="#L122">122</a> 		StandardEvaluationContext context = <strong class="jxr_keyword">new</strong> <a href="../../../../org/springframework/expression/spel/support/StandardEvaluationContext.html">StandardEvaluationContext</a>();
+<a class="jxr_linenumber" name="L123" href="#L123">123</a> 		context.setRootObject(tesla);
+<a class="jxr_linenumber" name="L124" href="#L124">124</a> 
+<a class="jxr_linenumber" name="L125" href="#L125">125</a> 		String name = (String) exp.getValue(context);
+<a class="jxr_linenumber" name="L126" href="#L126">126</a> 		assertEquals(<span class="jxr_string">"Nikola Tesla"</span>,name);
+<a class="jxr_linenumber" name="L127" href="#L127">127</a> 	}
+<a class="jxr_linenumber" name="L128" href="#L128">128</a> 
+<a class="jxr_linenumber" name="L129" href="#L129">129</a> 	@Test
+<a class="jxr_linenumber" name="L130" href="#L130">130</a> 	<strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testEqualityCheck() <strong class="jxr_keyword">throws</strong> Exception {
+<a class="jxr_linenumber" name="L131" href="#L131">131</a> 		ExpressionParser parser = <strong class="jxr_keyword">new</strong> <a href="../../../../org/springframework/expression/spel/standard/SpelExpressionParser.html">SpelExpressionParser</a>();
+<a class="jxr_linenumber" name="L132" href="#L132">132</a> 
+<a class="jxr_linenumber" name="L133" href="#L133">133</a> 		StandardEvaluationContext context = <strong class="jxr_keyword">new</strong> <a href="../../../../org/springframework/expression/spel/support/StandardEvaluationContext.html">StandardEvaluationContext</a>();
+<a class="jxr_linenumber" name="L134" href="#L134">134</a> 		context.setRootObject(tesla);
+<a class="jxr_linenumber" name="L135" href="#L135">135</a> 
+<a class="jxr_linenumber" name="L136" href="#L136">136</a> 		Expression exp = parser.parseExpression(<span class="jxr_string">"name == 'Nikola Tesla'"</span>);
+<a class="jxr_linenumber" name="L137" href="#L137">137</a> 		<strong class="jxr_keyword">boolean</strong> isEqual = exp.getValue(context, Boolean.<strong class="jxr_keyword">class</strong>);  <em class="jxr_comment">// evaluates to true</em>
+<a class="jxr_linenumber" name="L138" href="#L138">138</a> 		assertTrue(isEqual);
+<a class="jxr_linenumber" name="L139" href="#L139">139</a> 	}
+<a class="jxr_linenumber" name="L140" href="#L140">140</a> 
+<a class="jxr_linenumber" name="L141" href="#L141">141</a> 	<em class="jxr_comment">// Section 7.4.1</em>
+<a class="jxr_linenumber" name="L142" href="#L142">142</a> 
+<a class="jxr_linenumber" name="L143" href="#L143">143</a> 	@Test
+<a class="jxr_linenumber" name="L144" href="#L144">144</a> 	<strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testXMLBasedConfig() {
+<a class="jxr_linenumber" name="L145" href="#L145">145</a> 		 evaluate(<span class="jxr_string">"(T(java.lang.Math).random() * 100.0 )&gt;0"</span>,<strong class="jxr_keyword">true</strong>,Boolean.<strong class="jxr_keyword">class</strong>);
+<a class="jxr_linenumber" name="L146" href="#L146">146</a> 	}
+<a class="jxr_linenumber" name="L147" href="#L147">147</a> 
+<a class="jxr_linenumber" name="L148" href="#L148">148</a> 	<em class="jxr_comment">// Section 7.5</em>
+<a class="jxr_linenumber" name="L149" href="#L149">149</a> 	@Test
+<a class="jxr_linenumber" name="L150" href="#L150">150</a> 	<strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testLiterals() <strong class="jxr_keyword">throws</strong> Exception {
+<a class="jxr_linenumber" name="L151" href="#L151">151</a> 		ExpressionParser parser = <strong class="jxr_keyword">new</strong> <a href="../../../../org/springframework/expression/spel/standard/SpelExpressionParser.html">SpelExpressionParser</a>();
+<a class="jxr_linenumber" name="L152" href="#L152">152</a> 
+<a class="jxr_linenumber" name="L153" href="#L153">153</a> 		String helloWorld = (String) parser.parseExpression(<span class="jxr_string">"'Hello World'"</span>).getValue(); <em class="jxr_comment">// evals to "Hello World"</em>
+<a class="jxr_linenumber" name="L154" href="#L154">154</a> 		assertEquals(<span class="jxr_string">"Hello World"</span>,helloWorld);
+<a class="jxr_linenumber" name="L155" href="#L155">155</a> 
+<a class="jxr_linenumber" name="L156" href="#L156">156</a> 		<strong class="jxr_keyword">double</strong> avogadrosNumber  = (Double) parser.parseExpression(<span class="jxr_string">"6.0221415E+23"</span>).getValue();
+<a class="jxr_linenumber" name="L157" href="#L157">157</a> 		assertEquals(6.0221415E+23, avogadrosNumber, 0);
+<a class="jxr_linenumber" name="L158" href="#L158">158</a> 
+<a class="jxr_linenumber" name="L159" href="#L159">159</a> 		<strong class="jxr_keyword">int</strong> maxValue = (Integer) parser.parseExpression(<span class="jxr_string">"0x7FFFFFFF"</span>).getValue();  <em class="jxr_comment">// evals to 2147483647</em>
+<a class="jxr_linenumber" name="L160" href="#L160">160</a> 		assertEquals(Integer.MAX_VALUE,maxValue);
+<a class="jxr_linenumber" name="L161" href="#L161">161</a> 
+<a class="jxr_linenumber" name="L162" href="#L162">162</a> 		<strong class="jxr_keyword">boolean</strong> trueValue = (Boolean) parser.parseExpression(<span class="jxr_string">"true"</span>).getValue();
+<a class="jxr_linenumber" name="L163" href="#L163">163</a> 		assertTrue(trueValue);
+<a class="jxr_linenumber" name="L164" href="#L164">164</a> 
+<a class="jxr_linenumber" name="L165" href="#L165">165</a> 		Object nullValue = parser.parseExpression(<span class="jxr_string">"null"</span>).getValue();
+<a class="jxr_linenumber" name="L166" href="#L166">166</a> 		assertNull(nullValue);
+<a class="jxr_linenumber" name="L167" href="#L167">167</a> 	}
+<a class="jxr_linenumber" name="L168" href="#L168">168</a> 
+<a class="jxr_linenumber" name="L169" href="#L169">169</a> 	@Test
+<a class="jxr_linenumber" name="L170" href="#L170">170</a> 	<strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testPropertyAccess() <strong class="jxr_keyword">throws</strong> Exception {
+<a class="jxr_linenumber" name="L171" href="#L171">171</a> 		EvaluationContext context = TestScenarioCreator.getTestEvaluationContext();
+<a class="jxr_linenumber" name="L172" href="#L172">172</a> 		<strong class="jxr_keyword">int</strong> year = (Integer) parser.parseExpression(<span class="jxr_string">"Birthdate.Year + 1900"</span>).getValue(context); <em class="jxr_comment">// 1856</em>
+<a class="jxr_linenumber" name="L173" href="#L173">173</a> 		assertEquals(1856,year);
+<a class="jxr_linenumber" name="L174" href="#L174">174</a> 
+<a class="jxr_linenumber" name="L175" href="#L175">175</a> 		String city = (String) parser.parseExpression(<span class="jxr_string">"placeOfBirth.City"</span>).getValue(context);
+<a class="jxr_linenumber" name="L176" href="#L176">176</a> 		assertEquals(<span class="jxr_string">"SmilJan"</span>,city);
+<a class="jxr_linenumber" name="L177" href="#L177">177</a> 	}
+<a class="jxr_linenumber" name="L178" href="#L178">178</a> 
+<a class="jxr_linenumber" name="L179" href="#L179">179</a> 	@Test
+<a class="jxr_linenumber" name="L180" href="#L180">180</a> 	<strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testPropertyNavigation() <strong class="jxr_keyword">throws</strong> Exception {
+<a class="jxr_linenumber" name="L181" href="#L181">181</a> 		ExpressionParser parser = <strong class="jxr_keyword">new</strong> <a href="../../../../org/springframework/expression/spel/standard/SpelExpressionParser.html">SpelExpressionParser</a>();
+<a class="jxr_linenumber" name="L182" href="#L182">182</a> 
+<a class="jxr_linenumber" name="L183" href="#L183">183</a> 		<em class="jxr_comment">// Inventions Array</em>
+<a class="jxr_linenumber" name="L184" href="#L184">184</a> 		StandardEvaluationContext teslaContext = TestScenarioCreator.getTestEvaluationContext();
+<a class="jxr_linenumber" name="L185" href="#L185">185</a> <em class="jxr_comment">//		teslaContext.setRootObject(tesla);</em>
+<a class="jxr_linenumber" name="L186" href="#L186">186</a> 
+<a class="jxr_linenumber" name="L187" href="#L187">187</a> 		<em class="jxr_comment">// evaluates to "Induction motor"</em>
+<a class="jxr_linenumber" name="L188" href="#L188">188</a> 		String invention = parser.parseExpression(<span class="jxr_string">"inventions[3]"</span>).getValue(teslaContext, String.<strong class="jxr_keyword">class</strong>);
+<a class="jxr_linenumber" name="L189" href="#L189">189</a> 		assertEquals(<span class="jxr_string">"Induction motor"</span>,invention);
+<a class="jxr_linenumber" name="L190" href="#L190">190</a> 
+<a class="jxr_linenumber" name="L191" href="#L191">191</a> 		<em class="jxr_comment">// Members List</em>
+<a class="jxr_linenumber" name="L192" href="#L192">192</a> 		StandardEvaluationContext societyContext = <strong class="jxr_keyword">new</strong> <a href="../../../../org/springframework/expression/spel/support/StandardEvaluationContext.html">StandardEvaluationContext</a>();
+<a class="jxr_linenumber" name="L193" href="#L193">193</a> 		IEEE ieee = <strong class="jxr_keyword">new</strong> <a href="../../../../org/springframework/expression/spel/SpelDocumentationTests.html">IEEE</a>();
+<a class="jxr_linenumber" name="L194" href="#L194">194</a> 		ieee.Members[0]= tesla;
+<a class="jxr_linenumber" name="L195" href="#L195">195</a> 		societyContext.setRootObject(ieee);
+<a class="jxr_linenumber" name="L196" href="#L196">196</a> 
+<a class="jxr_linenumber" name="L197" href="#L197">197</a> 		<em class="jxr_comment">// evaluates to "Nikola Tesla"</em>
+<a class="jxr_linenumber" name="L198" href="#L198">198</a> 		String name = parser.parseExpression(<span class="jxr_string">"Members[0].Name"</span>).getValue(societyContext, String.<strong class="jxr_keyword">class</strong>);
+<a class="jxr_linenumber" name="L199" href="#L199">199</a> 		assertEquals(<span class="jxr_string">"Nikola Tesla"</span>,name);
+<a class="jxr_linenumber" name="L200" href="#L200">200</a> 
+<a class="jxr_linenumber" name="L201" href="#L201">201</a> 		<em class="jxr_comment">// List and Array navigation</em>
+<a class="jxr_linenumber" name="L202" href="#L202">202</a> 		<em class="jxr_comment">// evaluates to "Wireless communication"</em>
+<a class="jxr_linenumber" name="L203" href="#L203">203</a> 		invention = parser.parseExpression(<span class="jxr_string">"Members[0].Inventions[6]"</span>).getValue(societyContext, String.<strong class="jxr_keyword">class</strong>);
+<a class="jxr_linenumber" name="L204" href="#L204">204</a> 		assertEquals(<span class="jxr_string">"Wireless communication"</span>,invention);
+<a class="jxr_linenumber" name="L205" href="#L205">205</a> 	}
+<a class="jxr_linenumber" name="L206" href="#L206">206</a> 
+<a class="jxr_linenumber" name="L207" href="#L207">207</a> 
+<a class="jxr_linenumber" name="L208" href="#L208">208</a> 	@Test
+<a class="jxr_linenumber" name="L209" href="#L209">209</a> 	<strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testDictionaryAccess() <strong class="jxr_keyword">throws</strong> Exception {
+<a class="jxr_linenumber" name="L210" href="#L210">210</a> 		StandardEvaluationContext societyContext = <strong class="jxr_keyword">new</strong> <a href="../../../../org/springframework/expression/spel/support/StandardEvaluationContext.html">StandardEvaluationContext</a>();
+<a class="jxr_linenumber" name="L211" href="#L211">211</a> 		societyContext.setRootObject(<strong class="jxr_keyword">new</strong> <a href="../../../../org/springframework/expression/spel/SpelDocumentationTests.html">IEEE</a>());
+<a class="jxr_linenumber" name="L212" href="#L212">212</a> 		<em class="jxr_comment">// Officer's Dictionary</em>
+<a class="jxr_linenumber" name="L213" href="#L213">213</a> 		Inventor pupin = parser.parseExpression(<span class="jxr_string">"officers['president']"</span>).getValue(societyContext, Inventor.<strong class="jxr_keyword">class</strong>);
+<a class="jxr_linenumber" name="L214" href="#L214">214</a> 		assertNotNull(pupin);
+<a class="jxr_linenumber" name="L215" href="#L215">215</a> 
+<a class="jxr_linenumber" name="L216" href="#L216">216</a> 		<em class="jxr_comment">// evaluates to "Idvor"</em>
+<a class="jxr_linenumber" name="L217" href="#L217">217</a> 		String city = parser.parseExpression(<span class="jxr_string">"officers['president'].PlaceOfBirth.city"</span>).getValue(societyContext, String.<strong class="jxr_keyword">class</strong>);
+<a class="jxr_linenumber" name="L218" href="#L218">218</a> 		assertNotNull(city);
+<a class="jxr_linenumber" name="L219" href="#L219">219</a> 
+<a class="jxr_linenumber" name="L220" href="#L220">220</a> 		<em class="jxr_comment">// setting values</em>
+<a class="jxr_linenumber" name="L221" href="#L221">221</a> 		Inventor i = parser.parseExpression(<span class="jxr_string">"officers['advisors'][0]"</span>).getValue(societyContext,Inventor.<strong class="jxr_keyword">class</strong>);
+<a class="jxr_linenumber" name="L222" href="#L222">222</a> 		assertEquals(<span class="jxr_string">"Nikola Tesla"</span>,i.getName());
+<a class="jxr_linenumber" name="L223" href="#L223">223</a> 
+<a class="jxr_linenumber" name="L224" href="#L224">224</a> 		parser.parseExpression(<span class="jxr_string">"officers['advisors'][0].PlaceOfBirth.Country"</span>).setValue(societyContext, <span class="jxr_string">"Croatia"</span>);
+<a class="jxr_linenumber" name="L225" href="#L225">225</a> 
+<a class="jxr_linenumber" name="L226" href="#L226">226</a> 		Inventor i2 = parser.parseExpression(<span class="jxr_string">"reverse[0]['advisors'][0]"</span>).getValue(societyContext,Inventor.<strong class="jxr_keyword">class</strong>);
+<a class="jxr_linenumber" name="L227" href="#L227">227</a> 		assertEquals(<span class="jxr_string">"Nikola Tesla"</span>,i2.getName());
+<a class="jxr_linenumber" name="L228" href="#L228">228</a> 
+<a class="jxr_linenumber" name="L229" href="#L229">229</a> 	}
+<a class="jxr_linenumber" name="L230" href="#L230">230</a> 
+<a class="jxr_linenumber" name="L231" href="#L231">231</a> 	<em class="jxr_comment">// 7.5.3</em>
+<a class="jxr_linenumber" name="L232" href="#L232">232</a> 
+<a class="jxr_linenumber" name="L233" href="#L233">233</a> 	@Test
+<a class="jxr_linenumber" name="L234" href="#L234">234</a> 	<strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testMethodInvocation2() <strong class="jxr_keyword">throws</strong> Exception {
+<a class="jxr_linenumber" name="L235" href="#L235">235</a> 		<em class="jxr_comment">// string literal, evaluates to "bc"</em>
+<a class="jxr_linenumber" name="L236" href="#L236">236</a> 		String c = parser.parseExpression(<span class="jxr_string">"'abc'.substring(1, 3)"</span>).getValue(String.<strong class="jxr_keyword">class</strong>);
+<a class="jxr_linenumber" name="L237" href="#L237">237</a> 		assertEquals(<span class="jxr_string">"bc"</span>,c);
+<a class="jxr_linenumber" name="L238" href="#L238">238</a> 
+<a class="jxr_linenumber" name="L239" href="#L239">239</a> 		StandardEvaluationContext societyContext = <strong class="jxr_keyword">new</strong> <a href="../../../../org/springframework/expression/spel/support/StandardEvaluationContext.html">StandardEvaluationContext</a>();
+<a class="jxr_linenumber" name="L240" href="#L240">240</a> 		societyContext.setRootObject(<strong class="jxr_keyword">new</strong> <a href="../../../../org/springframework/expression/spel/SpelDocumentationTests.html">IEEE</a>());
+<a class="jxr_linenumber" name="L241" href="#L241">241</a> 		<em class="jxr_comment">// evaluates to true</em>
+<a class="jxr_linenumber" name="L242" href="#L242">242</a> 		<strong class="jxr_keyword">boolean</strong> isMember = parser.parseExpression(<span class="jxr_string">"isMember('Mihajlo Pupin')"</span>).getValue(societyContext, Boolean.<strong class="jxr_keyword">class</strong>);
+<a class="jxr_linenumber" name="L243" href="#L243">243</a> 		assertTrue(isMember);
+<a class="jxr_linenumber" name="L244" href="#L244">244</a> 	}
+<a class="jxr_linenumber" name="L245" href="#L245">245</a> 
+<a class="jxr_linenumber" name="L246" href="#L246">246</a> 	<em class="jxr_comment">// 7.5.4.1</em>
+<a class="jxr_linenumber" name="L247" href="#L247">247</a> 
+<a class="jxr_linenumber" name="L248" href="#L248">248</a> 	@Test
+<a class="jxr_linenumber" name="L249" href="#L249">249</a> 	<strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testRelationalOperators() <strong class="jxr_keyword">throws</strong> Exception {
+<a class="jxr_linenumber" name="L250" href="#L250">250</a> 		<strong class="jxr_keyword">boolean</strong> result = parser.parseExpression(<span class="jxr_string">"2 == 2"</span>).getValue(Boolean.<strong class="jxr_keyword">class</strong>);
+<a class="jxr_linenumber" name="L251" href="#L251">251</a> 		assertTrue(result);
+<a class="jxr_linenumber" name="L252" href="#L252">252</a> 		<em class="jxr_comment">// evaluates to false</em>
+<a class="jxr_linenumber" name="L253" href="#L253">253</a> 		result = parser.parseExpression(<span class="jxr_string">"2 &lt; -5.0"</span>).getValue(Boolean.<strong class="jxr_keyword">class</strong>);
+<a class="jxr_linenumber" name="L254" href="#L254">254</a> 		assertFalse(result);
+<a class="jxr_linenumber" name="L255" href="#L255">255</a> 
+<a class="jxr_linenumber" name="L256" href="#L256">256</a> 		<em class="jxr_comment">// evaluates to true</em>
+<a class="jxr_linenumber" name="L257" href="#L257">257</a> 		result = parser.parseExpression(<span class="jxr_string">"'black' &lt; 'block'"</span>).getValue(Boolean.<strong class="jxr_keyword">class</strong>);
+<a class="jxr_linenumber" name="L258" href="#L258">258</a> 		assertTrue(result);
+<a class="jxr_linenumber" name="L259" href="#L259">259</a> 	}
+<a class="jxr_linenumber" name="L260" href="#L260">260</a> 
+<a class="jxr_linenumber" name="L261" href="#L261">261</a> 	@Test
+<a class="jxr_linenumber" name="L262" href="#L262">262</a> 	<strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testOtherOperators() <strong class="jxr_keyword">throws</strong> Exception {
+<a class="jxr_linenumber" name="L263" href="#L263">263</a> 		<em class="jxr_comment">// evaluates to false</em>
+<a class="jxr_linenumber" name="L264" href="#L264">264</a> 		<strong class="jxr_keyword">boolean</strong> falseValue = parser.parseExpression(<span class="jxr_string">"'xyz' instanceof T(int)"</span>).getValue(Boolean.<strong class="jxr_keyword">class</strong>);
+<a class="jxr_linenumber" name="L265" href="#L265">265</a> 		assertFalse(falseValue);
+<a class="jxr_linenumber" name="L266" href="#L266">266</a> 
+<a class="jxr_linenumber" name="L267" href="#L267">267</a> 		<em class="jxr_comment">// evaluates to true</em>
+<a class="jxr_linenumber" name="L268" href="#L268">268</a> 		<strong class="jxr_keyword">boolean</strong> trueValue = parser.parseExpression(<span class="jxr_string">"'5.00' matches '^-?&#92;&#92;d+(&#92;&#92;.&#92;&#92;d{2})?$'"</span>).getValue(Boolean.<strong class="jxr_keyword">class</strong>);
+<a class="jxr_linenumber" name="L269" href="#L269">269</a> 		assertTrue(trueValue);
+<a class="jxr_linenumber" name="L270" href="#L270">270</a> 
+<a class="jxr_linenumber" name="L271" href="#L271">271</a> 		<em class="jxr_comment">//evaluates to false</em>
+<a class="jxr_linenumber" name="L272" href="#L272">272</a> 		falseValue = parser.parseExpression(<span class="jxr_string">"'5.0067' matches '^-?&#92;&#92;d+(&#92;&#92;.&#92;&#92;d{2})?$'"</span>).getValue(Boolean.<strong class="jxr_keyword">class</strong>);
+<a class="jxr_linenumber" name="L273" href="#L273">273</a> 		assertFalse(falseValue);
+<a class="jxr_linenumber" name="L274" href="#L274">274</a> 	}
+<a class="jxr_linenumber" name="L275" href="#L275">275</a> 
+<a class="jxr_linenumber" name="L276" href="#L276">276</a> 	<em class="jxr_comment">// 7.5.4.2</em>
+<a class="jxr_linenumber" name="L277" href="#L277">277</a> 
+<a class="jxr_linenumber" name="L278" href="#L278">278</a> 	@Test
+<a class="jxr_linenumber" name="L279" href="#L279">279</a> 	<strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testLogicalOperators() <strong class="jxr_keyword">throws</strong> Exception {
+<a class="jxr_linenumber" name="L280" href="#L280">280</a> 
+<a class="jxr_linenumber" name="L281" href="#L281">281</a> 		StandardEvaluationContext societyContext = <strong class="jxr_keyword">new</strong> <a href="../../../../org/springframework/expression/spel/support/StandardEvaluationContext.html">StandardEvaluationContext</a>();
+<a class="jxr_linenumber" name="L282" href="#L282">282</a> 		societyContext.setRootObject(<strong class="jxr_keyword">new</strong> <a href="../../../../org/springframework/expression/spel/SpelDocumentationTests.html">IEEE</a>());
+<a class="jxr_linenumber" name="L283" href="#L283">283</a> 
+<a class="jxr_linenumber" name="L284" href="#L284">284</a> 		<em class="jxr_comment">// -- AND --</em>
+<a class="jxr_linenumber" name="L285" href="#L285">285</a> 
+<a class="jxr_linenumber" name="L286" href="#L286">286</a> 		<em class="jxr_comment">// evaluates to false</em>
+<a class="jxr_linenumber" name="L287" href="#L287">287</a> 		<strong class="jxr_keyword">boolean</strong> falseValue = parser.parseExpression(<span class="jxr_string">"true and false"</span>).getValue(Boolean.<strong class="jxr_keyword">class</strong>);
+<a class="jxr_linenumber" name="L288" href="#L288">288</a> 		assertFalse(falseValue);
+<a class="jxr_linenumber" name="L289" href="#L289">289</a> 		<em class="jxr_comment">// evaluates to true</em>
+<a class="jxr_linenumber" name="L290" href="#L290">290</a> 		String expression =  <span class="jxr_string">"isMember('Nikola Tesla') and isMember('Mihajlo Pupin')"</span>;
+<a class="jxr_linenumber" name="L291" href="#L291">291</a> 		<strong class="jxr_keyword">boolean</strong> trueValue = parser.parseExpression(expression).getValue(societyContext, Boolean.<strong class="jxr_keyword">class</strong>);
+<a class="jxr_linenumber" name="L292" href="#L292">292</a> 
+<a class="jxr_linenumber" name="L293" href="#L293">293</a> 		<em class="jxr_comment">// -- OR --</em>
+<a class="jxr_linenumber" name="L294" href="#L294">294</a> 
+<a class="jxr_linenumber" name="L295" href="#L295">295</a> 		<em class="jxr_comment">// evaluates to true</em>
+<a class="jxr_linenumber" name="L296" href="#L296">296</a> 		trueValue = parser.parseExpression(<span class="jxr_string">"true or false"</span>).getValue(Boolean.<strong class="jxr_keyword">class</strong>);
+<a class="jxr_linenumber" name="L297" href="#L297">297</a> 		assertTrue(trueValue);
+<a class="jxr_linenumber" name="L298" href="#L298">298</a> 
+<a class="jxr_linenumber" name="L299" href="#L299">299</a> 		<em class="jxr_comment">// evaluates to true</em>
+<a class="jxr_linenumber" name="L300" href="#L300">300</a> 		expression =  <span class="jxr_string">"isMember('Nikola Tesla') or isMember('Albert Einstien')"</span>;
+<a class="jxr_linenumber" name="L301" href="#L301">301</a> 		trueValue = parser.parseExpression(expression).getValue(societyContext, Boolean.<strong class="jxr_keyword">class</strong>);
+<a class="jxr_linenumber" name="L302" href="#L302">302</a> 		assertTrue(trueValue);
+<a class="jxr_linenumber" name="L303" href="#L303">303</a> 
+<a class="jxr_linenumber" name="L304" href="#L304">304</a> 		<em class="jxr_comment">// -- NOT --</em>
+<a class="jxr_linenumber" name="L305" href="#L305">305</a> 
+<a class="jxr_linenumber" name="L306" href="#L306">306</a> 		<em class="jxr_comment">// evaluates to false</em>
+<a class="jxr_linenumber" name="L307" href="#L307">307</a> 		falseValue = parser.parseExpression(<span class="jxr_string">"!true"</span>).getValue(Boolean.<strong class="jxr_keyword">class</strong>);
+<a class="jxr_linenumber" name="L308" href="#L308">308</a> 		assertFalse(falseValue);
+<a class="jxr_linenumber" name="L309" href="#L309">309</a> 
+<a class="jxr_linenumber" name="L310" href="#L310">310</a> 
+<a class="jxr_linenumber" name="L311" href="#L311">311</a> 		<em class="jxr_comment">// -- AND and NOT --</em>
+<a class="jxr_linenumber" name="L312" href="#L312">312</a> 		expression =  <span class="jxr_string">"isMember('Nikola Tesla') and !isMember('Mihajlo Pupin')"</span>;
+<a class="jxr_linenumber" name="L313" href="#L313">313</a> 		falseValue = parser.parseExpression(expression).getValue(societyContext, Boolean.<strong class="jxr_keyword">class</strong>);
+<a class="jxr_linenumber" name="L314" href="#L314">314</a> 		assertFalse(falseValue);
+<a class="jxr_linenumber" name="L315" href="#L315">315</a> 	}
+<a class="jxr_linenumber" name="L316" href="#L316">316</a> 
+<a class="jxr_linenumber" name="L317" href="#L317">317</a> 	<em class="jxr_comment">// 7.5.4.3</em>
+<a class="jxr_linenumber" name="L318" href="#L318">318</a> 
+<a class="jxr_linenumber" name="L319" href="#L319">319</a> 	@Test
+<a class="jxr_linenumber" name="L320" href="#L320">320</a> 	<strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testNumericalOperators() <strong class="jxr_keyword">throws</strong> Exception {
+<a class="jxr_linenumber" name="L321" href="#L321">321</a> 		<em class="jxr_comment">// Addition</em>
+<a class="jxr_linenumber" name="L322" href="#L322">322</a> 		<strong class="jxr_keyword">int</strong> two = parser.parseExpression(<span class="jxr_string">"1 + 1"</span>).getValue(Integer.<strong class="jxr_keyword">class</strong>); <em class="jxr_comment">// 2</em>
+<a class="jxr_linenumber" name="L323" href="#L323">323</a> 		assertEquals(2,two);
+<a class="jxr_linenumber" name="L324" href="#L324">324</a> 
+<a class="jxr_linenumber" name="L325" href="#L325">325</a> 		String testString = parser.parseExpression(<span class="jxr_string">"'test' + ' ' + 'string'"</span>).getValue(String.<strong class="jxr_keyword">class</strong>); <em class="jxr_comment">// 'test string'</em>
+<a class="jxr_linenumber" name="L326" href="#L326">326</a> 		assertEquals(<span class="jxr_string">"test string"</span>,testString);
+<a class="jxr_linenumber" name="L327" href="#L327">327</a> 
+<a class="jxr_linenumber" name="L328" href="#L328">328</a> 		<em class="jxr_comment">// Subtraction</em>
+<a class="jxr_linenumber" name="L329" href="#L329">329</a> 		<strong class="jxr_keyword">int</strong> four =  parser.parseExpression(<span class="jxr_string">"1 - -3"</span>).getValue(Integer.<strong class="jxr_keyword">class</strong>); <em class="jxr_comment">// 4</em>
+<a class="jxr_linenumber" name="L330" href="#L330">330</a> 		assertEquals(4,four);
+<a class="jxr_linenumber" name="L331" href="#L331">331</a> 
+<a class="jxr_linenumber" name="L332" href="#L332">332</a> 		<strong class="jxr_keyword">double</strong> d = parser.parseExpression(<span class="jxr_string">"1000.00 - 1e4"</span>).getValue(Double.<strong class="jxr_keyword">class</strong>); <em class="jxr_comment">// -9000</em>
+<a class="jxr_linenumber" name="L333" href="#L333">333</a> 		assertEquals(-9000.0d, d, 0);
+<a class="jxr_linenumber" name="L334" href="#L334">334</a> 
+<a class="jxr_linenumber" name="L335" href="#L335">335</a> 		<em class="jxr_comment">// Multiplication</em>
+<a class="jxr_linenumber" name="L336" href="#L336">336</a> 		<strong class="jxr_keyword">int</strong> six =  parser.parseExpression(<span class="jxr_string">"-2 * -3"</span>).getValue(Integer.<strong class="jxr_keyword">class</strong>); <em class="jxr_comment">// 6</em>
+<a class="jxr_linenumber" name="L337" href="#L337">337</a> 		assertEquals(6,six);
+<a class="jxr_linenumber" name="L338" href="#L338">338</a> 
+<a class="jxr_linenumber" name="L339" href="#L339">339</a> 		<strong class="jxr_keyword">double</strong> twentyFour = parser.parseExpression(<span class="jxr_string">"2.0 * 3e0 * 4"</span>).getValue(Double.<strong class="jxr_keyword">class</strong>); <em class="jxr_comment">// 24.0</em>
+<a class="jxr_linenumber" name="L340" href="#L340">340</a> 		assertEquals(24.0d, twentyFour, 0);
+<a class="jxr_linenumber" name="L341" href="#L341">341</a> 
+<a class="jxr_linenumber" name="L342" href="#L342">342</a> 		<em class="jxr_comment">// Division</em>
+<a class="jxr_linenumber" name="L343" href="#L343">343</a> 		<strong class="jxr_keyword">int</strong> minusTwo =  parser.parseExpression(<span class="jxr_string">"6 / -3"</span>).getValue(Integer.<strong class="jxr_keyword">class</strong>); <em class="jxr_comment">// -2</em>
+<a class="jxr_linenumber" name="L344" href="#L344">344</a> 		assertEquals(-2,minusTwo);
+<a class="jxr_linenumber" name="L345" href="#L345">345</a> 
+<a class="jxr_linenumber" name="L346" href="#L346">346</a> 		<strong class="jxr_keyword">double</strong> one = parser.parseExpression(<span class="jxr_string">"8.0 / 4e0 / 2"</span>).getValue(Double.<strong class="jxr_keyword">class</strong>); <em class="jxr_comment">// 1.0</em>
+<a class="jxr_linenumber" name="L347" href="#L347">347</a> 		assertEquals(1.0d, one, 0);
+<a class="jxr_linenumber" name="L348" href="#L348">348</a> 
+<a class="jxr_linenumber" name="L349" href="#L349">349</a> 		<em class="jxr_comment">// Modulus</em>
+<a class="jxr_linenumber" name="L350" href="#L350">350</a> 		<strong class="jxr_keyword">int</strong> three =  parser.parseExpression(<span class="jxr_string">"7 % 4"</span>).getValue(Integer.<strong class="jxr_keyword">class</strong>); <em class="jxr_comment">// 3</em>
+<a class="jxr_linenumber" name="L351" href="#L351">351</a> 		assertEquals(3,three);
+<a class="jxr_linenumber" name="L352" href="#L352">352</a> 
+<a class="jxr_linenumber" name="L353" href="#L353">353</a> 		<strong class="jxr_keyword">int</strong> oneInt = parser.parseExpression(<span class="jxr_string">"8 / 5 % 2"</span>).getValue(Integer.<strong class="jxr_keyword">class</strong>); <em class="jxr_comment">// 1</em>
+<a class="jxr_linenumber" name="L354" href="#L354">354</a> 		assertEquals(1,oneInt);
+<a class="jxr_linenumber" name="L355" href="#L355">355</a> 
+<a class="jxr_linenumber" name="L356" href="#L356">356</a> 		<em class="jxr_comment">// Operator precedence</em>
+<a class="jxr_linenumber" name="L357" href="#L357">357</a> 		<strong class="jxr_keyword">int</strong> minusTwentyOne = parser.parseExpression(<span class="jxr_string">"1+2-3*8"</span>).getValue(Integer.<strong class="jxr_keyword">class</strong>); <em class="jxr_comment">// -21</em>
+<a class="jxr_linenumber" name="L358" href="#L358">358</a> 		assertEquals(-21,minusTwentyOne);
+<a class="jxr_linenumber" name="L359" href="#L359">359</a> 	}
+<a class="jxr_linenumber" name="L360" href="#L360">360</a> 
+<a class="jxr_linenumber" name="L361" href="#L361">361</a> 	<em class="jxr_comment">// 7.5.5</em>
+<a class="jxr_linenumber" name="L362" href="#L362">362</a> 
+<a class="jxr_linenumber" name="L363" href="#L363">363</a> 	@Test
+<a class="jxr_linenumber" name="L364" href="#L364">364</a> 	<strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testAssignment() <strong class="jxr_keyword">throws</strong> Exception {
+<a class="jxr_linenumber" name="L365" href="#L365">365</a> 		Inventor inventor = <strong class="jxr_keyword">new</strong> <a href="../../../../org/springframework/expression/spel/testresources/Inventor.html">Inventor</a>();
+<a class="jxr_linenumber" name="L366" href="#L366">366</a> 		StandardEvaluationContext inventorContext = <strong class="jxr_keyword">new</strong> <a href="../../../../org/springframework/expression/spel/support/StandardEvaluationContext.html">StandardEvaluationContext</a>();
+<a class="jxr_linenumber" name="L367" href="#L367">367</a> 		inventorContext.setRootObject(inventor);
+<a class="jxr_linenumber" name="L368" href="#L368">368</a> 
+<a class="jxr_linenumber" name="L369" href="#L369">369</a> 		parser.parseExpression(<span class="jxr_string">"foo"</span>).setValue(inventorContext, <span class="jxr_string">"Alexander Seovic2"</span>);
+<a class="jxr_linenumber" name="L370" href="#L370">370</a> 
+<a class="jxr_linenumber" name="L371" href="#L371">371</a> 		assertEquals(<span class="jxr_string">"Alexander Seovic2"</span>,parser.parseExpression(<span class="jxr_string">"foo"</span>).getValue(inventorContext,String.<strong class="jxr_keyword">class</strong>));
+<a class="jxr_linenumber" name="L372" href="#L372">372</a> 		<em class="jxr_comment">// alternatively</em>
+<a class="jxr_linenumber" name="L373" href="#L373">373</a> 
+<a class="jxr_linenumber" name="L374" href="#L374">374</a> 		String aleks = parser.parseExpression(<span class="jxr_string">"foo = 'Alexandar Seovic'"</span>).getValue(inventorContext, String.<strong class="jxr_keyword">class</strong>);
+<a class="jxr_linenumber" name="L375" href="#L375">375</a> 		assertEquals(<span class="jxr_string">"Alexandar Seovic"</span>,parser.parseExpression(<span class="jxr_string">"foo"</span>).getValue(inventorContext,String.<strong class="jxr_keyword">class</strong>));
+<a class="jxr_linenumber" name="L376" href="#L376">376</a> 		assertEquals(<span class="jxr_string">"Alexandar Seovic"</span>,aleks);
+<a class="jxr_linenumber" name="L377" href="#L377">377</a> 	}
+<a class="jxr_linenumber" name="L378" href="#L378">378</a> 
+<a class="jxr_linenumber" name="L379" href="#L379">379</a> 	<em class="jxr_comment">// 7.5.6</em>
+<a class="jxr_linenumber" name="L380" href="#L380">380</a> 
+<a class="jxr_linenumber" name="L381" href="#L381">381</a> 	@Test
+<a class="jxr_linenumber" name="L382" href="#L382">382</a> 	<strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testTypes() <strong class="jxr_keyword">throws</strong> Exception {
+<a class="jxr_linenumber" name="L383" href="#L383">383</a> 		Class&lt;?&gt; dateClass = parser.parseExpression(<span class="jxr_string">"T(java.util.Date)"</span>).getValue(Class.<strong class="jxr_keyword">class</strong>);
+<a class="jxr_linenumber" name="L384" href="#L384">384</a> 		assertEquals(Date.<strong class="jxr_keyword">class</strong>, dateClass);
+<a class="jxr_linenumber" name="L385" href="#L385">385</a> 		<strong class="jxr_keyword">boolean</strong> trueValue = parser.parseExpression(<span class="jxr_string">"T(java.math.RoundingMode).CEILING &lt; T(java.math.RoundingMode).FLOOR"</span>).getValue(Boolean.<strong class="jxr_keyword">class</strong>);
+<a class="jxr_linenumber" name="L386" href="#L386">386</a> 		assertTrue(trueValue);
+<a class="jxr_linenumber" name="L387" href="#L387">387</a> 	}
+<a class="jxr_linenumber" name="L388" href="#L388">388</a> 
+<a class="jxr_linenumber" name="L389" href="#L389">389</a> 	<em class="jxr_comment">// 7.5.7</em>
+<a class="jxr_linenumber" name="L390" href="#L390">390</a> 
+<a class="jxr_linenumber" name="L391" href="#L391">391</a> 	@Test
+<a class="jxr_linenumber" name="L392" href="#L392">392</a> 	<strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testConstructors() <strong class="jxr_keyword">throws</strong> Exception {
+<a class="jxr_linenumber" name="L393" href="#L393">393</a> 		StandardEvaluationContext societyContext = <strong class="jxr_keyword">new</strong> <a href="../../../../org/springframework/expression/spel/support/StandardEvaluationContext.html">StandardEvaluationContext</a>();
+<a class="jxr_linenumber" name="L394" href="#L394">394</a> 		societyContext.setRootObject(<strong class="jxr_keyword">new</strong> <a href="../../../../org/springframework/expression/spel/SpelDocumentationTests.html">IEEE</a>());
+<a class="jxr_linenumber" name="L395" href="#L395">395</a> 		Inventor einstein =
+<a class="jxr_linenumber" name="L396" href="#L396">396</a> 			   parser.parseExpression(<span class="jxr_string">"new org.springframework.expression.spel.testresources.Inventor('Albert Einstein',new java.util.Date(), 'German')"</span>).getValue(Inventor.<strong class="jxr_keyword">class</strong>);
+<a class="jxr_linenumber" name="L397" href="#L397">397</a> 		assertEquals(<span class="jxr_string">"Albert Einstein"</span>, einstein.getName());
+<a class="jxr_linenumber" name="L398" href="#L398">398</a> 		<em class="jxr_comment">//create new inventor instance within add method of List</em>
+<a class="jxr_linenumber" name="L399" href="#L399">399</a> 		parser.parseExpression(<span class="jxr_string">"Members2.add(new org.springframework.expression.spel.testresources.Inventor('Albert Einstein', 'German'))"</span>).getValue(societyContext);
+<a class="jxr_linenumber" name="L400" href="#L400">400</a> 	}
+<a class="jxr_linenumber" name="L401" href="#L401">401</a> 
+<a class="jxr_linenumber" name="L402" href="#L402">402</a> 	<em class="jxr_comment">// 7.5.8</em>
+<a class="jxr_linenumber" name="L403" href="#L403">403</a> 
+<a class="jxr_linenumber" name="L404" href="#L404">404</a> 	@Test
+<a class="jxr_linenumber" name="L405" href="#L405">405</a> 	<strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testVariables() <strong class="jxr_keyword">throws</strong> Exception {
+<a class="jxr_linenumber" name="L406" href="#L406">406</a> 		Inventor tesla = <strong class="jxr_keyword">new</strong> <a href="../../../../org/springframework/expression/spel/testresources/Inventor.html">Inventor</a>(<span class="jxr_string">"Nikola Tesla"</span>, <span class="jxr_string">"Serbian"</span>);
+<a class="jxr_linenumber" name="L407" href="#L407">407</a> 		StandardEvaluationContext context = <strong class="jxr_keyword">new</strong> <a href="../../../../org/springframework/expression/spel/support/StandardEvaluationContext.html">StandardEvaluationContext</a>();
+<a class="jxr_linenumber" name="L408" href="#L408">408</a> 		context.setVariable(<span class="jxr_string">"newName"</span>, <span class="jxr_string">"Mike Tesla"</span>);
+<a class="jxr_linenumber" name="L409" href="#L409">409</a> 
+<a class="jxr_linenumber" name="L410" href="#L410">410</a> 		context.setRootObject(tesla);
+<a class="jxr_linenumber" name="L411" href="#L411">411</a> 
+<a class="jxr_linenumber" name="L412" href="#L412">412</a> 		parser.parseExpression(<span class="jxr_string">"foo = #newName"</span>).getValue(context);
+<a class="jxr_linenumber" name="L413" href="#L413">413</a> 
+<a class="jxr_linenumber" name="L414" href="#L414">414</a> 		assertEquals(<span class="jxr_string">"Mike Tesla"</span>,tesla.getFoo());
+<a class="jxr_linenumber" name="L415" href="#L415">415</a> 	}
+<a class="jxr_linenumber" name="L416" href="#L416">416</a> 
+<a class="jxr_linenumber" name="L417" href="#L417">417</a> 	@SuppressWarnings(<span class="jxr_string">"unchecked"</span>)
+<a class="jxr_linenumber" name="L418" href="#L418">418</a> 	@Test
+<a class="jxr_linenumber" name="L419" href="#L419">419</a> 	<strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testSpecialVariables() <strong class="jxr_keyword">throws</strong> Exception {
+<a class="jxr_linenumber" name="L420" href="#L420">420</a> 		<em class="jxr_comment">// create an array of integers</em>
+<a class="jxr_linenumber" name="L421" href="#L421">421</a> 		List&lt;Integer&gt; primes = <strong class="jxr_keyword">new</strong> ArrayList&lt;Integer&gt;();
+<a class="jxr_linenumber" name="L422" href="#L422">422</a> 		primes.addAll(Arrays.asList(2,3,5,7,11,13,17));
+<a class="jxr_linenumber" name="L423" href="#L423">423</a> 
+<a class="jxr_linenumber" name="L424" href="#L424">424</a> 		<em class="jxr_comment">// create parser and set variable 'primes' as the array of integers</em>
+<a class="jxr_linenumber" name="L425" href="#L425">425</a> 		ExpressionParser parser = <strong class="jxr_keyword">new</strong> <a href="../../../../org/springframework/expression/spel/standard/SpelExpressionParser.html">SpelExpressionParser</a>();
+<a class="jxr_linenumber" name="L426" href="#L426">426</a> 		StandardEvaluationContext context = <strong class="jxr_keyword">new</strong> <a href="../../../../org/springframework/expression/spel/support/StandardEvaluationContext.html">StandardEvaluationContext</a>();
+<a class="jxr_linenumber" name="L427" href="#L427">427</a> 		context.setVariable(<span class="jxr_string">"primes"</span>,primes);
+<a class="jxr_linenumber" name="L428" href="#L428">428</a> 
+<a class="jxr_linenumber" name="L429" href="#L429">429</a> 		<em class="jxr_comment">// all prime numbers &gt; 10 from the list (using selection ?{...})</em>
+<a class="jxr_linenumber" name="L430" href="#L430">430</a> 		List&lt;Integer&gt; primesGreaterThanTen = (List&lt;Integer&gt;) parser.parseExpression(<span class="jxr_string">"#primes.?[#this&gt;10]"</span>).getValue(context);
+<a class="jxr_linenumber" name="L431" href="#L431">431</a> 		assertEquals(<span class="jxr_string">"[11, 13, 17]"</span>,primesGreaterThanTen.toString());
+<a class="jxr_linenumber" name="L432" href="#L432">432</a> 	}
+<a class="jxr_linenumber" name="L433" href="#L433">433</a> 
+<a class="jxr_linenumber" name="L434" href="#L434">434</a> 	<em class="jxr_comment">// 7.5.9</em>
+<a class="jxr_linenumber" name="L435" href="#L435">435</a> 
+<a class="jxr_linenumber" name="L436" href="#L436">436</a> 	@Test
+<a class="jxr_linenumber" name="L437" href="#L437">437</a> 	<strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testFunctions() <strong class="jxr_keyword">throws</strong> Exception {
+<a class="jxr_linenumber" name="L438" href="#L438">438</a> 		ExpressionParser parser = <strong class="jxr_keyword">new</strong> <a href="../../../../org/springframework/expression/spel/standard/SpelExpressionParser.html">SpelExpressionParser</a>();
+<a class="jxr_linenumber" name="L439" href="#L439">439</a> 		StandardEvaluationContext context = <strong class="jxr_keyword">new</strong> <a href="../../../../org/springframework/expression/spel/support/StandardEvaluationContext.html">StandardEvaluationContext</a>();
+<a class="jxr_linenumber" name="L440" href="#L440">440</a> 
+<a class="jxr_linenumber" name="L441" href="#L441">441</a> 		context.registerFunction(<span class="jxr_string">"reverseString"</span>, StringUtils.<strong class="jxr_keyword">class</strong>.getDeclaredMethod(
+<a class="jxr_linenumber" name="L442" href="#L442">442</a> 				<span class="jxr_string">"reverseString"</span>, <strong class="jxr_keyword">new</strong> Class[] { String.<strong class="jxr_keyword">class</strong> }));
+<a class="jxr_linenumber" name="L443" href="#L443">443</a> 
+<a class="jxr_linenumber" name="L444" href="#L444">444</a> 		String helloWorldReversed = parser.parseExpression(<span class="jxr_string">"#reverseString('hello world')"</span>).getValue(context, String.<strong class="jxr_keyword">class</strong>);
+<a class="jxr_linenumber" name="L445" href="#L445">445</a> 		assertEquals(<span class="jxr_string">"dlrow olleh"</span>,helloWorldReversed);
+<a class="jxr_linenumber" name="L446" href="#L446">446</a> 	}
+<a class="jxr_linenumber" name="L447" href="#L447">447</a> 
+<a class="jxr_linenumber" name="L448" href="#L448">448</a> 	<em class="jxr_comment">// 7.5.10</em>
+<a class="jxr_linenumber" name="L449" href="#L449">449</a> 
+<a class="jxr_linenumber" name="L450" href="#L450">450</a> 	@Test
+<a class="jxr_linenumber" name="L451" href="#L451">451</a> 	<strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testTernary() <strong class="jxr_keyword">throws</strong> Exception {
+<a class="jxr_linenumber" name="L452" href="#L452">452</a> 		String falseString = parser.parseExpression(<span class="jxr_string">"false ? 'trueExp' : 'falseExp'"</span>).getValue(String.<strong class="jxr_keyword">class</strong>);
+<a class="jxr_linenumber" name="L453" href="#L453">453</a> 		assertEquals(<span class="jxr_string">"falseExp"</span>,falseString);
+<a class="jxr_linenumber" name="L454" href="#L454">454</a> 
+<a class="jxr_linenumber" name="L455" href="#L455">455</a> 		StandardEvaluationContext societyContext = <strong class="jxr_keyword">new</strong> <a href="../../../../org/springframework/expression/spel/support/StandardEvaluationContext.html">StandardEvaluationContext</a>();
+<a class="jxr_linenumber" name="L456" href="#L456">456</a> 		societyContext.setRootObject(<strong class="jxr_keyword">new</strong> <a href="../../../../org/springframework/expression/spel/SpelDocumentationTests.html">IEEE</a>());
+<a class="jxr_linenumber" name="L457" href="#L457">457</a> 
+<a class="jxr_linenumber" name="L458" href="#L458">458</a> 
+<a class="jxr_linenumber" name="L459" href="#L459">459</a> 		parser.parseExpression(<span class="jxr_string">"Name"</span>).setValue(societyContext, <span class="jxr_string">"IEEE"</span>);
+<a class="jxr_linenumber" name="L460" href="#L460">460</a> 		societyContext.setVariable(<span class="jxr_string">"queryName"</span>, <span class="jxr_string">"Nikola Tesla"</span>);
+<a class="jxr_linenumber" name="L461" href="#L461">461</a> 
+<a class="jxr_linenumber" name="L462" href="#L462">462</a> 		String expression = <span class="jxr_string">"isMember(#queryName)? #queryName + ' is a member of the ' "</span>
+<a class="jxr_linenumber" name="L463" href="#L463">463</a> 				+ <span class="jxr_string">"+ Name + ' Society' : #queryName + ' is not a member of the ' + Name + ' Society'"</span>;
+<a class="jxr_linenumber" name="L464" href="#L464">464</a> 
+<a class="jxr_linenumber" name="L465" href="#L465">465</a> 		String queryResultString = parser.parseExpression(expression).getValue(societyContext, String.<strong class="jxr_keyword">class</strong>);
+<a class="jxr_linenumber" name="L466" href="#L466">466</a> 		assertEquals(<span class="jxr_string">"Nikola Tesla is a member of the IEEE Society"</span>,queryResultString);
+<a class="jxr_linenumber" name="L467" href="#L467">467</a> 		<em class="jxr_comment">// queryResultString = "Nikola Tesla is a member of the IEEE Society"</em>
+<a class="jxr_linenumber" name="L468" href="#L468">468</a> 	}
+<a class="jxr_linenumber" name="L469" href="#L469">469</a> 
+<a class="jxr_linenumber" name="L470" href="#L470">470</a> 	<em class="jxr_comment">// 7.5.11</em>
+<a class="jxr_linenumber" name="L471" href="#L471">471</a> 
+<a class="jxr_linenumber" name="L472" href="#L472">472</a> 	@SuppressWarnings(<span class="jxr_string">"unchecked"</span>)
+<a class="jxr_linenumber" name="L473" href="#L473">473</a> 	@Test
+<a class="jxr_linenumber" name="L474" href="#L474">474</a> 	<strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testSelection() <strong class="jxr_keyword">throws</strong> Exception {
+<a class="jxr_linenumber" name="L475" href="#L475">475</a> 		StandardEvaluationContext societyContext = <strong class="jxr_keyword">new</strong> <a href="../../../../org/springframework/expression/spel/support/StandardEvaluationContext.html">StandardEvaluationContext</a>();
+<a class="jxr_linenumber" name="L476" href="#L476">476</a> 		societyContext.setRootObject(<strong class="jxr_keyword">new</strong> <a href="../../../../org/springframework/expression/spel/SpelDocumentationTests.html">IEEE</a>());
+<a class="jxr_linenumber" name="L477" href="#L477">477</a> 		List&lt;Inventor&gt; list = (List&lt;Inventor&gt;) parser.parseExpression(<span class="jxr_string">"Members2.?[nationality == 'Serbian']"</span>).getValue(societyContext);
+<a class="jxr_linenumber" name="L478" href="#L478">478</a> 		assertEquals(1,list.size());
+<a class="jxr_linenumber" name="L479" href="#L479">479</a> 		assertEquals(<span class="jxr_string">"Nikola Tesla"</span>,list.get(0).getName());
+<a class="jxr_linenumber" name="L480" href="#L480">480</a> 	}
+<a class="jxr_linenumber" name="L481" href="#L481">481</a> 
+<a class="jxr_linenumber" name="L482" href="#L482">482</a> 	<em class="jxr_comment">// 7.5.12</em>
+<a class="jxr_linenumber" name="L483" href="#L483">483</a> 
+<a class="jxr_linenumber" name="L484" href="#L484">484</a> 	@Test
+<a class="jxr_linenumber" name="L485" href="#L485">485</a> 	<strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testTemplating() <strong class="jxr_keyword">throws</strong> Exception {
+<a class="jxr_linenumber" name="L486" href="#L486">486</a> 		String randomPhrase =
+<a class="jxr_linenumber" name="L487" href="#L487">487</a> 			   parser.parseExpression(<span class="jxr_string">"random number is ${T(java.lang.Math).random()}"</span>, <strong class="jxr_keyword">new</strong> <a href="../../../../org/springframework/expression/spel/SpelDocumentationTests.html">TemplatedParserContext</a>()).getValue(String.<strong class="jxr_keyword">class</strong>);
+<a class="jxr_linenumber" name="L488" href="#L488">488</a> 		assertTrue(randomPhrase.startsWith(<span class="jxr_string">"random number"</span>));
+<a class="jxr_linenumber" name="L489" href="#L489">489</a> 	}
+<a class="jxr_linenumber" name="L490" href="#L490">490</a> 
+<a class="jxr_linenumber" name="L491" href="#L491">491</a> 	<strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">class</strong> <a href="../../../../org/springframework/expression/spel/SpelDocumentationTests.html">TemplatedParserContext</a> <strong class="jxr_keyword">implements</strong> <a href="../../../../org/springframework/expression/ParserContext.html">ParserContext</a> {
+<a class="jxr_linenumber" name="L492" href="#L492">492</a> 
+<a class="jxr_linenumber" name="L493" href="#L493">493</a> 		@Override
+<a class="jxr_linenumber" name="L494" href="#L494">494</a> 		<strong class="jxr_keyword">public</strong> String getExpressionPrefix() {
+<a class="jxr_linenumber" name="L495" href="#L495">495</a> 			<strong class="jxr_keyword">return</strong> <span class="jxr_string">"${"</span>;
+<a class="jxr_linenumber" name="L496" href="#L496">496</a> 		}
+<a class="jxr_linenumber" name="L497" href="#L497">497</a> 
+<a class="jxr_linenumber" name="L498" href="#L498">498</a> 		@Override
+<a class="jxr_linenumber" name="L499" href="#L499">499</a> 		<strong class="jxr_keyword">public</strong> String getExpressionSuffix() {
+<a class="jxr_linenumber" name="L500" href="#L500">500</a> 			<strong class="jxr_keyword">return</strong> <span class="jxr_string">"}"</span>;
+<a class="jxr_linenumber" name="L501" href="#L501">501</a> 		}
+<a class="jxr_linenumber" name="L502" href="#L502">502</a> 
+<a class="jxr_linenumber" name="L503" href="#L503">503</a> 		@Override
+<a class="jxr_linenumber" name="L504" href="#L504">504</a> 		<strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">boolean</strong> isTemplate() {
+<a class="jxr_linenumber" name="L505" href="#L505">505</a> 			<strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">true</strong>;
+<a class="jxr_linenumber" name="L506" href="#L506">506</a> 		}
+<a class="jxr_linenumber" name="L507" href="#L507">507</a> 	}
+<a class="jxr_linenumber" name="L508" href="#L508">508</a> 
+<a class="jxr_linenumber" name="L509" href="#L509">509</a> 	<strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">class</strong> <a href="../../../../org/springframework/expression/spel/SpelDocumentationTests.html">StringUtils</a> {
+<a class="jxr_linenumber" name="L510" href="#L510">510</a> 
+<a class="jxr_linenumber" name="L511" href="#L511">511</a> 		<strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">static</strong> String reverseString(String input) {
+<a class="jxr_linenumber" name="L512" href="#L512">512</a> 			StringBuilder backwards = <strong class="jxr_keyword">new</strong> StringBuilder();
+<a class="jxr_linenumber" name="L513" href="#L513">513</a> 			<strong class="jxr_keyword">for</strong> (<strong class="jxr_keyword">int</strong> i = 0; i &lt; input.length(); i++) {
+<a class="jxr_linenumber" name="L514" href="#L514">514</a> 				backwards.append(input.charAt(input.length() - 1 - i));
+<a class="jxr_linenumber" name="L515" href="#L515">515</a> 			}
+<a class="jxr_linenumber" name="L516" href="#L516">516</a> 			<strong class="jxr_keyword">return</strong> backwards.toString();
+<a class="jxr_linenumber" name="L517" href="#L517">517</a> 		}
+<a class="jxr_linenumber" name="L518" href="#L518">518</a> 	}
+<a class="jxr_linenumber" name="L519" href="#L519">519</a> 
+<a class="jxr_linenumber" name="L520" href="#L520">520</a> }
+<a class="jxr_linenumber" name="L521" href="#L521">521</a> 
+</pre>
+<hr/>
+<div id="footer">Copyright &#169; 2015. All rights reserved.</div>
+</body>
+</html>

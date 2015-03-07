@@ -1,0 +1,122 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head><meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+<title>RestHealthAction xref</title>
+<link type="text/css" rel="stylesheet" href="../../../../../stylesheet.css" />
+</head>
+<body>
+<div id="overview"><a href="../../../../../../../../../../apidocs/org/elasticsearch/rest/action/cat/RestHealthAction.html">View Javadoc</a></div><pre>
+<a class="jxr_linenumber" name="L1" href="#L1">1</a>   <em class="jxr_comment">/*</em>
+<a class="jxr_linenumber" name="L2" href="#L2">2</a>   <em class="jxr_comment"> * Licensed to Elasticsearch under one or more contributor</em>
+<a class="jxr_linenumber" name="L3" href="#L3">3</a>   <em class="jxr_comment"> * license agreements. See the NOTICE file distributed with</em>
+<a class="jxr_linenumber" name="L4" href="#L4">4</a>   <em class="jxr_comment"> * this work for additional information regarding copyright</em>
+<a class="jxr_linenumber" name="L5" href="#L5">5</a>   <em class="jxr_comment"> * ownership. Elasticsearch licenses this file to you under</em>
+<a class="jxr_linenumber" name="L6" href="#L6">6</a>   <em class="jxr_comment"> * the Apache License, Version 2.0 (the "License"); you may</em>
+<a class="jxr_linenumber" name="L7" href="#L7">7</a>   <em class="jxr_comment"> * not use this file except in compliance with the License.</em>
+<a class="jxr_linenumber" name="L8" href="#L8">8</a>   <em class="jxr_comment"> * You may obtain a copy of the License at</em>
+<a class="jxr_linenumber" name="L9" href="#L9">9</a>   <em class="jxr_comment"> *</em>
+<a class="jxr_linenumber" name="L10" href="#L10">10</a>  <em class="jxr_comment"> *    <a href="http://www.apache.org/licenses/LICENSE-2." target="alexandria_uri">http://www.apache.org/licenses/LICENSE-2.</a>0</em>
+<a class="jxr_linenumber" name="L11" href="#L11">11</a>  <em class="jxr_comment"> *</em>
+<a class="jxr_linenumber" name="L12" href="#L12">12</a>  <em class="jxr_comment"> * Unless required by applicable law or agreed to in writing,</em>
+<a class="jxr_linenumber" name="L13" href="#L13">13</a>  <em class="jxr_comment"> * software distributed under the License is distributed on an</em>
+<a class="jxr_linenumber" name="L14" href="#L14">14</a>  <em class="jxr_comment"> * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY</em>
+<a class="jxr_linenumber" name="L15" href="#L15">15</a>  <em class="jxr_comment"> * KIND, either express or implied.  See the License for the</em>
+<a class="jxr_linenumber" name="L16" href="#L16">16</a>  <em class="jxr_comment"> * specific language governing permissions and limitations</em>
+<a class="jxr_linenumber" name="L17" href="#L17">17</a>  <em class="jxr_comment"> * under the License.</em>
+<a class="jxr_linenumber" name="L18" href="#L18">18</a>  <em class="jxr_comment"> */</em>
+<a class="jxr_linenumber" name="L19" href="#L19">19</a>  
+<a class="jxr_linenumber" name="L20" href="#L20">20</a>  <strong class="jxr_keyword">package</strong> org.elasticsearch.<strong class="jxr_keyword">rest</strong>.action.cat;
+<a class="jxr_linenumber" name="L21" href="#L21">21</a>  
+<a class="jxr_linenumber" name="L22" href="#L22">22</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.action.admin.cluster.health.ClusterHealthRequest;
+<a class="jxr_linenumber" name="L23" href="#L23">23</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.action.admin.cluster.health.ClusterHealthResponse;
+<a class="jxr_linenumber" name="L24" href="#L24">24</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.client.Client;
+<a class="jxr_linenumber" name="L25" href="#L25">25</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.common.Table;
+<a class="jxr_linenumber" name="L26" href="#L26">26</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.common.inject.Inject;
+<a class="jxr_linenumber" name="L27" href="#L27">27</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.common.settings.Settings;
+<a class="jxr_linenumber" name="L28" href="#L28">28</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.<strong class="jxr_keyword">rest</strong>.RestChannel;
+<a class="jxr_linenumber" name="L29" href="#L29">29</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.<strong class="jxr_keyword">rest</strong>.RestController;
+<a class="jxr_linenumber" name="L30" href="#L30">30</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.<strong class="jxr_keyword">rest</strong>.RestRequest;
+<a class="jxr_linenumber" name="L31" href="#L31">31</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.<strong class="jxr_keyword">rest</strong>.RestResponse;
+<a class="jxr_linenumber" name="L32" href="#L32">32</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.<strong class="jxr_keyword">rest</strong>.action.support.RestResponseListener;
+<a class="jxr_linenumber" name="L33" href="#L33">33</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.<strong class="jxr_keyword">rest</strong>.action.support.RestTable;
+<a class="jxr_linenumber" name="L34" href="#L34">34</a>  <strong class="jxr_keyword">import</strong> org.joda.time.format.DateTimeFormat;
+<a class="jxr_linenumber" name="L35" href="#L35">35</a>  <strong class="jxr_keyword">import</strong> org.joda.time.format.DateTimeFormatter;
+<a class="jxr_linenumber" name="L36" href="#L36">36</a>  
+<a class="jxr_linenumber" name="L37" href="#L37">37</a>  <strong class="jxr_keyword">import</strong> java.util.Locale;
+<a class="jxr_linenumber" name="L38" href="#L38">38</a>  <strong class="jxr_keyword">import</strong> java.util.concurrent.TimeUnit;
+<a class="jxr_linenumber" name="L39" href="#L39">39</a>  
+<a class="jxr_linenumber" name="L40" href="#L40">40</a>  <strong class="jxr_keyword">import</strong> <strong class="jxr_keyword">static</strong> org.elasticsearch.<strong class="jxr_keyword">rest</strong>.RestRequest.Method.GET;
+<a class="jxr_linenumber" name="L41" href="#L41">41</a>  
+<a class="jxr_linenumber" name="L42" href="#L42">42</a>  <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">class</strong> <a href="../../../../../org/elasticsearch/rest/action/cat/RestHealthAction.html">RestHealthAction</a> <strong class="jxr_keyword">extends</strong> <a href="../../../../../org/elasticsearch/rest/action/cat/AbstractCatAction.html">AbstractCatAction</a> {
+<a class="jxr_linenumber" name="L43" href="#L43">43</a>  
+<a class="jxr_linenumber" name="L44" href="#L44">44</a>      @Inject
+<a class="jxr_linenumber" name="L45" href="#L45">45</a>      <strong class="jxr_keyword">public</strong> <a href="../../../../../org/elasticsearch/rest/action/cat/RestHealthAction.html">RestHealthAction</a>(<a href="../../../../../org/elasticsearch/common/settings/Settings.html">Settings</a> settings, <a href="../../../../../org/elasticsearch/rest/RestController.html">RestController</a> controller, <a href="../../../../../org/elasticsearch/client/Client.html">Client</a> client) {
+<a class="jxr_linenumber" name="L46" href="#L46">46</a>          <strong class="jxr_keyword">super</strong>(settings, controller, client);
+<a class="jxr_linenumber" name="L47" href="#L47">47</a>          controller.registerHandler(GET, <span class="jxr_string">"/_cat/health"</span>, <strong class="jxr_keyword">this</strong>);
+<a class="jxr_linenumber" name="L48" href="#L48">48</a>      }
+<a class="jxr_linenumber" name="L49" href="#L49">49</a>  
+<a class="jxr_linenumber" name="L50" href="#L50">50</a>      @Override
+<a class="jxr_linenumber" name="L51" href="#L51">51</a>      <strong class="jxr_keyword">void</strong> documentation(StringBuilder sb) {
+<a class="jxr_linenumber" name="L52" href="#L52">52</a>          sb.append(<span class="jxr_string">"/_cat/health\n"</span>);
+<a class="jxr_linenumber" name="L53" href="#L53">53</a>      }
+<a class="jxr_linenumber" name="L54" href="#L54">54</a>  
+<a class="jxr_linenumber" name="L55" href="#L55">55</a>      @Override
+<a class="jxr_linenumber" name="L56" href="#L56">56</a>      <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> doRequest(<strong class="jxr_keyword">final</strong> <a href="../../../../../org/elasticsearch/rest/RestRequest.html">RestRequest</a> request, <strong class="jxr_keyword">final</strong> <a href="../../../../../org/elasticsearch/rest/RestChannel.html">RestChannel</a> channel, <strong class="jxr_keyword">final</strong> <a href="../../../../../org/elasticsearch/client/Client.html">Client</a> client) {
+<a class="jxr_linenumber" name="L57" href="#L57">57</a>          <a href="../../../../../org/elasticsearch/action/admin/cluster/health/ClusterHealthRequest.html">ClusterHealthRequest</a> clusterHealthRequest = <strong class="jxr_keyword">new</strong> <a href="../../../../../org/elasticsearch/action/admin/cluster/health/ClusterHealthRequest.html">ClusterHealthRequest</a>();
+<a class="jxr_linenumber" name="L58" href="#L58">58</a>  
+<a class="jxr_linenumber" name="L59" href="#L59">59</a>          client.admin().cluster().health(clusterHealthRequest, <strong class="jxr_keyword">new</strong> RestResponseListener&lt;ClusterHealthResponse&gt;(channel) {
+<a class="jxr_linenumber" name="L60" href="#L60">60</a>              @Override
+<a class="jxr_linenumber" name="L61" href="#L61">61</a>              <strong class="jxr_keyword">public</strong> <a href="../../../../../org/elasticsearch/rest/RestResponse.html">RestResponse</a> buildResponse(<strong class="jxr_keyword">final</strong> <a href="../../../../../org/elasticsearch/action/admin/cluster/health/ClusterHealthResponse.html">ClusterHealthResponse</a> health) <strong class="jxr_keyword">throws</strong> Exception {
+<a class="jxr_linenumber" name="L62" href="#L62">62</a>                  <strong class="jxr_keyword">return</strong> RestTable.buildResponse(buildTable(health, request), channel);
+<a class="jxr_linenumber" name="L63" href="#L63">63</a>              }
+<a class="jxr_linenumber" name="L64" href="#L64">64</a>          });
+<a class="jxr_linenumber" name="L65" href="#L65">65</a>      }
+<a class="jxr_linenumber" name="L66" href="#L66">66</a>  
+<a class="jxr_linenumber" name="L67" href="#L67">67</a>      @Override
+<a class="jxr_linenumber" name="L68" href="#L68">68</a>      <a href="../../../../../org/elasticsearch/common/Table.html">Table</a> getTableWithHeader(<strong class="jxr_keyword">final</strong> <a href="../../../../../org/elasticsearch/rest/RestRequest.html">RestRequest</a> request) {
+<a class="jxr_linenumber" name="L69" href="#L69">69</a>          <a href="../../../../../org/elasticsearch/common/Table.html">Table</a> t = <strong class="jxr_keyword">new</strong> <a href="../../../../../org/elasticsearch/common/Table.html">Table</a>();
+<a class="jxr_linenumber" name="L70" href="#L70">70</a>          t.startHeaders();
+<a class="jxr_linenumber" name="L71" href="#L71">71</a>          t.addCell(<span class="jxr_string">"epoch"</span>, <span class="jxr_string">"alias:t,time;desc:seconds since 1970-01-01 00:00:00"</span>);
+<a class="jxr_linenumber" name="L72" href="#L72">72</a>          t.addCell(<span class="jxr_string">"timestamp"</span>, <span class="jxr_string">"alias:ts,hms,hhmmss;desc:time in HH:MM:SS"</span>);
+<a class="jxr_linenumber" name="L73" href="#L73">73</a>          t.addCell(<span class="jxr_string">"cluster"</span>, <span class="jxr_string">"alias:cl;desc:cluster name"</span>);
+<a class="jxr_linenumber" name="L74" href="#L74">74</a>          t.addCell(<span class="jxr_string">"status"</span>, <span class="jxr_string">"alias:st;desc:health status"</span>);
+<a class="jxr_linenumber" name="L75" href="#L75">75</a>          t.addCell(<span class="jxr_string">"node.total"</span>, <span class="jxr_string">"alias:nt,nodeTotal;text-align:right;desc:total number of nodes"</span>);
+<a class="jxr_linenumber" name="L76" href="#L76">76</a>          t.addCell(<span class="jxr_string">"node.data"</span>, <span class="jxr_string">"alias:nd,nodeData;text-align:right;desc:number of nodes that can store data"</span>);
+<a class="jxr_linenumber" name="L77" href="#L77">77</a>          t.addCell(<span class="jxr_string">"shards"</span>, <span class="jxr_string">"alias:t,sh,shards.total,shardsTotal;text-align:right;desc:total number of shards"</span>);
+<a class="jxr_linenumber" name="L78" href="#L78">78</a>          t.addCell(<span class="jxr_string">"pri"</span>, <span class="jxr_string">"alias:p,shards.primary,shardsPrimary;text-align:right;desc:number of primary shards"</span>);
+<a class="jxr_linenumber" name="L79" href="#L79">79</a>          t.addCell(<span class="jxr_string">"relo"</span>, <span class="jxr_string">"alias:r,shards.relocating,shardsRelocating;text-align:right;desc:number of relocating nodes"</span>);
+<a class="jxr_linenumber" name="L80" href="#L80">80</a>          t.addCell(<span class="jxr_string">"init"</span>, <span class="jxr_string">"alias:i,shards.initializing,shardsInitializing;text-align:right;desc:number of initializing nodes"</span>);
+<a class="jxr_linenumber" name="L81" href="#L81">81</a>          t.addCell(<span class="jxr_string">"unassign"</span>, <span class="jxr_string">"alias:u,shards.unassigned,shardsUnassigned;text-align:right;desc:number of unassigned shards"</span>);
+<a class="jxr_linenumber" name="L82" href="#L82">82</a>          t.addCell(<span class="jxr_string">"pending_tasks"</span>, <span class="jxr_string">"alias:pt,pendingTasks;text-align:right;desc:number of pending tasks"</span>);
+<a class="jxr_linenumber" name="L83" href="#L83">83</a>          t.endHeaders();
+<a class="jxr_linenumber" name="L84" href="#L84">84</a>  
+<a class="jxr_linenumber" name="L85" href="#L85">85</a>          <strong class="jxr_keyword">return</strong> t;
+<a class="jxr_linenumber" name="L86" href="#L86">86</a>      }
+<a class="jxr_linenumber" name="L87" href="#L87">87</a>  
+<a class="jxr_linenumber" name="L88" href="#L88">88</a>      <strong class="jxr_keyword">private</strong> DateTimeFormatter dateFormat = DateTimeFormat.forPattern(<span class="jxr_string">"HH:mm:ss"</span>);
+<a class="jxr_linenumber" name="L89" href="#L89">89</a>  
+<a class="jxr_linenumber" name="L90" href="#L90">90</a>      <strong class="jxr_keyword">private</strong> <a href="../../../../../org/elasticsearch/common/Table.html">Table</a> buildTable(<strong class="jxr_keyword">final</strong> <a href="../../../../../org/elasticsearch/action/admin/cluster/health/ClusterHealthResponse.html">ClusterHealthResponse</a> health, <strong class="jxr_keyword">final</strong> <a href="../../../../../org/elasticsearch/rest/RestRequest.html">RestRequest</a> request) {
+<a class="jxr_linenumber" name="L91" href="#L91">91</a>          <strong class="jxr_keyword">long</strong> time = System.currentTimeMillis();
+<a class="jxr_linenumber" name="L92" href="#L92">92</a>          <a href="../../../../../org/elasticsearch/common/Table.html">Table</a> t = getTableWithHeader(request);
+<a class="jxr_linenumber" name="L93" href="#L93">93</a>          t.startRow();
+<a class="jxr_linenumber" name="L94" href="#L94">94</a>          t.addCell(TimeUnit.SECONDS.convert(time, TimeUnit.MILLISECONDS));
+<a class="jxr_linenumber" name="L95" href="#L95">95</a>          t.addCell(dateFormat.print(time));
+<a class="jxr_linenumber" name="L96" href="#L96">96</a>          t.addCell(health.getClusterName());
+<a class="jxr_linenumber" name="L97" href="#L97">97</a>          t.addCell(health.getStatus().name().toLowerCase(Locale.ROOT));
+<a class="jxr_linenumber" name="L98" href="#L98">98</a>          t.addCell(health.getNumberOfNodes());
+<a class="jxr_linenumber" name="L99" href="#L99">99</a>          t.addCell(health.getNumberOfDataNodes());
+<a class="jxr_linenumber" name="L100" href="#L100">100</a>         t.addCell(health.getActiveShards());
+<a class="jxr_linenumber" name="L101" href="#L101">101</a>         t.addCell(health.getActivePrimaryShards());
+<a class="jxr_linenumber" name="L102" href="#L102">102</a>         t.addCell(health.getRelocatingShards());
+<a class="jxr_linenumber" name="L103" href="#L103">103</a>         t.addCell(health.getInitializingShards());
+<a class="jxr_linenumber" name="L104" href="#L104">104</a>         t.addCell(health.getUnassignedShards());
+<a class="jxr_linenumber" name="L105" href="#L105">105</a>         t.addCell(health.getNumberOfPendingTasks());
+<a class="jxr_linenumber" name="L106" href="#L106">106</a>         t.endRow();
+<a class="jxr_linenumber" name="L107" href="#L107">107</a>         <strong class="jxr_keyword">return</strong> t;
+<a class="jxr_linenumber" name="L108" href="#L108">108</a>     }
+<a class="jxr_linenumber" name="L109" href="#L109">109</a> }
+</pre>
+<hr/>
+<div id="footer">Copyright &#169; 2015. All rights reserved.</div>
+</body>
+</html>

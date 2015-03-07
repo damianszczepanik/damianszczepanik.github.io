@@ -1,0 +1,515 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head><meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+<title>BasePolygonBuilder xref</title>
+<link type="text/css" rel="stylesheet" href="../../../../../stylesheet.css" />
+</head>
+<body>
+<div id="overview"><a href="../../../../../../../../../../apidocs/org/elasticsearch/common/geo/builders/BasePolygonBuilder.html">View Javadoc</a></div><pre>
+<a class="jxr_linenumber" name="L1" href="#L1">1</a>   <em class="jxr_comment">/*</em>
+<a class="jxr_linenumber" name="L2" href="#L2">2</a>   <em class="jxr_comment"> * Licensed to Elasticsearch under one or more contributor</em>
+<a class="jxr_linenumber" name="L3" href="#L3">3</a>   <em class="jxr_comment"> * license agreements. See the NOTICE file distributed with</em>
+<a class="jxr_linenumber" name="L4" href="#L4">4</a>   <em class="jxr_comment"> * this work for additional information regarding copyright</em>
+<a class="jxr_linenumber" name="L5" href="#L5">5</a>   <em class="jxr_comment"> * ownership. Elasticsearch licenses this file to you under</em>
+<a class="jxr_linenumber" name="L6" href="#L6">6</a>   <em class="jxr_comment"> * the Apache License, Version 2.0 (the "License"); you may</em>
+<a class="jxr_linenumber" name="L7" href="#L7">7</a>   <em class="jxr_comment"> * not use this file except in compliance with the License.</em>
+<a class="jxr_linenumber" name="L8" href="#L8">8</a>   <em class="jxr_comment"> * You may obtain a copy of the License at</em>
+<a class="jxr_linenumber" name="L9" href="#L9">9</a>   <em class="jxr_comment"> *</em>
+<a class="jxr_linenumber" name="L10" href="#L10">10</a>  <em class="jxr_comment"> *    <a href="http://www.apache.org/licenses/LICENSE-2." target="alexandria_uri">http://www.apache.org/licenses/LICENSE-2.</a>0</em>
+<a class="jxr_linenumber" name="L11" href="#L11">11</a>  <em class="jxr_comment"> *</em>
+<a class="jxr_linenumber" name="L12" href="#L12">12</a>  <em class="jxr_comment"> * Unless required by applicable law or agreed to in writing,</em>
+<a class="jxr_linenumber" name="L13" href="#L13">13</a>  <em class="jxr_comment"> * software distributed under the License is distributed on an</em>
+<a class="jxr_linenumber" name="L14" href="#L14">14</a>  <em class="jxr_comment"> * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY</em>
+<a class="jxr_linenumber" name="L15" href="#L15">15</a>  <em class="jxr_comment"> * KIND, either express or implied.  See the License for the</em>
+<a class="jxr_linenumber" name="L16" href="#L16">16</a>  <em class="jxr_comment"> * specific language governing permissions and limitations</em>
+<a class="jxr_linenumber" name="L17" href="#L17">17</a>  <em class="jxr_comment"> * under the License.</em>
+<a class="jxr_linenumber" name="L18" href="#L18">18</a>  <em class="jxr_comment"> */</em>
+<a class="jxr_linenumber" name="L19" href="#L19">19</a>  
+<a class="jxr_linenumber" name="L20" href="#L20">20</a>  <strong class="jxr_keyword">package</strong> org.elasticsearch.common.geo.builders;
+<a class="jxr_linenumber" name="L21" href="#L21">21</a>  
+<a class="jxr_linenumber" name="L22" href="#L22">22</a>  <strong class="jxr_keyword">import</strong> com.spatial4j.core.shape.Shape;
+<a class="jxr_linenumber" name="L23" href="#L23">23</a>  <strong class="jxr_keyword">import</strong> com.vividsolutions.jts.geom.*;
+<a class="jxr_linenumber" name="L24" href="#L24">24</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.ElasticsearchParseException;
+<a class="jxr_linenumber" name="L25" href="#L25">25</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.common.xcontent.XContentBuilder;
+<a class="jxr_linenumber" name="L26" href="#L26">26</a>  
+<a class="jxr_linenumber" name="L27" href="#L27">27</a>  <strong class="jxr_keyword">import</strong> java.io.IOException;
+<a class="jxr_linenumber" name="L28" href="#L28">28</a>  <strong class="jxr_keyword">import</strong> java.util.ArrayList;
+<a class="jxr_linenumber" name="L29" href="#L29">29</a>  <strong class="jxr_keyword">import</strong> java.util.Arrays;
+<a class="jxr_linenumber" name="L30" href="#L30">30</a>  <strong class="jxr_keyword">import</strong> java.util.Iterator;
+<a class="jxr_linenumber" name="L31" href="#L31">31</a>  
+<a class="jxr_linenumber" name="L32" href="#L32">32</a>  <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="L33" href="#L33">33</a>  <em class="jxr_javadoccomment"> * The {@link BasePolygonBuilder} implements the groundwork to create polygons. This contains</em>
+<a class="jxr_linenumber" name="L34" href="#L34">34</a>  <em class="jxr_javadoccomment"> * Methods to wrap polygons at the dateline and building shapes from the data held by the</em>
+<a class="jxr_linenumber" name="L35" href="#L35">35</a>  <em class="jxr_javadoccomment"> * builder.</em>
+<a class="jxr_linenumber" name="L36" href="#L36">36</a>  <em class="jxr_javadoccomment"> * Since this Builder can be embedded to other builders (i.e. {@link MultiPolygonBuilder}) </em>
+<a class="jxr_linenumber" name="L37" href="#L37">37</a>  <em class="jxr_javadoccomment"> * the class of the embedding builder is given by the generic argument &lt;code&gt;E&lt;/code&gt;  </em>
+<a class="jxr_linenumber" name="L38" href="#L38">38</a>  
+<a class="jxr_linenumber" name="L39" href="#L39">39</a>  <em class="jxr_javadoccomment"> * @param &lt;E&gt; type of the embedding class</em>
+<a class="jxr_linenumber" name="L40" href="#L40">40</a>  <em class="jxr_javadoccomment"> */</em>
+<a class="jxr_linenumber" name="L41" href="#L41">41</a>  <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">abstract</strong> <strong class="jxr_keyword">class</strong> BasePolygonBuilder&lt;E <strong class="jxr_keyword">extends</strong> BasePolygonBuilder&lt;E&gt;&gt; <strong class="jxr_keyword">extends</strong> <a href="../../../../../org/elasticsearch/common/geo/builders/ShapeBuilder.html">ShapeBuilder</a> {
+<a class="jxr_linenumber" name="L42" href="#L42">42</a>  
+<a class="jxr_linenumber" name="L43" href="#L43">43</a>      <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">final</strong> <a href="../../../../../org/elasticsearch/common/geo/builders/ShapeBuilder.html">GeoShapeType</a> TYPE = GeoShapeType.POLYGON;
+<a class="jxr_linenumber" name="L44" href="#L44">44</a>  
+<a class="jxr_linenumber" name="L45" href="#L45">45</a>      <em class="jxr_comment">// Linear ring defining the shell of the polygon</em>
+<a class="jxr_linenumber" name="L46" href="#L46">46</a>      <strong class="jxr_keyword">protected</strong> Ring&lt;E&gt; shell; 
+<a class="jxr_linenumber" name="L47" href="#L47">47</a>  
+<a class="jxr_linenumber" name="L48" href="#L48">48</a>      <em class="jxr_comment">// List of linear rings defining the holes of the polygon </em>
+<a class="jxr_linenumber" name="L49" href="#L49">49</a>      <strong class="jxr_keyword">protected</strong> <strong class="jxr_keyword">final</strong> ArrayList&lt;BaseLineStringBuilder&lt;?&gt;&gt; holes = <strong class="jxr_keyword">new</strong> ArrayList&lt;&gt;();
+<a class="jxr_linenumber" name="L50" href="#L50">50</a>  
+<a class="jxr_linenumber" name="L51" href="#L51">51</a>      <strong class="jxr_keyword">public</strong> <a href="../../../../../org/elasticsearch/common/geo/builders/BasePolygonBuilder.html">BasePolygonBuilder</a>(<a href="../../../../../org/elasticsearch/common/geo/builders/ShapeBuilder.html">Orientation</a> orientation) {
+<a class="jxr_linenumber" name="L52" href="#L52">52</a>          <strong class="jxr_keyword">super</strong>(orientation);
+<a class="jxr_linenumber" name="L53" href="#L53">53</a>      }
+<a class="jxr_linenumber" name="L54" href="#L54">54</a>  
+<a class="jxr_linenumber" name="L55" href="#L55">55</a>      @SuppressWarnings(<span class="jxr_string">"unchecked"</span>)
+<a class="jxr_linenumber" name="L56" href="#L56">56</a>      <strong class="jxr_keyword">private</strong> E thisRef() {
+<a class="jxr_linenumber" name="L57" href="#L57">57</a>          <strong class="jxr_keyword">return</strong> (E)<strong class="jxr_keyword">this</strong>;
+<a class="jxr_linenumber" name="L58" href="#L58">58</a>      }
+<a class="jxr_linenumber" name="L59" href="#L59">59</a>      
+<a class="jxr_linenumber" name="L60" href="#L60">60</a>      <strong class="jxr_keyword">public</strong> E point(<strong class="jxr_keyword">double</strong> longitude, <strong class="jxr_keyword">double</strong> latitude) {
+<a class="jxr_linenumber" name="L61" href="#L61">61</a>          shell.point(longitude, latitude);
+<a class="jxr_linenumber" name="L62" href="#L62">62</a>          <strong class="jxr_keyword">return</strong> thisRef();
+<a class="jxr_linenumber" name="L63" href="#L63">63</a>      }
+<a class="jxr_linenumber" name="L64" href="#L64">64</a>  
+<a class="jxr_linenumber" name="L65" href="#L65">65</a>      <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="L66" href="#L66">66</a>  <em class="jxr_javadoccomment">     * Add a point to the shell of the polygon</em>
+<a class="jxr_linenumber" name="L67" href="#L67">67</a>  <em class="jxr_javadoccomment">     * @param coordinate coordinate of the new point</em>
+<a class="jxr_linenumber" name="L68" href="#L68">68</a>  <em class="jxr_javadoccomment">     * @return this</em>
+<a class="jxr_linenumber" name="L69" href="#L69">69</a>  <em class="jxr_javadoccomment">     */</em>
+<a class="jxr_linenumber" name="L70" href="#L70">70</a>      <strong class="jxr_keyword">public</strong> E point(Coordinate coordinate) {
+<a class="jxr_linenumber" name="L71" href="#L71">71</a>          shell.point(coordinate);
+<a class="jxr_linenumber" name="L72" href="#L72">72</a>          <strong class="jxr_keyword">return</strong> thisRef();
+<a class="jxr_linenumber" name="L73" href="#L73">73</a>      }
+<a class="jxr_linenumber" name="L74" href="#L74">74</a>  
+<a class="jxr_linenumber" name="L75" href="#L75">75</a>      <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="L76" href="#L76">76</a>  <em class="jxr_javadoccomment">     * Add a array of points to the shell of the polygon</em>
+<a class="jxr_linenumber" name="L77" href="#L77">77</a>  <em class="jxr_javadoccomment">     * @param coordinates coordinates of the new points to add</em>
+<a class="jxr_linenumber" name="L78" href="#L78">78</a>  <em class="jxr_javadoccomment">     * @return this</em>
+<a class="jxr_linenumber" name="L79" href="#L79">79</a>  <em class="jxr_javadoccomment">     */</em>
+<a class="jxr_linenumber" name="L80" href="#L80">80</a>      <strong class="jxr_keyword">public</strong> E points(Coordinate...coordinates) {
+<a class="jxr_linenumber" name="L81" href="#L81">81</a>          shell.points(coordinates);
+<a class="jxr_linenumber" name="L82" href="#L82">82</a>          <strong class="jxr_keyword">return</strong> thisRef();
+<a class="jxr_linenumber" name="L83" href="#L83">83</a>      }
+<a class="jxr_linenumber" name="L84" href="#L84">84</a>  
+<a class="jxr_linenumber" name="L85" href="#L85">85</a>      <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="L86" href="#L86">86</a>  <em class="jxr_javadoccomment">     * Add a new hole to the polygon</em>
+<a class="jxr_linenumber" name="L87" href="#L87">87</a>  <em class="jxr_javadoccomment">     * @param hole linear ring defining the hole</em>
+<a class="jxr_linenumber" name="L88" href="#L88">88</a>  <em class="jxr_javadoccomment">     * @return this</em>
+<a class="jxr_linenumber" name="L89" href="#L89">89</a>  <em class="jxr_javadoccomment">     */</em>
+<a class="jxr_linenumber" name="L90" href="#L90">90</a>      <strong class="jxr_keyword">public</strong> E hole(BaseLineStringBuilder&lt;?&gt; hole) {
+<a class="jxr_linenumber" name="L91" href="#L91">91</a>          holes.add(hole);
+<a class="jxr_linenumber" name="L92" href="#L92">92</a>          <strong class="jxr_keyword">return</strong> thisRef();
+<a class="jxr_linenumber" name="L93" href="#L93">93</a>      }
+<a class="jxr_linenumber" name="L94" href="#L94">94</a>  
+<a class="jxr_linenumber" name="L95" href="#L95">95</a>      <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="L96" href="#L96">96</a>  <em class="jxr_javadoccomment">     * build new hole to the polygon</em>
+<a class="jxr_linenumber" name="L97" href="#L97">97</a>  <em class="jxr_javadoccomment">     * @param hole linear ring defining the hole</em>
+<a class="jxr_linenumber" name="L98" href="#L98">98</a>  <em class="jxr_javadoccomment">     * @return this</em>
+<a class="jxr_linenumber" name="L99" href="#L99">99</a>  <em class="jxr_javadoccomment">     */</em>
+<a class="jxr_linenumber" name="L100" href="#L100">100</a>     <strong class="jxr_keyword">public</strong> Ring&lt;E&gt; hole() {
+<a class="jxr_linenumber" name="L101" href="#L101">101</a>         Ring&lt;E&gt; hole = <strong class="jxr_keyword">new</strong> Ring&lt;&gt;(thisRef());
+<a class="jxr_linenumber" name="L102" href="#L102">102</a>         <strong class="jxr_keyword">this</strong>.holes.add(hole);
+<a class="jxr_linenumber" name="L103" href="#L103">103</a>         <strong class="jxr_keyword">return</strong> hole;
+<a class="jxr_linenumber" name="L104" href="#L104">104</a>     }
+<a class="jxr_linenumber" name="L105" href="#L105">105</a> 
+<a class="jxr_linenumber" name="L106" href="#L106">106</a>     <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="L107" href="#L107">107</a> <em class="jxr_javadoccomment">     * Close the shell of the polygon</em>
+<a class="jxr_linenumber" name="L108" href="#L108">108</a> <em class="jxr_javadoccomment">     * @return parent</em>
+<a class="jxr_linenumber" name="L109" href="#L109">109</a> <em class="jxr_javadoccomment">     */</em>
+<a class="jxr_linenumber" name="L110" href="#L110">110</a>     <strong class="jxr_keyword">public</strong> <a href="../../../../../org/elasticsearch/common/geo/builders/ShapeBuilder.html">ShapeBuilder</a> close() {
+<a class="jxr_linenumber" name="L111" href="#L111">111</a>         <strong class="jxr_keyword">return</strong> shell.close();
+<a class="jxr_linenumber" name="L112" href="#L112">112</a>     }
+<a class="jxr_linenumber" name="L113" href="#L113">113</a> 
+<a class="jxr_linenumber" name="L114" href="#L114">114</a>     <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="L115" href="#L115">115</a> <em class="jxr_javadoccomment">     * The coordinates setup by the builder will be assembled to a polygon. The result will consist of</em>
+<a class="jxr_linenumber" name="L116" href="#L116">116</a> <em class="jxr_javadoccomment">     * a set of polygons. Each of these components holds a list of linestrings defining the polygon: the</em>
+<a class="jxr_linenumber" name="L117" href="#L117">117</a> <em class="jxr_javadoccomment">     * first set of coordinates will be used as the shell of the polygon. The others are defined to holes</em>
+<a class="jxr_linenumber" name="L118" href="#L118">118</a> <em class="jxr_javadoccomment">     * within the polygon.</em>
+<a class="jxr_linenumber" name="L119" href="#L119">119</a> <em class="jxr_javadoccomment">     * This Method also wraps the polygons at the dateline. In order to this fact the result may</em>
+<a class="jxr_linenumber" name="L120" href="#L120">120</a> <em class="jxr_javadoccomment">     * contains more polygons and less holes than defined in the builder it self.</em>
+<a class="jxr_linenumber" name="L121" href="#L121">121</a> <em class="jxr_javadoccomment">     * </em>
+<a class="jxr_linenumber" name="L122" href="#L122">122</a> <em class="jxr_javadoccomment">     * @return coordinates of the polygon</em>
+<a class="jxr_linenumber" name="L123" href="#L123">123</a> <em class="jxr_javadoccomment">     */</em>
+<a class="jxr_linenumber" name="L124" href="#L124">124</a>     <strong class="jxr_keyword">public</strong> Coordinate[][][] coordinates() {
+<a class="jxr_linenumber" name="L125" href="#L125">125</a>         <strong class="jxr_keyword">int</strong> numEdges = shell.points.size()-1; <em class="jxr_comment">// Last point is repeated </em>
+<a class="jxr_linenumber" name="L126" href="#L126">126</a>         <strong class="jxr_keyword">for</strong> (<strong class="jxr_keyword">int</strong> i = 0; i &lt; holes.size(); i++) {
+<a class="jxr_linenumber" name="L127" href="#L127">127</a>             numEdges += holes.get(i).points.size()-1;
+<a class="jxr_linenumber" name="L128" href="#L128">128</a>         }
+<a class="jxr_linenumber" name="L129" href="#L129">129</a> 
+<a class="jxr_linenumber" name="L130" href="#L130">130</a>         <a href="../../../../../org/elasticsearch/common/geo/builders/ShapeBuilder.html">Edge</a>[] edges = <strong class="jxr_keyword">new</strong> <a href="../../../../../org/elasticsearch/common/geo/builders/ShapeBuilder.html">Edge</a>[numEdges];
+<a class="jxr_linenumber" name="L131" href="#L131">131</a>         <a href="../../../../../org/elasticsearch/common/geo/builders/ShapeBuilder.html">Edge</a>[] holeComponents = <strong class="jxr_keyword">new</strong> <a href="../../../../../org/elasticsearch/common/geo/builders/ShapeBuilder.html">Edge</a>[holes.size()];
+<a class="jxr_linenumber" name="L132" href="#L132">132</a>         <strong class="jxr_keyword">int</strong> offset = createEdges(0, orientation, shell, <strong class="jxr_keyword">null</strong>, edges, 0);
+<a class="jxr_linenumber" name="L133" href="#L133">133</a>         <strong class="jxr_keyword">for</strong> (<strong class="jxr_keyword">int</strong> i = 0; i &lt; holes.size(); i++) {
+<a class="jxr_linenumber" name="L134" href="#L134">134</a>             <strong class="jxr_keyword">int</strong> length = createEdges(i+1, orientation, shell, <strong class="jxr_keyword">this</strong>.holes.get(i), edges, offset);
+<a class="jxr_linenumber" name="L135" href="#L135">135</a>             holeComponents[i] = edges[offset];
+<a class="jxr_linenumber" name="L136" href="#L136">136</a>             offset += length;
+<a class="jxr_linenumber" name="L137" href="#L137">137</a>         }
+<a class="jxr_linenumber" name="L138" href="#L138">138</a> 
+<a class="jxr_linenumber" name="L139" href="#L139">139</a>         <strong class="jxr_keyword">int</strong> numHoles = holeComponents.length;
+<a class="jxr_linenumber" name="L140" href="#L140">140</a> 
+<a class="jxr_linenumber" name="L141" href="#L141">141</a>         numHoles = merge(edges, 0, intersections(+DATELINE, edges), holeComponents, numHoles);
+<a class="jxr_linenumber" name="L142" href="#L142">142</a>         numHoles = merge(edges, 0, intersections(-DATELINE, edges), holeComponents, numHoles);
+<a class="jxr_linenumber" name="L143" href="#L143">143</a> 
+<a class="jxr_linenumber" name="L144" href="#L144">144</a>         <strong class="jxr_keyword">return</strong> compose(edges, holeComponents, numHoles);
+<a class="jxr_linenumber" name="L145" href="#L145">145</a>     }
+<a class="jxr_linenumber" name="L146" href="#L146">146</a> 
+<a class="jxr_linenumber" name="L147" href="#L147">147</a>     @Override
+<a class="jxr_linenumber" name="L148" href="#L148">148</a>     <strong class="jxr_keyword">public</strong> Shape build() {
+<a class="jxr_linenumber" name="L149" href="#L149">149</a>         <strong class="jxr_keyword">return</strong> jtsGeometry(buildGeometry(FACTORY, wrapdateline));
+<a class="jxr_linenumber" name="L150" href="#L150">150</a>     }
+<a class="jxr_linenumber" name="L151" href="#L151">151</a> 
+<a class="jxr_linenumber" name="L152" href="#L152">152</a>     <strong class="jxr_keyword">protected</strong> <a href="../../../../../org/elasticsearch/common/xcontent/XContentBuilder.html">XContentBuilder</a> coordinatesArray(<a href="../../../../../org/elasticsearch/common/xcontent/XContentBuilder.html">XContentBuilder</a> builder, <a href="../../../../../org/elasticsearch/common/xcontent/ToXContent.html">Params</a> params) <strong class="jxr_keyword">throws</strong> IOException {
+<a class="jxr_linenumber" name="L153" href="#L153">153</a>         shell.coordinatesToXcontent(builder, <strong class="jxr_keyword">true</strong>);
+<a class="jxr_linenumber" name="L154" href="#L154">154</a>         <strong class="jxr_keyword">for</strong>(BaseLineStringBuilder&lt;?&gt; hole : holes) {
+<a class="jxr_linenumber" name="L155" href="#L155">155</a>             hole.coordinatesToXcontent(builder, <strong class="jxr_keyword">true</strong>);
+<a class="jxr_linenumber" name="L156" href="#L156">156</a>         }
+<a class="jxr_linenumber" name="L157" href="#L157">157</a>         <strong class="jxr_keyword">return</strong> builder;
+<a class="jxr_linenumber" name="L158" href="#L158">158</a>     }
+<a class="jxr_linenumber" name="L159" href="#L159">159</a>     
+<a class="jxr_linenumber" name="L160" href="#L160">160</a>     @Override
+<a class="jxr_linenumber" name="L161" href="#L161">161</a>     <strong class="jxr_keyword">public</strong> <a href="../../../../../org/elasticsearch/common/xcontent/XContentBuilder.html">XContentBuilder</a> toXContent(<a href="../../../../../org/elasticsearch/common/xcontent/XContentBuilder.html">XContentBuilder</a> builder, <a href="../../../../../org/elasticsearch/common/xcontent/ToXContent.html">Params</a> params) <strong class="jxr_keyword">throws</strong> IOException {
+<a class="jxr_linenumber" name="L162" href="#L162">162</a>         builder.startObject();
+<a class="jxr_linenumber" name="L163" href="#L163">163</a>         builder.field(FIELD_TYPE, TYPE.shapename);
+<a class="jxr_linenumber" name="L164" href="#L164">164</a>         builder.startArray(FIELD_COORDINATES);
+<a class="jxr_linenumber" name="L165" href="#L165">165</a>         coordinatesArray(builder, params);
+<a class="jxr_linenumber" name="L166" href="#L166">166</a>         builder.endArray();
+<a class="jxr_linenumber" name="L167" href="#L167">167</a>         builder.endObject();
+<a class="jxr_linenumber" name="L168" href="#L168">168</a>         <strong class="jxr_keyword">return</strong> builder;
+<a class="jxr_linenumber" name="L169" href="#L169">169</a>     }
+<a class="jxr_linenumber" name="L170" href="#L170">170</a>     
+<a class="jxr_linenumber" name="L171" href="#L171">171</a>     <strong class="jxr_keyword">public</strong> Geometry buildGeometry(GeometryFactory factory, <strong class="jxr_keyword">boolean</strong> fixDateline) {
+<a class="jxr_linenumber" name="L172" href="#L172">172</a>         <strong class="jxr_keyword">if</strong>(fixDateline) {
+<a class="jxr_linenumber" name="L173" href="#L173">173</a>             Coordinate[][][] polygons = coordinates();
+<a class="jxr_linenumber" name="L174" href="#L174">174</a>             <strong class="jxr_keyword">return</strong> polygons.length == 1
+<a class="jxr_linenumber" name="L175" href="#L175">175</a>                     ? polygon(factory, polygons[0])
+<a class="jxr_linenumber" name="L176" href="#L176">176</a>                     : multipolygon(factory, polygons);
+<a class="jxr_linenumber" name="L177" href="#L177">177</a>         } <strong class="jxr_keyword">else</strong> {
+<a class="jxr_linenumber" name="L178" href="#L178">178</a>             <strong class="jxr_keyword">return</strong> toPolygon(factory);
+<a class="jxr_linenumber" name="L179" href="#L179">179</a>         }
+<a class="jxr_linenumber" name="L180" href="#L180">180</a>     }
+<a class="jxr_linenumber" name="L181" href="#L181">181</a> 
+<a class="jxr_linenumber" name="L182" href="#L182">182</a>     <strong class="jxr_keyword">public</strong> Polygon toPolygon() {
+<a class="jxr_linenumber" name="L183" href="#L183">183</a>         <strong class="jxr_keyword">return</strong> toPolygon(FACTORY);
+<a class="jxr_linenumber" name="L184" href="#L184">184</a>     }
+<a class="jxr_linenumber" name="L185" href="#L185">185</a> 
+<a class="jxr_linenumber" name="L186" href="#L186">186</a>     <strong class="jxr_keyword">protected</strong> Polygon toPolygon(GeometryFactory factory) {
+<a class="jxr_linenumber" name="L187" href="#L187">187</a>         <strong class="jxr_keyword">final</strong> LinearRing shell = linearRing(factory, <strong class="jxr_keyword">this</strong>.shell.points);
+<a class="jxr_linenumber" name="L188" href="#L188">188</a>         <strong class="jxr_keyword">final</strong> LinearRing[] holes = <strong class="jxr_keyword">new</strong> LinearRing[<strong class="jxr_keyword">this</strong>.holes.size()];
+<a class="jxr_linenumber" name="L189" href="#L189">189</a>         Iterator&lt;BaseLineStringBuilder&lt;?&gt;&gt; iterator = <strong class="jxr_keyword">this</strong>.holes.iterator();
+<a class="jxr_linenumber" name="L190" href="#L190">190</a>         <strong class="jxr_keyword">for</strong> (<strong class="jxr_keyword">int</strong> i = 0; iterator.hasNext(); i++) {
+<a class="jxr_linenumber" name="L191" href="#L191">191</a>             holes[i] = linearRing(factory, iterator.next().points);
+<a class="jxr_linenumber" name="L192" href="#L192">192</a>         }
+<a class="jxr_linenumber" name="L193" href="#L193">193</a>         <strong class="jxr_keyword">return</strong> factory.createPolygon(shell, holes);
+<a class="jxr_linenumber" name="L194" href="#L194">194</a>     }
+<a class="jxr_linenumber" name="L195" href="#L195">195</a> 
+<a class="jxr_linenumber" name="L196" href="#L196">196</a>     <strong class="jxr_keyword">protected</strong> <strong class="jxr_keyword">static</strong> LinearRing linearRing(GeometryFactory factory, ArrayList&lt;Coordinate&gt; coordinates) {
+<a class="jxr_linenumber" name="L197" href="#L197">197</a>         <strong class="jxr_keyword">return</strong> factory.createLinearRing(coordinates.toArray(<strong class="jxr_keyword">new</strong> Coordinate[coordinates.size()]));
+<a class="jxr_linenumber" name="L198" href="#L198">198</a>     }
+<a class="jxr_linenumber" name="L199" href="#L199">199</a> 
+<a class="jxr_linenumber" name="L200" href="#L200">200</a>     @Override
+<a class="jxr_linenumber" name="L201" href="#L201">201</a>     <strong class="jxr_keyword">public</strong> <a href="../../../../../org/elasticsearch/common/geo/builders/ShapeBuilder.html">GeoShapeType</a> type() {
+<a class="jxr_linenumber" name="L202" href="#L202">202</a>         <strong class="jxr_keyword">return</strong> TYPE;
+<a class="jxr_linenumber" name="L203" href="#L203">203</a>     }
+<a class="jxr_linenumber" name="L204" href="#L204">204</a> 
+<a class="jxr_linenumber" name="L205" href="#L205">205</a>     <strong class="jxr_keyword">protected</strong> <strong class="jxr_keyword">static</strong> Polygon polygon(GeometryFactory factory, Coordinate[][] polygon) {
+<a class="jxr_linenumber" name="L206" href="#L206">206</a>         LinearRing shell = factory.createLinearRing(polygon[0]);
+<a class="jxr_linenumber" name="L207" href="#L207">207</a>         LinearRing[] holes;
+<a class="jxr_linenumber" name="L208" href="#L208">208</a>         
+<a class="jxr_linenumber" name="L209" href="#L209">209</a>         <strong class="jxr_keyword">if</strong>(polygon.length &gt; 1) {
+<a class="jxr_linenumber" name="L210" href="#L210">210</a>             holes = <strong class="jxr_keyword">new</strong> LinearRing[polygon.length-1];
+<a class="jxr_linenumber" name="L211" href="#L211">211</a>             <strong class="jxr_keyword">for</strong> (<strong class="jxr_keyword">int</strong> i = 0; i &lt; holes.length; i++) {
+<a class="jxr_linenumber" name="L212" href="#L212">212</a>                 holes[i] = factory.createLinearRing(polygon[i+1]);
+<a class="jxr_linenumber" name="L213" href="#L213">213</a>             }
+<a class="jxr_linenumber" name="L214" href="#L214">214</a>         } <strong class="jxr_keyword">else</strong> {
+<a class="jxr_linenumber" name="L215" href="#L215">215</a>             holes = <strong class="jxr_keyword">null</strong>;
+<a class="jxr_linenumber" name="L216" href="#L216">216</a>         }
+<a class="jxr_linenumber" name="L217" href="#L217">217</a>         <strong class="jxr_keyword">return</strong> factory.createPolygon(shell, holes);
+<a class="jxr_linenumber" name="L218" href="#L218">218</a>     }
+<a class="jxr_linenumber" name="L219" href="#L219">219</a> 
+<a class="jxr_linenumber" name="L220" href="#L220">220</a>     <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="L221" href="#L221">221</a> <em class="jxr_javadoccomment">     * Create a Multipolygon from a set of coordinates. Each primary array contains a polygon which</em>
+<a class="jxr_linenumber" name="L222" href="#L222">222</a> <em class="jxr_javadoccomment">     * in turn contains an array of linestrings. These line Strings are represented as an array of</em>
+<a class="jxr_linenumber" name="L223" href="#L223">223</a> <em class="jxr_javadoccomment">     * coordinates. The first linestring will be the shell of the polygon the others define holes</em>
+<a class="jxr_linenumber" name="L224" href="#L224">224</a> <em class="jxr_javadoccomment">     * within the polygon.</em>
+<a class="jxr_linenumber" name="L225" href="#L225">225</a> <em class="jxr_javadoccomment">     *      </em>
+<a class="jxr_linenumber" name="L226" href="#L226">226</a> <em class="jxr_javadoccomment">     * @param factory {@link GeometryFactory} to use</em>
+<a class="jxr_linenumber" name="L227" href="#L227">227</a> <em class="jxr_javadoccomment">     * @param polygons definition of polygons</em>
+<a class="jxr_linenumber" name="L228" href="#L228">228</a> <em class="jxr_javadoccomment">     * @return a new Multipolygon</em>
+<a class="jxr_linenumber" name="L229" href="#L229">229</a> <em class="jxr_javadoccomment">     */</em>
+<a class="jxr_linenumber" name="L230" href="#L230">230</a>     <strong class="jxr_keyword">protected</strong> <strong class="jxr_keyword">static</strong> MultiPolygon multipolygon(GeometryFactory factory, Coordinate[][][] polygons) {
+<a class="jxr_linenumber" name="L231" href="#L231">231</a>         Polygon[] polygonSet = <strong class="jxr_keyword">new</strong> Polygon[polygons.length];
+<a class="jxr_linenumber" name="L232" href="#L232">232</a>         <strong class="jxr_keyword">for</strong> (<strong class="jxr_keyword">int</strong> i = 0; i &lt; polygonSet.length; i++) {
+<a class="jxr_linenumber" name="L233" href="#L233">233</a>             polygonSet[i] = polygon(factory, polygons[i]);
+<a class="jxr_linenumber" name="L234" href="#L234">234</a>         }
+<a class="jxr_linenumber" name="L235" href="#L235">235</a>         <strong class="jxr_keyword">return</strong> factory.createMultiPolygon(polygonSet);
+<a class="jxr_linenumber" name="L236" href="#L236">236</a>     }
+<a class="jxr_linenumber" name="L237" href="#L237">237</a> 
+<a class="jxr_linenumber" name="L238" href="#L238">238</a>     <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="L239" href="#L239">239</a> <em class="jxr_javadoccomment">     * This method sets the component id of all edges in a ring to a given id and shifts the</em>
+<a class="jxr_linenumber" name="L240" href="#L240">240</a> <em class="jxr_javadoccomment">     * coordinates of this component according to the dateline </em>
+<a class="jxr_linenumber" name="L241" href="#L241">241</a> <em class="jxr_javadoccomment">     * </em>
+<a class="jxr_linenumber" name="L242" href="#L242">242</a> <em class="jxr_javadoccomment">     * @param edge An arbitrary edge of the component</em>
+<a class="jxr_linenumber" name="L243" href="#L243">243</a> <em class="jxr_javadoccomment">     * @param id id to apply to the component</em>
+<a class="jxr_linenumber" name="L244" href="#L244">244</a> <em class="jxr_javadoccomment">     * @param edges a list of edges to which all edges of the component will be added (could be &lt;code&gt;null&lt;/code&gt;)</em>
+<a class="jxr_linenumber" name="L245" href="#L245">245</a> <em class="jxr_javadoccomment">     * @return number of edges that belong to this component</em>
+<a class="jxr_linenumber" name="L246" href="#L246">246</a> <em class="jxr_javadoccomment">     */</em>
+<a class="jxr_linenumber" name="L247" href="#L247">247</a>     <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">int</strong> component(<strong class="jxr_keyword">final</strong> <a href="../../../../../org/elasticsearch/common/geo/builders/ShapeBuilder.html">Edge</a> edge, <strong class="jxr_keyword">final</strong> <strong class="jxr_keyword">int</strong> id, <strong class="jxr_keyword">final</strong> ArrayList&lt;Edge&gt; edges) {
+<a class="jxr_linenumber" name="L248" href="#L248">248</a>         <em class="jxr_comment">// find a coordinate that is not part of the dateline </em>
+<a class="jxr_linenumber" name="L249" href="#L249">249</a>         <a href="../../../../../org/elasticsearch/common/geo/builders/ShapeBuilder.html">Edge</a> any = edge;
+<a class="jxr_linenumber" name="L250" href="#L250">250</a>         <strong class="jxr_keyword">while</strong>(any.coordinate.x == +DATELINE || any.coordinate.x == -DATELINE) {
+<a class="jxr_linenumber" name="L251" href="#L251">251</a>             <strong class="jxr_keyword">if</strong>((any = any.next) == edge) {
+<a class="jxr_linenumber" name="L252" href="#L252">252</a>                 <strong class="jxr_keyword">break</strong>;   
+<a class="jxr_linenumber" name="L253" href="#L253">253</a>             }
+<a class="jxr_linenumber" name="L254" href="#L254">254</a>         }
+<a class="jxr_linenumber" name="L255" href="#L255">255</a> 
+<a class="jxr_linenumber" name="L256" href="#L256">256</a>         <strong class="jxr_keyword">double</strong> shift = any.coordinate.x &gt; DATELINE ? DATELINE : (any.coordinate.x &lt; -DATELINE ? -DATELINE : 0);
+<a class="jxr_linenumber" name="L257" href="#L257">257</a>         <strong class="jxr_keyword">if</strong> (debugEnabled()) {
+<a class="jxr_linenumber" name="L258" href="#L258">258</a>             LOGGER.debug(<span class="jxr_string">"shift: {[]}"</span>, shift);
+<a class="jxr_linenumber" name="L259" href="#L259">259</a>         }
+<a class="jxr_linenumber" name="L260" href="#L260">260</a> 
+<a class="jxr_linenumber" name="L261" href="#L261">261</a>         <em class="jxr_comment">// run along the border of the component, collect the</em>
+<a class="jxr_linenumber" name="L262" href="#L262">262</a>         <em class="jxr_comment">// edges, shift them according to the dateline and</em>
+<a class="jxr_linenumber" name="L263" href="#L263">263</a>         <em class="jxr_comment">// update the component id</em>
+<a class="jxr_linenumber" name="L264" href="#L264">264</a>         <strong class="jxr_keyword">int</strong> length = 0;
+<a class="jxr_linenumber" name="L265" href="#L265">265</a>         <a href="../../../../../org/elasticsearch/common/geo/builders/ShapeBuilder.html">Edge</a> current = edge;
+<a class="jxr_linenumber" name="L266" href="#L266">266</a>         <strong class="jxr_keyword">do</strong> {
+<a class="jxr_linenumber" name="L267" href="#L267">267</a> 
+<a class="jxr_linenumber" name="L268" href="#L268">268</a>             current.coordinate = shift(current.coordinate, shift); 
+<a class="jxr_linenumber" name="L269" href="#L269">269</a>             current.component = id;
+<a class="jxr_linenumber" name="L270" href="#L270">270</a>             <strong class="jxr_keyword">if</strong>(edges != <strong class="jxr_keyword">null</strong>) {
+<a class="jxr_linenumber" name="L271" href="#L271">271</a>                 edges.add(current);
+<a class="jxr_linenumber" name="L272" href="#L272">272</a>             }
+<a class="jxr_linenumber" name="L273" href="#L273">273</a> 
+<a class="jxr_linenumber" name="L274" href="#L274">274</a>             length++;
+<a class="jxr_linenumber" name="L275" href="#L275">275</a>         } <strong class="jxr_keyword">while</strong>((current = current.next) != edge);
+<a class="jxr_linenumber" name="L276" href="#L276">276</a> 
+<a class="jxr_linenumber" name="L277" href="#L277">277</a>         <strong class="jxr_keyword">return</strong> length;
+<a class="jxr_linenumber" name="L278" href="#L278">278</a>     }
+<a class="jxr_linenumber" name="L279" href="#L279">279</a> 
+<a class="jxr_linenumber" name="L280" href="#L280">280</a>     <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="L281" href="#L281">281</a> <em class="jxr_javadoccomment">     * Compute all coordinates of a component</em>
+<a class="jxr_linenumber" name="L282" href="#L282">282</a> <em class="jxr_javadoccomment">     * @param component an arbitrary edge of the component</em>
+<a class="jxr_linenumber" name="L283" href="#L283">283</a> <em class="jxr_javadoccomment">     * @param coordinates Array of coordinates to write the result to</em>
+<a class="jxr_linenumber" name="L284" href="#L284">284</a> <em class="jxr_javadoccomment">     * @return the coordinates parameter</em>
+<a class="jxr_linenumber" name="L285" href="#L285">285</a> <em class="jxr_javadoccomment">     */</em>
+<a class="jxr_linenumber" name="L286" href="#L286">286</a>     <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> Coordinate[] coordinates(<a href="../../../../../org/elasticsearch/common/geo/builders/ShapeBuilder.html">Edge</a> component, Coordinate[] coordinates) {
+<a class="jxr_linenumber" name="L287" href="#L287">287</a>         <strong class="jxr_keyword">for</strong> (<strong class="jxr_keyword">int</strong> i = 0; i &lt; coordinates.length; i++) {
+<a class="jxr_linenumber" name="L288" href="#L288">288</a>             coordinates[i] = (component = component.next).coordinate;
+<a class="jxr_linenumber" name="L289" href="#L289">289</a>         }
+<a class="jxr_linenumber" name="L290" href="#L290">290</a>         <strong class="jxr_keyword">return</strong> coordinates;
+<a class="jxr_linenumber" name="L291" href="#L291">291</a>     }
+<a class="jxr_linenumber" name="L292" href="#L292">292</a> 
+<a class="jxr_linenumber" name="L293" href="#L293">293</a>     <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> Coordinate[][][] buildCoordinates(ArrayList&lt;ArrayList&lt;Coordinate[]&gt;&gt; components) {
+<a class="jxr_linenumber" name="L294" href="#L294">294</a>         Coordinate[][][] result = <strong class="jxr_keyword">new</strong> Coordinate[components.size()][][];
+<a class="jxr_linenumber" name="L295" href="#L295">295</a>         <strong class="jxr_keyword">for</strong> (<strong class="jxr_keyword">int</strong> i = 0; i &lt; result.length; i++) {
+<a class="jxr_linenumber" name="L296" href="#L296">296</a>             ArrayList&lt;Coordinate[]&gt; component = components.get(i);
+<a class="jxr_linenumber" name="L297" href="#L297">297</a>             result[i] = component.toArray(<strong class="jxr_keyword">new</strong> Coordinate[component.size()][]);
+<a class="jxr_linenumber" name="L298" href="#L298">298</a>         }
+<a class="jxr_linenumber" name="L299" href="#L299">299</a> 
+<a class="jxr_linenumber" name="L300" href="#L300">300</a>         <strong class="jxr_keyword">if</strong>(debugEnabled()) {
+<a class="jxr_linenumber" name="L301" href="#L301">301</a>             <strong class="jxr_keyword">for</strong> (<strong class="jxr_keyword">int</strong> i = 0; i &lt; result.length; i++) {
+<a class="jxr_linenumber" name="L302" href="#L302">302</a>                 LOGGER.debug(<span class="jxr_string">"Component {[]}:"</span>, i);
+<a class="jxr_linenumber" name="L303" href="#L303">303</a>                 <strong class="jxr_keyword">for</strong> (<strong class="jxr_keyword">int</strong> j = 0; j &lt; result[i].length; j++) {
+<a class="jxr_linenumber" name="L304" href="#L304">304</a>                     LOGGER.debug(<span class="jxr_string">"\t"</span> + Arrays.toString(result[i][j]));
+<a class="jxr_linenumber" name="L305" href="#L305">305</a>                 }
+<a class="jxr_linenumber" name="L306" href="#L306">306</a>             }
+<a class="jxr_linenumber" name="L307" href="#L307">307</a>         }
+<a class="jxr_linenumber" name="L308" href="#L308">308</a> 
+<a class="jxr_linenumber" name="L309" href="#L309">309</a>         <strong class="jxr_keyword">return</strong> result;
+<a class="jxr_linenumber" name="L310" href="#L310">310</a>     } 
+<a class="jxr_linenumber" name="L311" href="#L311">311</a> 
+<a class="jxr_linenumber" name="L312" href="#L312">312</a>     <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">final</strong> Coordinate[][] EMPTY = <strong class="jxr_keyword">new</strong> Coordinate[0][];
+<a class="jxr_linenumber" name="L313" href="#L313">313</a> 
+<a class="jxr_linenumber" name="L314" href="#L314">314</a>     <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> Coordinate[][] holes(<a href="../../../../../org/elasticsearch/common/geo/builders/ShapeBuilder.html">Edge</a>[] holes, <strong class="jxr_keyword">int</strong> numHoles) {
+<a class="jxr_linenumber" name="L315" href="#L315">315</a>         <strong class="jxr_keyword">if</strong> (numHoles == 0) {
+<a class="jxr_linenumber" name="L316" href="#L316">316</a>             <strong class="jxr_keyword">return</strong> EMPTY;
+<a class="jxr_linenumber" name="L317" href="#L317">317</a>         }
+<a class="jxr_linenumber" name="L318" href="#L318">318</a>         <strong class="jxr_keyword">final</strong> Coordinate[][] points = <strong class="jxr_keyword">new</strong> Coordinate[numHoles][];
+<a class="jxr_linenumber" name="L319" href="#L319">319</a> 
+<a class="jxr_linenumber" name="L320" href="#L320">320</a>         <strong class="jxr_keyword">for</strong> (<strong class="jxr_keyword">int</strong> i = 0; i &lt; numHoles; i++) {
+<a class="jxr_linenumber" name="L321" href="#L321">321</a>             <strong class="jxr_keyword">int</strong> length = component(holes[i], -(i+1), <strong class="jxr_keyword">null</strong>); <em class="jxr_comment">// mark as visited by inverting the sign</em>
+<a class="jxr_linenumber" name="L322" href="#L322">322</a>             points[i] = coordinates(holes[i], <strong class="jxr_keyword">new</strong> Coordinate[length+1]);
+<a class="jxr_linenumber" name="L323" href="#L323">323</a>         }
+<a class="jxr_linenumber" name="L324" href="#L324">324</a> 
+<a class="jxr_linenumber" name="L325" href="#L325">325</a>         <strong class="jxr_keyword">return</strong> points;
+<a class="jxr_linenumber" name="L326" href="#L326">326</a>     } 
+<a class="jxr_linenumber" name="L327" href="#L327">327</a> 
+<a class="jxr_linenumber" name="L328" href="#L328">328</a>     <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> <a href="../../../../../org/elasticsearch/common/geo/builders/ShapeBuilder.html">Edge</a>[] edges(<a href="../../../../../org/elasticsearch/common/geo/builders/ShapeBuilder.html">Edge</a>[] edges, <strong class="jxr_keyword">int</strong> numHoles, ArrayList&lt;ArrayList&lt;Coordinate[]&gt;&gt; components) {
+<a class="jxr_linenumber" name="L329" href="#L329">329</a>         ArrayList&lt;Edge&gt; mainEdges = <strong class="jxr_keyword">new</strong> ArrayList&lt;&gt;(edges.length);
+<a class="jxr_linenumber" name="L330" href="#L330">330</a> 
+<a class="jxr_linenumber" name="L331" href="#L331">331</a>         <strong class="jxr_keyword">for</strong> (<strong class="jxr_keyword">int</strong> i = 0; i &lt; edges.length; i++) {
+<a class="jxr_linenumber" name="L332" href="#L332">332</a>             <strong class="jxr_keyword">if</strong> (edges[i].component &gt;= 0) {
+<a class="jxr_linenumber" name="L333" href="#L333">333</a>                 <strong class="jxr_keyword">int</strong> length = component(edges[i], -(components.size()+numHoles+1), mainEdges);
+<a class="jxr_linenumber" name="L334" href="#L334">334</a>                 ArrayList&lt;Coordinate[]&gt; component = <strong class="jxr_keyword">new</strong> ArrayList&lt;&gt;();
+<a class="jxr_linenumber" name="L335" href="#L335">335</a>                 component.add(coordinates(edges[i], <strong class="jxr_keyword">new</strong> Coordinate[length+1]));
+<a class="jxr_linenumber" name="L336" href="#L336">336</a>                 components.add(component);
+<a class="jxr_linenumber" name="L337" href="#L337">337</a>             }
+<a class="jxr_linenumber" name="L338" href="#L338">338</a>         }
+<a class="jxr_linenumber" name="L339" href="#L339">339</a> 
+<a class="jxr_linenumber" name="L340" href="#L340">340</a>         <strong class="jxr_keyword">return</strong> mainEdges.toArray(<strong class="jxr_keyword">new</strong> <a href="../../../../../org/elasticsearch/common/geo/builders/ShapeBuilder.html">Edge</a>[mainEdges.size()]);
+<a class="jxr_linenumber" name="L341" href="#L341">341</a>     }
+<a class="jxr_linenumber" name="L342" href="#L342">342</a> 
+<a class="jxr_linenumber" name="L343" href="#L343">343</a>     <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> Coordinate[][][] compose(<a href="../../../../../org/elasticsearch/common/geo/builders/ShapeBuilder.html">Edge</a>[] edges, <a href="../../../../../org/elasticsearch/common/geo/builders/ShapeBuilder.html">Edge</a>[] holes, <strong class="jxr_keyword">int</strong> numHoles) {
+<a class="jxr_linenumber" name="L344" href="#L344">344</a>         <strong class="jxr_keyword">final</strong> ArrayList&lt;ArrayList&lt;Coordinate[]&gt;&gt; components = <strong class="jxr_keyword">new</strong> ArrayList&lt;&gt;();
+<a class="jxr_linenumber" name="L345" href="#L345">345</a>         assign(holes, holes(holes, numHoles), numHoles, edges(edges, numHoles, components), components);
+<a class="jxr_linenumber" name="L346" href="#L346">346</a>         <strong class="jxr_keyword">return</strong> buildCoordinates(components);
+<a class="jxr_linenumber" name="L347" href="#L347">347</a>     }
+<a class="jxr_linenumber" name="L348" href="#L348">348</a> 
+<a class="jxr_linenumber" name="L349" href="#L349">349</a>     <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">void</strong> assign(<a href="../../../../../org/elasticsearch/common/geo/builders/ShapeBuilder.html">Edge</a>[] holes, Coordinate[][] points, <strong class="jxr_keyword">int</strong> numHoles, <a href="../../../../../org/elasticsearch/common/geo/builders/ShapeBuilder.html">Edge</a>[] edges, ArrayList&lt;ArrayList&lt;Coordinate[]&gt;&gt; components) {
+<a class="jxr_linenumber" name="L350" href="#L350">350</a>         <em class="jxr_comment">// Assign Hole to related components</em>
+<a class="jxr_linenumber" name="L351" href="#L351">351</a>         <em class="jxr_comment">// To find the new component the hole belongs to all intersections of the</em>
+<a class="jxr_linenumber" name="L352" href="#L352">352</a>         <em class="jxr_comment">// polygon edges with a vertical line are calculated. This vertical line</em>
+<a class="jxr_linenumber" name="L353" href="#L353">353</a>         <em class="jxr_comment">// is an arbitrary point of the hole. The polygon edge next to this point</em>
+<a class="jxr_linenumber" name="L354" href="#L354">354</a>         <em class="jxr_comment">// is part of the polygon the hole belongs to.</em>
+<a class="jxr_linenumber" name="L355" href="#L355">355</a>         <strong class="jxr_keyword">if</strong> (debugEnabled()) {
+<a class="jxr_linenumber" name="L356" href="#L356">356</a>             LOGGER.debug(<span class="jxr_string">"Holes: "</span> + Arrays.toString(holes));
+<a class="jxr_linenumber" name="L357" href="#L357">357</a>         }
+<a class="jxr_linenumber" name="L358" href="#L358">358</a>         <strong class="jxr_keyword">for</strong> (<strong class="jxr_keyword">int</strong> i = 0; i &lt; numHoles; i++) {
+<a class="jxr_linenumber" name="L359" href="#L359">359</a>             <strong class="jxr_keyword">final</strong> <a href="../../../../../org/elasticsearch/common/geo/builders/ShapeBuilder.html">Edge</a> current = <strong class="jxr_keyword">new</strong> <a href="../../../../../org/elasticsearch/common/geo/builders/ShapeBuilder.html">Edge</a>(holes[i].coordinate, holes[i].next);
+<a class="jxr_linenumber" name="L360" href="#L360">360</a>             <em class="jxr_comment">// the edge intersects with itself at its own coordinate.  We need intersect to be set this way so the binary search </em>
+<a class="jxr_linenumber" name="L361" href="#L361">361</a>             <em class="jxr_comment">// will get the correct position in the edge list and therefore the correct component to add the hole</em>
+<a class="jxr_linenumber" name="L362" href="#L362">362</a>             current.intersect = current.coordinate;
+<a class="jxr_linenumber" name="L363" href="#L363">363</a>             <strong class="jxr_keyword">final</strong> <strong class="jxr_keyword">int</strong> intersections = intersections(current.coordinate.x, edges);
+<a class="jxr_linenumber" name="L364" href="#L364">364</a>             <em class="jxr_comment">// if no intersection is found then the hole is not within the polygon, so</em>
+<a class="jxr_linenumber" name="L365" href="#L365">365</a>             <em class="jxr_comment">// don't waste time calling a binary search</em>
+<a class="jxr_linenumber" name="L366" href="#L366">366</a>             <strong class="jxr_keyword">final</strong> <strong class="jxr_keyword">int</strong> pos;
+<a class="jxr_linenumber" name="L367" href="#L367">367</a>             <strong class="jxr_keyword">if</strong> (intersections == 0 ||
+<a class="jxr_linenumber" name="L368" href="#L368">368</a>                (pos = Arrays.binarySearch(edges, 0, intersections, current, INTERSECTION_ORDER)) &gt;= 0) {
+<a class="jxr_linenumber" name="L369" href="#L369">369</a>                 <strong class="jxr_keyword">throw</strong> <strong class="jxr_keyword">new</strong> <a href="../../../../../org/elasticsearch/ElasticsearchParseException.html">ElasticsearchParseException</a>(<span class="jxr_string">"Invalid shape: Hole is not within polygon"</span>);
+<a class="jxr_linenumber" name="L370" href="#L370">370</a>             }
+<a class="jxr_linenumber" name="L371" href="#L371">371</a>             <strong class="jxr_keyword">final</strong> <strong class="jxr_keyword">int</strong> index = -(pos+2);
+<a class="jxr_linenumber" name="L372" href="#L372">372</a>             <strong class="jxr_keyword">final</strong> <strong class="jxr_keyword">int</strong> component = -edges[index].component - numHoles - 1;
+<a class="jxr_linenumber" name="L373" href="#L373">373</a> 
+<a class="jxr_linenumber" name="L374" href="#L374">374</a>             <strong class="jxr_keyword">if</strong>(debugEnabled()) {
+<a class="jxr_linenumber" name="L375" href="#L375">375</a>                 LOGGER.debug(<span class="jxr_string">"\tposition ("</span>+index+<span class="jxr_string">") of edge "</span>+current+<span class="jxr_string">": "</span> + edges[index]);
+<a class="jxr_linenumber" name="L376" href="#L376">376</a>                 LOGGER.debug(<span class="jxr_string">"\tComponent: "</span> + component);
+<a class="jxr_linenumber" name="L377" href="#L377">377</a>                 LOGGER.debug(<span class="jxr_string">"\tHole intersections ("</span>+current.coordinate.x+<span class="jxr_string">"): "</span> + Arrays.toString(edges));
+<a class="jxr_linenumber" name="L378" href="#L378">378</a>             }
+<a class="jxr_linenumber" name="L379" href="#L379">379</a> 
+<a class="jxr_linenumber" name="L380" href="#L380">380</a>             components.get(component).add(points[i]);
+<a class="jxr_linenumber" name="L381" href="#L381">381</a>         }
+<a class="jxr_linenumber" name="L382" href="#L382">382</a>     }
+<a class="jxr_linenumber" name="L383" href="#L383">383</a> 
+<a class="jxr_linenumber" name="L384" href="#L384">384</a>     <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">int</strong> merge(<a href="../../../../../org/elasticsearch/common/geo/builders/ShapeBuilder.html">Edge</a>[] intersections, <strong class="jxr_keyword">int</strong> offset, <strong class="jxr_keyword">int</strong> length, <a href="../../../../../org/elasticsearch/common/geo/builders/ShapeBuilder.html">Edge</a>[] holes, <strong class="jxr_keyword">int</strong> numHoles) {
+<a class="jxr_linenumber" name="L385" href="#L385">385</a>         <em class="jxr_comment">// Intersections appear pairwise. On the first edge the inner of</em>
+<a class="jxr_linenumber" name="L386" href="#L386">386</a>         <em class="jxr_comment">// of the polygon is entered. On the second edge the outer face</em>
+<a class="jxr_linenumber" name="L387" href="#L387">387</a>         <em class="jxr_comment">// is entered. Other kinds of intersections are discard by the</em>
+<a class="jxr_linenumber" name="L388" href="#L388">388</a>         <em class="jxr_comment">// intersection function</em>
+<a class="jxr_linenumber" name="L389" href="#L389">389</a> 
+<a class="jxr_linenumber" name="L390" href="#L390">390</a>         <strong class="jxr_keyword">for</strong> (<strong class="jxr_keyword">int</strong> i = 0; i &lt; length; i += 2) {
+<a class="jxr_linenumber" name="L391" href="#L391">391</a>             <a href="../../../../../org/elasticsearch/common/geo/builders/ShapeBuilder.html">Edge</a> e1 = intersections[offset + i + 0];
+<a class="jxr_linenumber" name="L392" href="#L392">392</a>             <a href="../../../../../org/elasticsearch/common/geo/builders/ShapeBuilder.html">Edge</a> e2 = intersections[offset + i + 1];
+<a class="jxr_linenumber" name="L393" href="#L393">393</a> 
+<a class="jxr_linenumber" name="L394" href="#L394">394</a>             <em class="jxr_comment">// If two segments are connected maybe a hole must be deleted</em>
+<a class="jxr_linenumber" name="L395" href="#L395">395</a>             <em class="jxr_comment">// Since Edges of components appear pairwise we need to check</em>
+<a class="jxr_linenumber" name="L396" href="#L396">396</a>             <em class="jxr_comment">// the second edge only (the first edge is either polygon or</em>
+<a class="jxr_linenumber" name="L397" href="#L397">397</a>             <em class="jxr_comment">// already handled)</em>
+<a class="jxr_linenumber" name="L398" href="#L398">398</a>             <strong class="jxr_keyword">if</strong> (e2.component &gt; 0) {
+<a class="jxr_linenumber" name="L399" href="#L399">399</a>                 <em class="jxr_comment">//TODO: Check if we could save the set null step</em>
+<a class="jxr_linenumber" name="L400" href="#L400">400</a>                 numHoles--;
+<a class="jxr_linenumber" name="L401" href="#L401">401</a>                 holes[e2.component-1] = holes[numHoles];
+<a class="jxr_linenumber" name="L402" href="#L402">402</a>                 holes[numHoles] = <strong class="jxr_keyword">null</strong>;
+<a class="jxr_linenumber" name="L403" href="#L403">403</a>             }
+<a class="jxr_linenumber" name="L404" href="#L404">404</a>             <em class="jxr_comment">// only connect edges if intersections are pairwise </em>
+<a class="jxr_linenumber" name="L405" href="#L405">405</a>             <em class="jxr_comment">// 1. per the comment above, the edge array is sorted by y-value of the intersection</em>
+<a class="jxr_linenumber" name="L406" href="#L406">406</a>             <em class="jxr_comment">// with the dateline.  Two edges have the same y intercept when they cross the </em>
+<a class="jxr_linenumber" name="L407" href="#L407">407</a>             <em class="jxr_comment">// dateline thus they appear sequentially (pairwise) in the edge array. Two edges</em>
+<a class="jxr_linenumber" name="L408" href="#L408">408</a>             <em class="jxr_comment">// do not have the same y intercept when we're forming a multi-poly from a poly</em>
+<a class="jxr_linenumber" name="L409" href="#L409">409</a>             <em class="jxr_comment">// that wraps the dateline (but there are 2 ordered intercepts).  </em>
+<a class="jxr_linenumber" name="L410" href="#L410">410</a>             <em class="jxr_comment">// The connect method creates a new edge for these paired edges in the linked list. </em>
+<a class="jxr_linenumber" name="L411" href="#L411">411</a>             <em class="jxr_comment">// For boundary conditions (e.g., intersect but not crossing) there is no sibling edge </em>
+<a class="jxr_linenumber" name="L412" href="#L412">412</a>             <em class="jxr_comment">// to connect. Thus the first logic check enforces the pairwise rule</em>
+<a class="jxr_linenumber" name="L413" href="#L413">413</a>             <em class="jxr_comment">// 2. the second logic check ensures the two candidate edges aren't already connected by an</em>
+<a class="jxr_linenumber" name="L414" href="#L414">414</a>             <em class="jxr_comment">//    existing edge along the dateline - this is necessary due to a logic change in</em>
+<a class="jxr_linenumber" name="L415" href="#L415">415</a>             <em class="jxr_comment">//    ShapeBuilder.intersection that computes dateline edges as valid intersect points </em>
+<a class="jxr_linenumber" name="L416" href="#L416">416</a>             <em class="jxr_comment">//    in support of OGC standards</em>
+<a class="jxr_linenumber" name="L417" href="#L417">417</a>             <strong class="jxr_keyword">if</strong> (e1.intersect != Edge.MAX_COORDINATE &amp;&amp; e2.intersect != Edge.MAX_COORDINATE 
+<a class="jxr_linenumber" name="L418" href="#L418">418</a>                     &amp;&amp; !(e1.next.next.coordinate.equals3D(e2.coordinate) &amp;&amp; Math.abs(e1.next.coordinate.x) == DATELINE
+<a class="jxr_linenumber" name="L419" href="#L419">419</a>                     &amp;&amp; Math.abs(e2.coordinate.x) == DATELINE) ) {
+<a class="jxr_linenumber" name="L420" href="#L420">420</a>                 connect(e1, e2);
+<a class="jxr_linenumber" name="L421" href="#L421">421</a>             }
+<a class="jxr_linenumber" name="L422" href="#L422">422</a>         }
+<a class="jxr_linenumber" name="L423" href="#L423">423</a>         <strong class="jxr_keyword">return</strong> numHoles;
+<a class="jxr_linenumber" name="L424" href="#L424">424</a>     }
+<a class="jxr_linenumber" name="L425" href="#L425">425</a> 
+<a class="jxr_linenumber" name="L426" href="#L426">426</a>     <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">void</strong> connect(<a href="../../../../../org/elasticsearch/common/geo/builders/ShapeBuilder.html">Edge</a> in, <a href="../../../../../org/elasticsearch/common/geo/builders/ShapeBuilder.html">Edge</a> out) {
+<a class="jxr_linenumber" name="L427" href="#L427">427</a>         assert in != <strong class="jxr_keyword">null</strong> &amp;&amp; out != <strong class="jxr_keyword">null</strong>;
+<a class="jxr_linenumber" name="L428" href="#L428">428</a>         assert in != out;
+<a class="jxr_linenumber" name="L429" href="#L429">429</a>         <em class="jxr_comment">// Connecting two Edges by inserting the point at</em>
+<a class="jxr_linenumber" name="L430" href="#L430">430</a>         <em class="jxr_comment">// dateline intersection and connect these by adding</em>
+<a class="jxr_linenumber" name="L431" href="#L431">431</a>         <em class="jxr_comment">// two edges between this points. One per direction</em>
+<a class="jxr_linenumber" name="L432" href="#L432">432</a>         <strong class="jxr_keyword">if</strong>(in.intersect != in.next.coordinate) {
+<a class="jxr_linenumber" name="L433" href="#L433">433</a>             <em class="jxr_comment">// NOTE: the order of the object creation is crucial here! Don't change it!</em>
+<a class="jxr_linenumber" name="L434" href="#L434">434</a>             <em class="jxr_comment">// first edge has no point on dateline</em>
+<a class="jxr_linenumber" name="L435" href="#L435">435</a>             <a href="../../../../../org/elasticsearch/common/geo/builders/ShapeBuilder.html">Edge</a> e1 = <strong class="jxr_keyword">new</strong> <a href="../../../../../org/elasticsearch/common/geo/builders/ShapeBuilder.html">Edge</a>(in.intersect, in.next);
+<a class="jxr_linenumber" name="L436" href="#L436">436</a>             
+<a class="jxr_linenumber" name="L437" href="#L437">437</a>             <strong class="jxr_keyword">if</strong>(out.intersect != out.next.coordinate) {
+<a class="jxr_linenumber" name="L438" href="#L438">438</a>                 <em class="jxr_comment">// second edge has no point on dateline</em>
+<a class="jxr_linenumber" name="L439" href="#L439">439</a>                 <a href="../../../../../org/elasticsearch/common/geo/builders/ShapeBuilder.html">Edge</a> e2 = <strong class="jxr_keyword">new</strong> <a href="../../../../../org/elasticsearch/common/geo/builders/ShapeBuilder.html">Edge</a>(out.intersect, out.next);
+<a class="jxr_linenumber" name="L440" href="#L440">440</a>                 in.next = <strong class="jxr_keyword">new</strong> <a href="../../../../../org/elasticsearch/common/geo/builders/ShapeBuilder.html">Edge</a>(in.intersect, e2, in.intersect);
+<a class="jxr_linenumber" name="L441" href="#L441">441</a>             } <strong class="jxr_keyword">else</strong> {
+<a class="jxr_linenumber" name="L442" href="#L442">442</a>                 <em class="jxr_comment">// second edge intersects with dateline</em>
+<a class="jxr_linenumber" name="L443" href="#L443">443</a>                 in.next = <strong class="jxr_keyword">new</strong> <a href="../../../../../org/elasticsearch/common/geo/builders/ShapeBuilder.html">Edge</a>(in.intersect, out.next, in.intersect);
+<a class="jxr_linenumber" name="L444" href="#L444">444</a>             }
+<a class="jxr_linenumber" name="L445" href="#L445">445</a>             out.next = <strong class="jxr_keyword">new</strong> <a href="../../../../../org/elasticsearch/common/geo/builders/ShapeBuilder.html">Edge</a>(out.intersect, e1, out.intersect);
+<a class="jxr_linenumber" name="L446" href="#L446">446</a>         } <strong class="jxr_keyword">else</strong> <strong class="jxr_keyword">if</strong> (in.next != out &amp;&amp; in.coordinate != out.intersect) {
+<a class="jxr_linenumber" name="L447" href="#L447">447</a>             <em class="jxr_comment">// first edge intersects with dateline</em>
+<a class="jxr_linenumber" name="L448" href="#L448">448</a>             <a href="../../../../../org/elasticsearch/common/geo/builders/ShapeBuilder.html">Edge</a> e2 = <strong class="jxr_keyword">new</strong> <a href="../../../../../org/elasticsearch/common/geo/builders/ShapeBuilder.html">Edge</a>(out.intersect, in.next, out.intersect);
+<a class="jxr_linenumber" name="L449" href="#L449">449</a> 
+<a class="jxr_linenumber" name="L450" href="#L450">450</a>             <strong class="jxr_keyword">if</strong>(out.intersect != out.next.coordinate) {
+<a class="jxr_linenumber" name="L451" href="#L451">451</a>                 <em class="jxr_comment">// second edge has no point on dateline</em>
+<a class="jxr_linenumber" name="L452" href="#L452">452</a>                 <a href="../../../../../org/elasticsearch/common/geo/builders/ShapeBuilder.html">Edge</a> e1 = <strong class="jxr_keyword">new</strong> <a href="../../../../../org/elasticsearch/common/geo/builders/ShapeBuilder.html">Edge</a>(out.intersect, out.next);
+<a class="jxr_linenumber" name="L453" href="#L453">453</a>                 in.next = <strong class="jxr_keyword">new</strong> <a href="../../../../../org/elasticsearch/common/geo/builders/ShapeBuilder.html">Edge</a>(in.intersect, e1, in.intersect);
+<a class="jxr_linenumber" name="L454" href="#L454">454</a>                 
+<a class="jxr_linenumber" name="L455" href="#L455">455</a>             } <strong class="jxr_keyword">else</strong> {
+<a class="jxr_linenumber" name="L456" href="#L456">456</a>                 <em class="jxr_comment">// second edge intersects with dateline</em>
+<a class="jxr_linenumber" name="L457" href="#L457">457</a>                 in.next = <strong class="jxr_keyword">new</strong> <a href="../../../../../org/elasticsearch/common/geo/builders/ShapeBuilder.html">Edge</a>(in.intersect, out.next, in.intersect);
+<a class="jxr_linenumber" name="L458" href="#L458">458</a>             }
+<a class="jxr_linenumber" name="L459" href="#L459">459</a>             out.next = e2;
+<a class="jxr_linenumber" name="L460" href="#L460">460</a>         }
+<a class="jxr_linenumber" name="L461" href="#L461">461</a>     }
+<a class="jxr_linenumber" name="L462" href="#L462">462</a> 
+<a class="jxr_linenumber" name="L463" href="#L463">463</a>     <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">int</strong> createEdges(<strong class="jxr_keyword">int</strong> component, <a href="../../../../../org/elasticsearch/common/geo/builders/ShapeBuilder.html">Orientation</a> orientation, BaseLineStringBuilder&lt;?&gt; shell,
+<a class="jxr_linenumber" name="L464" href="#L464">464</a>                                    BaseLineStringBuilder&lt;?&gt; hole,
+<a class="jxr_linenumber" name="L465" href="#L465">465</a>                                    <a href="../../../../../org/elasticsearch/common/geo/builders/ShapeBuilder.html">Edge</a>[] edges, <strong class="jxr_keyword">int</strong> offset) {
+<a class="jxr_linenumber" name="L466" href="#L466">466</a>         <em class="jxr_comment">// inner rings (holes) have an opposite direction than the outer rings</em>
+<a class="jxr_linenumber" name="L467" href="#L467">467</a>         <em class="jxr_comment">// XOR will invert the orientation for outer ring cases (Truth Table:, T/T = F, T/F = T, F/T = T, F/F = F)</em>
+<a class="jxr_linenumber" name="L468" href="#L468">468</a>         <strong class="jxr_keyword">boolean</strong> direction = (component != 0 ^ orientation == Orientation.RIGHT);
+<a class="jxr_linenumber" name="L469" href="#L469">469</a>         <em class="jxr_comment">// set the points array accordingly (shell or hole)</em>
+<a class="jxr_linenumber" name="L470" href="#L470">470</a>         Coordinate[] points = (hole != <strong class="jxr_keyword">null</strong>) ? hole.coordinates(false) : shell.coordinates(false);
+<a class="jxr_linenumber" name="L471" href="#L471">471</a>         Edge.ring(component, direction, orientation == Orientation.LEFT, shell, points, 0, edges, offset, points.length-1);
+<a class="jxr_linenumber" name="L472" href="#L472">472</a>         <strong class="jxr_keyword">return</strong> points.length-1;
+<a class="jxr_linenumber" name="L473" href="#L473">473</a>     }
+<a class="jxr_linenumber" name="L474" href="#L474">474</a> 
+<a class="jxr_linenumber" name="L475" href="#L475">475</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">class</strong> Ring&lt;P <strong class="jxr_keyword">extends</strong> ShapeBuilder&gt; <strong class="jxr_keyword">extends</strong> BaseLineStringBuilder&lt;Ring&lt;P&gt;&gt; {
+<a class="jxr_linenumber" name="L476" href="#L476">476</a> 
+<a class="jxr_linenumber" name="L477" href="#L477">477</a>         <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">final</strong> P parent;
+<a class="jxr_linenumber" name="L478" href="#L478">478</a> 
+<a class="jxr_linenumber" name="L479" href="#L479">479</a>         <strong class="jxr_keyword">protected</strong> <a href="../../../../../org/elasticsearch/common/geo/builders/BasePolygonBuilder.html">Ring</a>(P parent) {
+<a class="jxr_linenumber" name="L480" href="#L480">480</a>             <strong class="jxr_keyword">this</strong>(parent, <strong class="jxr_keyword">new</strong> ArrayList&lt;Coordinate&gt;());
+<a class="jxr_linenumber" name="L481" href="#L481">481</a>         }
+<a class="jxr_linenumber" name="L482" href="#L482">482</a> 
+<a class="jxr_linenumber" name="L483" href="#L483">483</a>         <strong class="jxr_keyword">protected</strong> <a href="../../../../../org/elasticsearch/common/geo/builders/BasePolygonBuilder.html">Ring</a>(P parent, ArrayList&lt;Coordinate&gt; points) {
+<a class="jxr_linenumber" name="L484" href="#L484">484</a>             <strong class="jxr_keyword">super</strong>(points);
+<a class="jxr_linenumber" name="L485" href="#L485">485</a>             <strong class="jxr_keyword">this</strong>.parent = parent;
+<a class="jxr_linenumber" name="L486" href="#L486">486</a>         }
+<a class="jxr_linenumber" name="L487" href="#L487">487</a> 
+<a class="jxr_linenumber" name="L488" href="#L488">488</a>         <strong class="jxr_keyword">public</strong> P close() {
+<a class="jxr_linenumber" name="L489" href="#L489">489</a>             Coordinate start = points.get(0);
+<a class="jxr_linenumber" name="L490" href="#L490">490</a>             Coordinate end = points.get(points.size()-1);
+<a class="jxr_linenumber" name="L491" href="#L491">491</a>             <strong class="jxr_keyword">if</strong>(start.x != end.x || start.y != end.y) {
+<a class="jxr_linenumber" name="L492" href="#L492">492</a>                 points.add(start);
+<a class="jxr_linenumber" name="L493" href="#L493">493</a>             }
+<a class="jxr_linenumber" name="L494" href="#L494">494</a>             <strong class="jxr_keyword">return</strong> parent;
+<a class="jxr_linenumber" name="L495" href="#L495">495</a>         }
+<a class="jxr_linenumber" name="L496" href="#L496">496</a> 
+<a class="jxr_linenumber" name="L497" href="#L497">497</a>         @Override
+<a class="jxr_linenumber" name="L498" href="#L498">498</a>         <strong class="jxr_keyword">public</strong> <a href="../../../../../org/elasticsearch/common/geo/builders/ShapeBuilder.html">GeoShapeType</a> type() {
+<a class="jxr_linenumber" name="L499" href="#L499">499</a>             <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">null</strong>;
+<a class="jxr_linenumber" name="L500" href="#L500">500</a>         }
+<a class="jxr_linenumber" name="L501" href="#L501">501</a>     }
+<a class="jxr_linenumber" name="L502" href="#L502">502</a> }
+</pre>
+<hr/>
+<div id="footer">Copyright &#169; 2015. All rights reserved.</div>
+</body>
+</html>

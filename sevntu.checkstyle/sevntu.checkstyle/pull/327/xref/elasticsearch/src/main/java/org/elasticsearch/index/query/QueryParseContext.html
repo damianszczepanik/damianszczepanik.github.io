@@ -1,0 +1,497 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head><meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+<title>QueryParseContext xref</title>
+<link type="text/css" rel="stylesheet" href="../../../../stylesheet.css" />
+</head>
+<body>
+<div id="overview"><a href="../../../../../../../../../apidocs/org/elasticsearch/index/query/QueryParseContext.html">View Javadoc</a></div><pre>
+<a class="jxr_linenumber" name="L1" href="#L1">1</a>   <em class="jxr_comment">/*</em>
+<a class="jxr_linenumber" name="L2" href="#L2">2</a>   <em class="jxr_comment"> * Licensed to Elasticsearch under one or more contributor</em>
+<a class="jxr_linenumber" name="L3" href="#L3">3</a>   <em class="jxr_comment"> * license agreements. See the NOTICE file distributed with</em>
+<a class="jxr_linenumber" name="L4" href="#L4">4</a>   <em class="jxr_comment"> * this work for additional information regarding copyright</em>
+<a class="jxr_linenumber" name="L5" href="#L5">5</a>   <em class="jxr_comment"> * ownership. Elasticsearch licenses this file to you under</em>
+<a class="jxr_linenumber" name="L6" href="#L6">6</a>   <em class="jxr_comment"> * the Apache License, Version 2.0 (the "License"); you may</em>
+<a class="jxr_linenumber" name="L7" href="#L7">7</a>   <em class="jxr_comment"> * not use this file except in compliance with the License.</em>
+<a class="jxr_linenumber" name="L8" href="#L8">8</a>   <em class="jxr_comment"> * You may obtain a copy of the License at</em>
+<a class="jxr_linenumber" name="L9" href="#L9">9</a>   <em class="jxr_comment"> *</em>
+<a class="jxr_linenumber" name="L10" href="#L10">10</a>  <em class="jxr_comment"> *    <a href="http://www.apache.org/licenses/LICENSE-2." target="alexandria_uri">http://www.apache.org/licenses/LICENSE-2.</a>0</em>
+<a class="jxr_linenumber" name="L11" href="#L11">11</a>  <em class="jxr_comment"> *</em>
+<a class="jxr_linenumber" name="L12" href="#L12">12</a>  <em class="jxr_comment"> * Unless required by applicable law or agreed to in writing,</em>
+<a class="jxr_linenumber" name="L13" href="#L13">13</a>  <em class="jxr_comment"> * software distributed under the License is distributed on an</em>
+<a class="jxr_linenumber" name="L14" href="#L14">14</a>  <em class="jxr_comment"> * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY</em>
+<a class="jxr_linenumber" name="L15" href="#L15">15</a>  <em class="jxr_comment"> * KIND, either express or implied.  See the License for the</em>
+<a class="jxr_linenumber" name="L16" href="#L16">16</a>  <em class="jxr_comment"> * specific language governing permissions and limitations</em>
+<a class="jxr_linenumber" name="L17" href="#L17">17</a>  <em class="jxr_comment"> * under the License.</em>
+<a class="jxr_linenumber" name="L18" href="#L18">18</a>  <em class="jxr_comment"> */</em>
+<a class="jxr_linenumber" name="L19" href="#L19">19</a>  
+<a class="jxr_linenumber" name="L20" href="#L20">20</a>  <strong class="jxr_keyword">package</strong> org.elasticsearch.index.query;
+<a class="jxr_linenumber" name="L21" href="#L21">21</a>  
+<a class="jxr_linenumber" name="L22" href="#L22">22</a>  <strong class="jxr_keyword">import</strong> com.google.common.collect.ImmutableMap;
+<a class="jxr_linenumber" name="L23" href="#L23">23</a>  <strong class="jxr_keyword">import</strong> com.google.common.collect.Maps;
+<a class="jxr_linenumber" name="L24" href="#L24">24</a>  
+<a class="jxr_linenumber" name="L25" href="#L25">25</a>  <strong class="jxr_keyword">import</strong> org.apache.lucene.index.LeafReaderContext;
+<a class="jxr_linenumber" name="L26" href="#L26">26</a>  <strong class="jxr_keyword">import</strong> org.apache.lucene.queryparser.classic.MapperQueryParser;
+<a class="jxr_linenumber" name="L27" href="#L27">27</a>  <strong class="jxr_keyword">import</strong> org.apache.lucene.queryparser.classic.QueryParserSettings;
+<a class="jxr_linenumber" name="L28" href="#L28">28</a>  <strong class="jxr_keyword">import</strong> org.apache.lucene.search.DocIdSet;
+<a class="jxr_linenumber" name="L29" href="#L29">29</a>  <strong class="jxr_keyword">import</strong> org.apache.lucene.search.Filter;
+<a class="jxr_linenumber" name="L30" href="#L30">30</a>  <strong class="jxr_keyword">import</strong> org.apache.lucene.search.FilterCachingPolicy;
+<a class="jxr_linenumber" name="L31" href="#L31">31</a>  <strong class="jxr_keyword">import</strong> org.apache.lucene.search.Query;
+<a class="jxr_linenumber" name="L32" href="#L32">32</a>  <strong class="jxr_keyword">import</strong> org.apache.lucene.search.join.BitDocIdSetFilter;
+<a class="jxr_linenumber" name="L33" href="#L33">33</a>  <strong class="jxr_keyword">import</strong> org.apache.lucene.search.similarities.Similarity;
+<a class="jxr_linenumber" name="L34" href="#L34">34</a>  <strong class="jxr_keyword">import</strong> org.apache.lucene.util.Bits;
+<a class="jxr_linenumber" name="L35" href="#L35">35</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.Version;
+<a class="jxr_linenumber" name="L36" href="#L36">36</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.cluster.metadata.IndexMetaData;
+<a class="jxr_linenumber" name="L37" href="#L37">37</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.common.Nullable;
+<a class="jxr_linenumber" name="L38" href="#L38">38</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.common.ParseField;
+<a class="jxr_linenumber" name="L39" href="#L39">39</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.common.lucene.HashedBytesRef;
+<a class="jxr_linenumber" name="L40" href="#L40">40</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.common.lucene.search.NoCacheFilter;
+<a class="jxr_linenumber" name="L41" href="#L41">41</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.common.lucene.search.NoCacheQuery;
+<a class="jxr_linenumber" name="L42" href="#L42">42</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.common.lucene.search.Queries;
+<a class="jxr_linenumber" name="L43" href="#L43">43</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.common.lucene.search.ResolvableFilter;
+<a class="jxr_linenumber" name="L44" href="#L44">44</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.common.settings.ImmutableSettings;
+<a class="jxr_linenumber" name="L45" href="#L45">45</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.common.settings.Settings;
+<a class="jxr_linenumber" name="L46" href="#L46">46</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.common.xcontent.XContentParser;
+<a class="jxr_linenumber" name="L47" href="#L47">47</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.index.Index;
+<a class="jxr_linenumber" name="L48" href="#L48">48</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.index.analysis.AnalysisService;
+<a class="jxr_linenumber" name="L49" href="#L49">49</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.index.cache.query.parser.QueryParserCache;
+<a class="jxr_linenumber" name="L50" href="#L50">50</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.index.fielddata.IndexFieldData;
+<a class="jxr_linenumber" name="L51" href="#L51">51</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.index.mapper.FieldMapper;
+<a class="jxr_linenumber" name="L52" href="#L52">52</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.index.mapper.FieldMappers;
+<a class="jxr_linenumber" name="L53" href="#L53">53</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.index.mapper.Mapper;
+<a class="jxr_linenumber" name="L54" href="#L54">54</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.index.mapper.MapperService;
+<a class="jxr_linenumber" name="L55" href="#L55">55</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.index.mapper.MapperBuilders;
+<a class="jxr_linenumber" name="L56" href="#L56">56</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.index.mapper.ContentPath;
+<a class="jxr_linenumber" name="L57" href="#L57">57</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.index.mapper.core.StringFieldMapper;
+<a class="jxr_linenumber" name="L58" href="#L58">58</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.index.query.support.NestedScope;
+<a class="jxr_linenumber" name="L59" href="#L59">59</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.index.search.child.CustomQueryWrappingFilter;
+<a class="jxr_linenumber" name="L60" href="#L60">60</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.index.similarity.SimilarityService;
+<a class="jxr_linenumber" name="L61" href="#L61">61</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.script.ScriptService;
+<a class="jxr_linenumber" name="L62" href="#L62">62</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.search.fetch.innerhits.InnerHitsContext;
+<a class="jxr_linenumber" name="L63" href="#L63">63</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.search.internal.SearchContext;
+<a class="jxr_linenumber" name="L64" href="#L64">64</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.search.lookup.SearchLookup;
+<a class="jxr_linenumber" name="L65" href="#L65">65</a>  
+<a class="jxr_linenumber" name="L66" href="#L66">66</a>  <strong class="jxr_keyword">import</strong> java.io.IOException;
+<a class="jxr_linenumber" name="L67" href="#L67">67</a>  <strong class="jxr_keyword">import</strong> java.util.*;
+<a class="jxr_linenumber" name="L68" href="#L68">68</a>  
+<a class="jxr_linenumber" name="L69" href="#L69">69</a>  <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="L70" href="#L70">70</a>  <em class="jxr_javadoccomment"> *</em>
+<a class="jxr_linenumber" name="L71" href="#L71">71</a>  <em class="jxr_javadoccomment"> */</em>
+<a class="jxr_linenumber" name="L72" href="#L72">72</a>  <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">class</strong> <a href="../../../../org/elasticsearch/index/query/QueryParseContext.html">QueryParseContext</a> {
+<a class="jxr_linenumber" name="L73" href="#L73">73</a>  
+<a class="jxr_linenumber" name="L74" href="#L74">74</a>      <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> ThreadLocal&lt;String[]&gt; typesContext = <strong class="jxr_keyword">new</strong> ThreadLocal&lt;&gt;();
+<a class="jxr_linenumber" name="L75" href="#L75">75</a>  
+<a class="jxr_linenumber" name="L76" href="#L76">76</a>      <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">void</strong> setTypes(String[] types) {
+<a class="jxr_linenumber" name="L77" href="#L77">77</a>          typesContext.set(types);
+<a class="jxr_linenumber" name="L78" href="#L78">78</a>      }
+<a class="jxr_linenumber" name="L79" href="#L79">79</a>  
+<a class="jxr_linenumber" name="L80" href="#L80">80</a>      <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">static</strong> String[] getTypes() {
+<a class="jxr_linenumber" name="L81" href="#L81">81</a>          <strong class="jxr_keyword">return</strong> typesContext.get();
+<a class="jxr_linenumber" name="L82" href="#L82">82</a>      }
+<a class="jxr_linenumber" name="L83" href="#L83">83</a>  
+<a class="jxr_linenumber" name="L84" href="#L84">84</a>      <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">static</strong> String[] setTypesWithPrevious(String[] types) {
+<a class="jxr_linenumber" name="L85" href="#L85">85</a>          String[] old = typesContext.get();
+<a class="jxr_linenumber" name="L86" href="#L86">86</a>          setTypes(types);
+<a class="jxr_linenumber" name="L87" href="#L87">87</a>          <strong class="jxr_keyword">return</strong> old;
+<a class="jxr_linenumber" name="L88" href="#L88">88</a>      }
+<a class="jxr_linenumber" name="L89" href="#L89">89</a>  
+<a class="jxr_linenumber" name="L90" href="#L90">90</a>      <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">void</strong> removeTypes() {
+<a class="jxr_linenumber" name="L91" href="#L91">91</a>          typesContext.remove();
+<a class="jxr_linenumber" name="L92" href="#L92">92</a>      }
+<a class="jxr_linenumber" name="L93" href="#L93">93</a>  
+<a class="jxr_linenumber" name="L94" href="#L94">94</a>      <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">final</strong> <a href="../../../../org/elasticsearch/index/Index.html">Index</a> index;
+<a class="jxr_linenumber" name="L95" href="#L95">95</a>  
+<a class="jxr_linenumber" name="L96" href="#L96">96</a>      <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">boolean</strong> propagateNoCache = false;
+<a class="jxr_linenumber" name="L97" href="#L97">97</a>  
+<a class="jxr_linenumber" name="L98" href="#L98">98</a>      <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">boolean</strong> requireCustomQueryWrappingFilter = false;
+<a class="jxr_linenumber" name="L99" href="#L99">99</a>  
+<a class="jxr_linenumber" name="L100" href="#L100">100</a>     <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">final</strong> <a href="../../../../org/elasticsearch/index/query/IndexQueryParserService.html">IndexQueryParserService</a> indexQueryParser;
+<a class="jxr_linenumber" name="L101" href="#L101">101</a> 
+<a class="jxr_linenumber" name="L102" href="#L102">102</a>     <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">final</strong> Map&lt;String, Filter&gt; namedFilters = Maps.newHashMap();
+<a class="jxr_linenumber" name="L103" href="#L103">103</a> 
+<a class="jxr_linenumber" name="L104" href="#L104">104</a>     <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">final</strong> <a href="../../../../org/apache/lucene/queryparser/classic/MapperQueryParser.html">MapperQueryParser</a> queryParser = <strong class="jxr_keyword">new</strong> <a href="../../../../org/apache/lucene/queryparser/classic/MapperQueryParser.html">MapperQueryParser</a>(<strong class="jxr_keyword">this</strong>);
+<a class="jxr_linenumber" name="L105" href="#L105">105</a> 
+<a class="jxr_linenumber" name="L106" href="#L106">106</a>     <strong class="jxr_keyword">private</strong> <a href="../../../../org/elasticsearch/common/xcontent/XContentParser.html">XContentParser</a> parser;
+<a class="jxr_linenumber" name="L107" href="#L107">107</a> 
+<a class="jxr_linenumber" name="L108" href="#L108">108</a>     <strong class="jxr_keyword">private</strong> EnumSet&lt;ParseField.Flag&gt; parseFlags = ParseField.EMPTY_FLAGS;
+<a class="jxr_linenumber" name="L109" href="#L109">109</a> 
+<a class="jxr_linenumber" name="L110" href="#L110">110</a>     <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">final</strong> <strong class="jxr_keyword">boolean</strong> disableFilterCaching;
+<a class="jxr_linenumber" name="L111" href="#L111">111</a> 
+<a class="jxr_linenumber" name="L112" href="#L112">112</a>     <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">boolean</strong> allowUnmappedFields;
+<a class="jxr_linenumber" name="L113" href="#L113">113</a> 
+<a class="jxr_linenumber" name="L114" href="#L114">114</a>     <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">boolean</strong> mapUnmappedFieldAsString;
+<a class="jxr_linenumber" name="L115" href="#L115">115</a> 
+<a class="jxr_linenumber" name="L116" href="#L116">116</a>     <strong class="jxr_keyword">private</strong> <a href="../../../../org/elasticsearch/index/query/support/NestedScope.html">NestedScope</a> nestedScope;
+<a class="jxr_linenumber" name="L117" href="#L117">117</a> 
+<a class="jxr_linenumber" name="L118" href="#L118">118</a>     <strong class="jxr_keyword">public</strong> <a href="../../../../org/elasticsearch/index/query/QueryParseContext.html">QueryParseContext</a>(<a href="../../../../org/elasticsearch/index/Index.html">Index</a> index, <a href="../../../../org/elasticsearch/index/query/IndexQueryParserService.html">IndexQueryParserService</a> indexQueryParser) {
+<a class="jxr_linenumber" name="L119" href="#L119">119</a>         <strong class="jxr_keyword">this</strong>(index, indexQueryParser, false);
+<a class="jxr_linenumber" name="L120" href="#L120">120</a>     }
+<a class="jxr_linenumber" name="L121" href="#L121">121</a> 
+<a class="jxr_linenumber" name="L122" href="#L122">122</a>     <strong class="jxr_keyword">public</strong> <a href="../../../../org/elasticsearch/index/query/QueryParseContext.html">QueryParseContext</a>(<a href="../../../../org/elasticsearch/index/Index.html">Index</a> index, <a href="../../../../org/elasticsearch/index/query/IndexQueryParserService.html">IndexQueryParserService</a> indexQueryParser, <strong class="jxr_keyword">boolean</strong> disableFilterCaching) {
+<a class="jxr_linenumber" name="L123" href="#L123">123</a>         <strong class="jxr_keyword">this</strong>.index = index;
+<a class="jxr_linenumber" name="L124" href="#L124">124</a>         <strong class="jxr_keyword">this</strong>.indexQueryParser = indexQueryParser;
+<a class="jxr_linenumber" name="L125" href="#L125">125</a>         <strong class="jxr_keyword">this</strong>.propagateNoCache = disableFilterCaching;
+<a class="jxr_linenumber" name="L126" href="#L126">126</a>         <strong class="jxr_keyword">this</strong>.disableFilterCaching = disableFilterCaching;
+<a class="jxr_linenumber" name="L127" href="#L127">127</a>     }
+<a class="jxr_linenumber" name="L128" href="#L128">128</a> 
+<a class="jxr_linenumber" name="L129" href="#L129">129</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> parseFlags(EnumSet&lt;ParseField.Flag&gt; parseFlags) {
+<a class="jxr_linenumber" name="L130" href="#L130">130</a>         <strong class="jxr_keyword">this</strong>.parseFlags = parseFlags == <strong class="jxr_keyword">null</strong> ? ParseField.EMPTY_FLAGS : parseFlags;
+<a class="jxr_linenumber" name="L131" href="#L131">131</a>     }
+<a class="jxr_linenumber" name="L132" href="#L132">132</a> 
+<a class="jxr_linenumber" name="L133" href="#L133">133</a>     <strong class="jxr_keyword">public</strong> EnumSet&lt;ParseField.Flag&gt; parseFlags() {
+<a class="jxr_linenumber" name="L134" href="#L134">134</a>         <strong class="jxr_keyword">return</strong> parseFlags;
+<a class="jxr_linenumber" name="L135" href="#L135">135</a>     }
+<a class="jxr_linenumber" name="L136" href="#L136">136</a> 
+<a class="jxr_linenumber" name="L137" href="#L137">137</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> reset(<a href="../../../../org/elasticsearch/common/xcontent/XContentParser.html">XContentParser</a> jp) {
+<a class="jxr_linenumber" name="L138" href="#L138">138</a>         allowUnmappedFields = indexQueryParser.defaultAllowUnmappedFields();
+<a class="jxr_linenumber" name="L139" href="#L139">139</a>         <strong class="jxr_keyword">this</strong>.parseFlags = ParseField.EMPTY_FLAGS;
+<a class="jxr_linenumber" name="L140" href="#L140">140</a>         <strong class="jxr_keyword">this</strong>.lookup = <strong class="jxr_keyword">null</strong>;
+<a class="jxr_linenumber" name="L141" href="#L141">141</a>         <strong class="jxr_keyword">this</strong>.parser = jp;
+<a class="jxr_linenumber" name="L142" href="#L142">142</a>         <strong class="jxr_keyword">this</strong>.namedFilters.clear();
+<a class="jxr_linenumber" name="L143" href="#L143">143</a>         <strong class="jxr_keyword">this</strong>.requireCustomQueryWrappingFilter = false;
+<a class="jxr_linenumber" name="L144" href="#L144">144</a>         <strong class="jxr_keyword">this</strong>.propagateNoCache = false;
+<a class="jxr_linenumber" name="L145" href="#L145">145</a>         <strong class="jxr_keyword">this</strong>.nestedScope = <strong class="jxr_keyword">new</strong> <a href="../../../../org/elasticsearch/index/query/support/NestedScope.html">NestedScope</a>();
+<a class="jxr_linenumber" name="L146" href="#L146">146</a>     }
+<a class="jxr_linenumber" name="L147" href="#L147">147</a> 
+<a class="jxr_linenumber" name="L148" href="#L148">148</a>     <strong class="jxr_keyword">public</strong> <a href="../../../../org/elasticsearch/index/Index.html">Index</a> index() {
+<a class="jxr_linenumber" name="L149" href="#L149">149</a>         <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">this</strong>.index;
+<a class="jxr_linenumber" name="L150" href="#L150">150</a>     }
+<a class="jxr_linenumber" name="L151" href="#L151">151</a> 
+<a class="jxr_linenumber" name="L152" href="#L152">152</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> parser(<a href="../../../../org/elasticsearch/common/xcontent/XContentParser.html">XContentParser</a> parser) {
+<a class="jxr_linenumber" name="L153" href="#L153">153</a>         <strong class="jxr_keyword">this</strong>.parser = parser;
+<a class="jxr_linenumber" name="L154" href="#L154">154</a>     }
+<a class="jxr_linenumber" name="L155" href="#L155">155</a> 
+<a class="jxr_linenumber" name="L156" href="#L156">156</a>     <strong class="jxr_keyword">public</strong> <a href="../../../../org/elasticsearch/common/xcontent/XContentParser.html">XContentParser</a> parser() {
+<a class="jxr_linenumber" name="L157" href="#L157">157</a>         <strong class="jxr_keyword">return</strong> parser;
+<a class="jxr_linenumber" name="L158" href="#L158">158</a>     }
+<a class="jxr_linenumber" name="L159" href="#L159">159</a>     
+<a class="jxr_linenumber" name="L160" href="#L160">160</a>     <strong class="jxr_keyword">public</strong> <a href="../../../../org/elasticsearch/index/query/IndexQueryParserService.html">IndexQueryParserService</a> indexQueryParserService() {
+<a class="jxr_linenumber" name="L161" href="#L161">161</a>         <strong class="jxr_keyword">return</strong> indexQueryParser;
+<a class="jxr_linenumber" name="L162" href="#L162">162</a>     }
+<a class="jxr_linenumber" name="L163" href="#L163">163</a> 
+<a class="jxr_linenumber" name="L164" href="#L164">164</a>     <strong class="jxr_keyword">public</strong> <a href="../../../../org/elasticsearch/index/analysis/AnalysisService.html">AnalysisService</a> analysisService() {
+<a class="jxr_linenumber" name="L165" href="#L165">165</a>         <strong class="jxr_keyword">return</strong> indexQueryParser.analysisService;
+<a class="jxr_linenumber" name="L166" href="#L166">166</a>     }
+<a class="jxr_linenumber" name="L167" href="#L167">167</a> 
+<a class="jxr_linenumber" name="L168" href="#L168">168</a>     <strong class="jxr_keyword">public</strong> <a href="../../../../org/elasticsearch/script/ScriptService.html">ScriptService</a> scriptService() {
+<a class="jxr_linenumber" name="L169" href="#L169">169</a>         <strong class="jxr_keyword">return</strong> indexQueryParser.scriptService;
+<a class="jxr_linenumber" name="L170" href="#L170">170</a>     }
+<a class="jxr_linenumber" name="L171" href="#L171">171</a> 
+<a class="jxr_linenumber" name="L172" href="#L172">172</a>     <strong class="jxr_keyword">public</strong> <a href="../../../../org/elasticsearch/index/mapper/MapperService.html">MapperService</a> mapperService() {
+<a class="jxr_linenumber" name="L173" href="#L173">173</a>         <strong class="jxr_keyword">return</strong> indexQueryParser.mapperService;
+<a class="jxr_linenumber" name="L174" href="#L174">174</a>     }
+<a class="jxr_linenumber" name="L175" href="#L175">175</a> 
+<a class="jxr_linenumber" name="L176" href="#L176">176</a>     @Nullable
+<a class="jxr_linenumber" name="L177" href="#L177">177</a>     <strong class="jxr_keyword">public</strong> <a href="../../../../org/elasticsearch/index/similarity/SimilarityService.html">SimilarityService</a> similarityService() {
+<a class="jxr_linenumber" name="L178" href="#L178">178</a>         <strong class="jxr_keyword">return</strong> indexQueryParser.similarityService;
+<a class="jxr_linenumber" name="L179" href="#L179">179</a>     }
+<a class="jxr_linenumber" name="L180" href="#L180">180</a> 
+<a class="jxr_linenumber" name="L181" href="#L181">181</a>     <strong class="jxr_keyword">public</strong> Similarity searchSimilarity() {
+<a class="jxr_linenumber" name="L182" href="#L182">182</a>         <strong class="jxr_keyword">return</strong> indexQueryParser.similarityService != <strong class="jxr_keyword">null</strong> ? indexQueryParser.similarityService.similarity() : <strong class="jxr_keyword">null</strong>;
+<a class="jxr_linenumber" name="L183" href="#L183">183</a>     }
+<a class="jxr_linenumber" name="L184" href="#L184">184</a> 
+<a class="jxr_linenumber" name="L185" href="#L185">185</a>     <strong class="jxr_keyword">public</strong> <a href="../../../../org/elasticsearch/index/cache/query/parser/QueryParserCache.html">QueryParserCache</a> queryParserCache() {
+<a class="jxr_linenumber" name="L186" href="#L186">186</a>         <strong class="jxr_keyword">return</strong> indexQueryParser.indexCache.queryParserCache();
+<a class="jxr_linenumber" name="L187" href="#L187">187</a>     }
+<a class="jxr_linenumber" name="L188" href="#L188">188</a> 
+<a class="jxr_linenumber" name="L189" href="#L189">189</a>     <strong class="jxr_keyword">public</strong> String defaultField() {
+<a class="jxr_linenumber" name="L190" href="#L190">190</a>         <strong class="jxr_keyword">return</strong> indexQueryParser.defaultField();
+<a class="jxr_linenumber" name="L191" href="#L191">191</a>     }
+<a class="jxr_linenumber" name="L192" href="#L192">192</a> 
+<a class="jxr_linenumber" name="L193" href="#L193">193</a>     <strong class="jxr_keyword">public</strong> FilterCachingPolicy autoFilterCachePolicy() {
+<a class="jxr_linenumber" name="L194" href="#L194">194</a>         <strong class="jxr_keyword">return</strong> indexQueryParser.autoFilterCachePolicy();
+<a class="jxr_linenumber" name="L195" href="#L195">195</a>     }
+<a class="jxr_linenumber" name="L196" href="#L196">196</a> 
+<a class="jxr_linenumber" name="L197" href="#L197">197</a>     <strong class="jxr_keyword">public</strong> FilterCachingPolicy parseFilterCachePolicy() <strong class="jxr_keyword">throws</strong> IOException {
+<a class="jxr_linenumber" name="L198" href="#L198">198</a>         <strong class="jxr_keyword">final</strong> String text = parser.textOrNull();
+<a class="jxr_linenumber" name="L199" href="#L199">199</a>         <strong class="jxr_keyword">if</strong> (text == <strong class="jxr_keyword">null</strong> || text.equals(<span class="jxr_string">"auto"</span>)) {
+<a class="jxr_linenumber" name="L200" href="#L200">200</a>             <strong class="jxr_keyword">return</strong> autoFilterCachePolicy();
+<a class="jxr_linenumber" name="L201" href="#L201">201</a>         } <strong class="jxr_keyword">else</strong> <strong class="jxr_keyword">if</strong> (parser.booleanValue()) {
+<a class="jxr_linenumber" name="L202" href="#L202">202</a>             <em class="jxr_comment">// cache without conditions on how many times the filter has been</em>
+<a class="jxr_linenumber" name="L203" href="#L203">203</a>             <em class="jxr_comment">// used or what the produced DocIdSet looks like, but ONLY on large</em>
+<a class="jxr_linenumber" name="L204" href="#L204">204</a>             <em class="jxr_comment">// segments to not pollute the cache</em>
+<a class="jxr_linenumber" name="L205" href="#L205">205</a>             <strong class="jxr_keyword">return</strong> FilterCachingPolicy.CacheOnLargeSegments.DEFAULT;
+<a class="jxr_linenumber" name="L206" href="#L206">206</a>         } <strong class="jxr_keyword">else</strong> {
+<a class="jxr_linenumber" name="L207" href="#L207">207</a>             <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">null</strong>;
+<a class="jxr_linenumber" name="L208" href="#L208">208</a>         }
+<a class="jxr_linenumber" name="L209" href="#L209">209</a>     }
+<a class="jxr_linenumber" name="L210" href="#L210">210</a> 
+<a class="jxr_linenumber" name="L211" href="#L211">211</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">boolean</strong> queryStringLenient() {
+<a class="jxr_linenumber" name="L212" href="#L212">212</a>         <strong class="jxr_keyword">return</strong> indexQueryParser.queryStringLenient();
+<a class="jxr_linenumber" name="L213" href="#L213">213</a>     }
+<a class="jxr_linenumber" name="L214" href="#L214">214</a> 
+<a class="jxr_linenumber" name="L215" href="#L215">215</a>     <strong class="jxr_keyword">public</strong> <a href="../../../../org/apache/lucene/queryparser/classic/MapperQueryParser.html">MapperQueryParser</a> queryParser(<a href="../../../../org/apache/lucene/queryparser/classic/QueryParserSettings.html">QueryParserSettings</a> settings) {
+<a class="jxr_linenumber" name="L216" href="#L216">216</a>         queryParser.reset(settings);
+<a class="jxr_linenumber" name="L217" href="#L217">217</a>         <strong class="jxr_keyword">return</strong> queryParser;
+<a class="jxr_linenumber" name="L218" href="#L218">218</a>     }
+<a class="jxr_linenumber" name="L219" href="#L219">219</a> 
+<a class="jxr_linenumber" name="L220" href="#L220">220</a>     <strong class="jxr_keyword">public</strong> BitDocIdSetFilter bitsetFilter(Filter filter) {
+<a class="jxr_linenumber" name="L221" href="#L221">221</a>         <strong class="jxr_keyword">return</strong> indexQueryParser.bitsetFilterCache.getBitDocIdSetFilter(filter);
+<a class="jxr_linenumber" name="L222" href="#L222">222</a>     }
+<a class="jxr_linenumber" name="L223" href="#L223">223</a> 
+<a class="jxr_linenumber" name="L224" href="#L224">224</a>     <strong class="jxr_keyword">public</strong> Filter cacheFilter(Filter filter, <strong class="jxr_keyword">final</strong> @Nullable <a href="../../../../org/elasticsearch/common/lucene/HashedBytesRef.html">HashedBytesRef</a> cacheKey, <strong class="jxr_keyword">final</strong> FilterCachingPolicy cachePolicy) {
+<a class="jxr_linenumber" name="L225" href="#L225">225</a>         <strong class="jxr_keyword">if</strong> (filter == <strong class="jxr_keyword">null</strong>) {
+<a class="jxr_linenumber" name="L226" href="#L226">226</a>             <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">null</strong>;
+<a class="jxr_linenumber" name="L227" href="#L227">227</a>         }
+<a class="jxr_linenumber" name="L228" href="#L228">228</a>         <strong class="jxr_keyword">if</strong> (<strong class="jxr_keyword">this</strong>.disableFilterCaching || <strong class="jxr_keyword">this</strong>.propagateNoCache || filter instanceof NoCacheFilter) {
+<a class="jxr_linenumber" name="L229" href="#L229">229</a>             <strong class="jxr_keyword">return</strong> filter;
+<a class="jxr_linenumber" name="L230" href="#L230">230</a>         }
+<a class="jxr_linenumber" name="L231" href="#L231">231</a>         <strong class="jxr_keyword">if</strong> (filter instanceof ResolvableFilter) {
+<a class="jxr_linenumber" name="L232" href="#L232">232</a>             <strong class="jxr_keyword">final</strong> <a href="../../../../org/elasticsearch/common/lucene/search/ResolvableFilter.html">ResolvableFilter</a> resolvableFilter = (ResolvableFilter) filter;
+<a class="jxr_linenumber" name="L233" href="#L233">233</a>             <em class="jxr_comment">// We need to wrap it another filter, because this method is invoked at query parse time, which</em>
+<a class="jxr_linenumber" name="L234" href="#L234">234</a>             <em class="jxr_comment">// may not be during search execution time. (for example index alias filter and percolator)</em>
+<a class="jxr_linenumber" name="L235" href="#L235">235</a>             <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> Filter() {
+<a class="jxr_linenumber" name="L236" href="#L236">236</a>                 @Override
+<a class="jxr_linenumber" name="L237" href="#L237">237</a>                 <strong class="jxr_keyword">public</strong> DocIdSet getDocIdSet(LeafReaderContext atomicReaderContext, Bits bits) <strong class="jxr_keyword">throws</strong> IOException {
+<a class="jxr_linenumber" name="L238" href="#L238">238</a>                     Filter filter = resolvableFilter.resolve();
+<a class="jxr_linenumber" name="L239" href="#L239">239</a>                     <strong class="jxr_keyword">if</strong> (filter == <strong class="jxr_keyword">null</strong>) {
+<a class="jxr_linenumber" name="L240" href="#L240">240</a>                         <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">null</strong>;
+<a class="jxr_linenumber" name="L241" href="#L241">241</a>                     }
+<a class="jxr_linenumber" name="L242" href="#L242">242</a>                     filter = indexQueryParser.indexCache.filter().cache(filter, cacheKey, cachePolicy);
+<a class="jxr_linenumber" name="L243" href="#L243">243</a>                     <strong class="jxr_keyword">return</strong> filter.getDocIdSet(atomicReaderContext, bits);
+<a class="jxr_linenumber" name="L244" href="#L244">244</a>                 }
+<a class="jxr_linenumber" name="L245" href="#L245">245</a> 
+<a class="jxr_linenumber" name="L246" href="#L246">246</a>                 @Override
+<a class="jxr_linenumber" name="L247" href="#L247">247</a>                 <strong class="jxr_keyword">public</strong> String toString(String field) {
+<a class="jxr_linenumber" name="L248" href="#L248">248</a>                     <strong class="jxr_keyword">return</strong> <span class="jxr_string">"AnonymousResolvableFilter"</span>; <em class="jxr_comment">// TODO: not sure what is going on here</em>
+<a class="jxr_linenumber" name="L249" href="#L249">249</a>                 }
+<a class="jxr_linenumber" name="L250" href="#L250">250</a>             };
+<a class="jxr_linenumber" name="L251" href="#L251">251</a>         } <strong class="jxr_keyword">else</strong> {
+<a class="jxr_linenumber" name="L252" href="#L252">252</a>             <strong class="jxr_keyword">return</strong> indexQueryParser.indexCache.filter().cache(filter, cacheKey, cachePolicy);
+<a class="jxr_linenumber" name="L253" href="#L253">253</a>         }
+<a class="jxr_linenumber" name="L254" href="#L254">254</a>     }
+<a class="jxr_linenumber" name="L255" href="#L255">255</a> 
+<a class="jxr_linenumber" name="L256" href="#L256">256</a>     <strong class="jxr_keyword">public</strong> &lt;IFD <strong class="jxr_keyword">extends</strong> IndexFieldData&lt;?&gt;&gt; IFD getForField(FieldMapper&lt;?&gt; mapper) {
+<a class="jxr_linenumber" name="L257" href="#L257">257</a>         <strong class="jxr_keyword">return</strong> indexQueryParser.fieldDataService.getForField(mapper);
+<a class="jxr_linenumber" name="L258" href="#L258">258</a>     }
+<a class="jxr_linenumber" name="L259" href="#L259">259</a> 
+<a class="jxr_linenumber" name="L260" href="#L260">260</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> addNamedFilter(String name, Filter filter) {
+<a class="jxr_linenumber" name="L261" href="#L261">261</a>         namedFilters.put(name, filter);
+<a class="jxr_linenumber" name="L262" href="#L262">262</a>     }
+<a class="jxr_linenumber" name="L263" href="#L263">263</a> 
+<a class="jxr_linenumber" name="L264" href="#L264">264</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> addNamedQuery(String name, Query query) {
+<a class="jxr_linenumber" name="L265" href="#L265">265</a>         namedFilters.put(name, Queries.wrap(query, <strong class="jxr_keyword">this</strong>));
+<a class="jxr_linenumber" name="L266" href="#L266">266</a>     }
+<a class="jxr_linenumber" name="L267" href="#L267">267</a> 
+<a class="jxr_linenumber" name="L268" href="#L268">268</a>     <strong class="jxr_keyword">public</strong> ImmutableMap&lt;String, Filter&gt; copyNamedFilters() {
+<a class="jxr_linenumber" name="L269" href="#L269">269</a>         <strong class="jxr_keyword">return</strong> ImmutableMap.copyOf(namedFilters);
+<a class="jxr_linenumber" name="L270" href="#L270">270</a>     }
+<a class="jxr_linenumber" name="L271" href="#L271">271</a> 
+<a class="jxr_linenumber" name="L272" href="#L272">272</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> combineNamedFilters(<a href="../../../../org/elasticsearch/index/query/QueryParseContext.html">QueryParseContext</a> context) {
+<a class="jxr_linenumber" name="L273" href="#L273">273</a>         namedFilters.putAll(context.namedFilters);
+<a class="jxr_linenumber" name="L274" href="#L274">274</a>     }
+<a class="jxr_linenumber" name="L275" href="#L275">275</a> 
+<a class="jxr_linenumber" name="L276" href="#L276">276</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> addInnerHits(String name, InnerHitsContext.BaseInnerHits context) {
+<a class="jxr_linenumber" name="L277" href="#L277">277</a>         <a href="../../../../org/elasticsearch/search/internal/SearchContext.html">SearchContext</a> sc = SearchContext.current();
+<a class="jxr_linenumber" name="L278" href="#L278">278</a>         <a href="../../../../org/elasticsearch/search/fetch/innerhits/InnerHitsContext.html">InnerHitsContext</a> innerHitsContext;
+<a class="jxr_linenumber" name="L279" href="#L279">279</a>         <strong class="jxr_keyword">if</strong> (sc.innerHits() == <strong class="jxr_keyword">null</strong>) {
+<a class="jxr_linenumber" name="L280" href="#L280">280</a>             innerHitsContext = <strong class="jxr_keyword">new</strong> <a href="../../../../org/elasticsearch/search/fetch/innerhits/InnerHitsContext.html">InnerHitsContext</a>(<strong class="jxr_keyword">new</strong> HashMap&lt;String, InnerHitsContext.BaseInnerHits&gt;());
+<a class="jxr_linenumber" name="L281" href="#L281">281</a>             sc.innerHits(innerHitsContext);
+<a class="jxr_linenumber" name="L282" href="#L282">282</a>         } <strong class="jxr_keyword">else</strong> {
+<a class="jxr_linenumber" name="L283" href="#L283">283</a>             innerHitsContext = sc.innerHits();
+<a class="jxr_linenumber" name="L284" href="#L284">284</a>         }
+<a class="jxr_linenumber" name="L285" href="#L285">285</a>         innerHitsContext.addInnerHitDefinition(name, context);
+<a class="jxr_linenumber" name="L286" href="#L286">286</a>     }
+<a class="jxr_linenumber" name="L287" href="#L287">287</a> 
+<a class="jxr_linenumber" name="L288" href="#L288">288</a>     @Nullable
+<a class="jxr_linenumber" name="L289" href="#L289">289</a>     <strong class="jxr_keyword">public</strong> Query parseInnerQuery() <strong class="jxr_keyword">throws</strong> IOException, QueryParsingException {
+<a class="jxr_linenumber" name="L290" href="#L290">290</a>         <em class="jxr_comment">// move to START object</em>
+<a class="jxr_linenumber" name="L291" href="#L291">291</a>         XContentParser.Token token;
+<a class="jxr_linenumber" name="L292" href="#L292">292</a>         <strong class="jxr_keyword">if</strong> (parser.currentToken() != XContentParser.Token.START_OBJECT) {
+<a class="jxr_linenumber" name="L293" href="#L293">293</a>             token = parser.nextToken();
+<a class="jxr_linenumber" name="L294" href="#L294">294</a>             <strong class="jxr_keyword">if</strong> (token != XContentParser.Token.START_OBJECT) {
+<a class="jxr_linenumber" name="L295" href="#L295">295</a>                 <strong class="jxr_keyword">throw</strong> <strong class="jxr_keyword">new</strong> <a href="../../../../org/elasticsearch/index/query/QueryParsingException.html">QueryParsingException</a>(index, <span class="jxr_string">"[_na] query malformed, must start with start_object"</span>);
+<a class="jxr_linenumber" name="L296" href="#L296">296</a>             }
+<a class="jxr_linenumber" name="L297" href="#L297">297</a>         }
+<a class="jxr_linenumber" name="L298" href="#L298">298</a>         token = parser.nextToken();
+<a class="jxr_linenumber" name="L299" href="#L299">299</a>         <strong class="jxr_keyword">if</strong> (token != XContentParser.Token.FIELD_NAME) {
+<a class="jxr_linenumber" name="L300" href="#L300">300</a>             <strong class="jxr_keyword">throw</strong> <strong class="jxr_keyword">new</strong> <a href="../../../../org/elasticsearch/index/query/QueryParsingException.html">QueryParsingException</a>(index, <span class="jxr_string">"[_na] query malformed, no field after start_object"</span>);
+<a class="jxr_linenumber" name="L301" href="#L301">301</a>         }
+<a class="jxr_linenumber" name="L302" href="#L302">302</a>         String queryName = parser.currentName();
+<a class="jxr_linenumber" name="L303" href="#L303">303</a>         <em class="jxr_comment">// move to the next START_OBJECT</em>
+<a class="jxr_linenumber" name="L304" href="#L304">304</a>         token = parser.nextToken();
+<a class="jxr_linenumber" name="L305" href="#L305">305</a>         <strong class="jxr_keyword">if</strong> (token != XContentParser.Token.START_OBJECT &amp;&amp; token != XContentParser.Token.START_ARRAY) {
+<a class="jxr_linenumber" name="L306" href="#L306">306</a>             <strong class="jxr_keyword">throw</strong> <strong class="jxr_keyword">new</strong> <a href="../../../../org/elasticsearch/index/query/QueryParsingException.html">QueryParsingException</a>(index, <span class="jxr_string">"[_na] query malformed, no field after start_object"</span>);
+<a class="jxr_linenumber" name="L307" href="#L307">307</a>         }
+<a class="jxr_linenumber" name="L308" href="#L308">308</a> 
+<a class="jxr_linenumber" name="L309" href="#L309">309</a>         <a href="../../../../org/elasticsearch/index/query/QueryParser.html">QueryParser</a> queryParser = indexQueryParser.queryParser(queryName);
+<a class="jxr_linenumber" name="L310" href="#L310">310</a>         <strong class="jxr_keyword">if</strong> (queryParser == <strong class="jxr_keyword">null</strong>) {
+<a class="jxr_linenumber" name="L311" href="#L311">311</a>             <strong class="jxr_keyword">throw</strong> <strong class="jxr_keyword">new</strong> <a href="../../../../org/elasticsearch/index/query/QueryParsingException.html">QueryParsingException</a>(index, <span class="jxr_string">"No query registered for ["</span> + queryName + <span class="jxr_string">"]"</span>);
+<a class="jxr_linenumber" name="L312" href="#L312">312</a>         }
+<a class="jxr_linenumber" name="L313" href="#L313">313</a>         Query result = queryParser.parse(<strong class="jxr_keyword">this</strong>);
+<a class="jxr_linenumber" name="L314" href="#L314">314</a>         <strong class="jxr_keyword">if</strong> (parser.currentToken() == XContentParser.Token.END_OBJECT || parser.currentToken() == XContentParser.Token.END_ARRAY) {
+<a class="jxr_linenumber" name="L315" href="#L315">315</a>             <em class="jxr_comment">// if we are at END_OBJECT, move to the next one...</em>
+<a class="jxr_linenumber" name="L316" href="#L316">316</a>             parser.nextToken();
+<a class="jxr_linenumber" name="L317" href="#L317">317</a>         }
+<a class="jxr_linenumber" name="L318" href="#L318">318</a>         <strong class="jxr_keyword">if</strong> (result instanceof NoCacheQuery) {
+<a class="jxr_linenumber" name="L319" href="#L319">319</a>             propagateNoCache = <strong class="jxr_keyword">true</strong>;
+<a class="jxr_linenumber" name="L320" href="#L320">320</a>         }
+<a class="jxr_linenumber" name="L321" href="#L321">321</a>         <strong class="jxr_keyword">if</strong> (CustomQueryWrappingFilter.shouldUseCustomQueryWrappingFilter(result)) {
+<a class="jxr_linenumber" name="L322" href="#L322">322</a>             requireCustomQueryWrappingFilter = <strong class="jxr_keyword">true</strong>;
+<a class="jxr_linenumber" name="L323" href="#L323">323</a>             <em class="jxr_comment">// If later on, either directly or indirectly this query gets wrapped in a query filter it must never</em>
+<a class="jxr_linenumber" name="L324" href="#L324">324</a>             <em class="jxr_comment">// get cached even if a filter higher up the chain is configured to do this. This will happen, because</em>
+<a class="jxr_linenumber" name="L325" href="#L325">325</a>             <em class="jxr_comment">// the result filter will be instance of NoCacheFilter (CustomQueryWrappingFilter) which will in</em>
+<a class="jxr_linenumber" name="L326" href="#L326">326</a>             <em class="jxr_comment">// #executeFilterParser() set propagateNoCache to true.</em>
+<a class="jxr_linenumber" name="L327" href="#L327">327</a>         }
+<a class="jxr_linenumber" name="L328" href="#L328">328</a>         <strong class="jxr_keyword">return</strong> result;
+<a class="jxr_linenumber" name="L329" href="#L329">329</a>     }
+<a class="jxr_linenumber" name="L330" href="#L330">330</a> 
+<a class="jxr_linenumber" name="L331" href="#L331">331</a>     @Nullable
+<a class="jxr_linenumber" name="L332" href="#L332">332</a>     <strong class="jxr_keyword">public</strong> Filter parseInnerFilter() <strong class="jxr_keyword">throws</strong> IOException, QueryParsingException {
+<a class="jxr_linenumber" name="L333" href="#L333">333</a>         <em class="jxr_comment">// move to START object</em>
+<a class="jxr_linenumber" name="L334" href="#L334">334</a>         XContentParser.Token token;
+<a class="jxr_linenumber" name="L335" href="#L335">335</a>         <strong class="jxr_keyword">if</strong> (parser.currentToken() != XContentParser.Token.START_OBJECT) {
+<a class="jxr_linenumber" name="L336" href="#L336">336</a>             token = parser.nextToken();
+<a class="jxr_linenumber" name="L337" href="#L337">337</a>             <strong class="jxr_keyword">if</strong> (token != XContentParser.Token.START_OBJECT) {
+<a class="jxr_linenumber" name="L338" href="#L338">338</a>                 <strong class="jxr_keyword">throw</strong> <strong class="jxr_keyword">new</strong> <a href="../../../../org/elasticsearch/index/query/QueryParsingException.html">QueryParsingException</a>(index, <span class="jxr_string">"[_na] filter malformed, must start with start_object"</span>);
+<a class="jxr_linenumber" name="L339" href="#L339">339</a>             }
+<a class="jxr_linenumber" name="L340" href="#L340">340</a>         }
+<a class="jxr_linenumber" name="L341" href="#L341">341</a>         token = parser.nextToken();
+<a class="jxr_linenumber" name="L342" href="#L342">342</a>         <strong class="jxr_keyword">if</strong> (token != XContentParser.Token.FIELD_NAME) {
+<a class="jxr_linenumber" name="L343" href="#L343">343</a>             <em class="jxr_comment">// empty filter</em>
+<a class="jxr_linenumber" name="L344" href="#L344">344</a>             <strong class="jxr_keyword">if</strong> (token == XContentParser.Token.END_OBJECT || token == XContentParser.Token.VALUE_NULL) {
+<a class="jxr_linenumber" name="L345" href="#L345">345</a>                 <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">null</strong>;
+<a class="jxr_linenumber" name="L346" href="#L346">346</a>             }
+<a class="jxr_linenumber" name="L347" href="#L347">347</a>             <strong class="jxr_keyword">throw</strong> <strong class="jxr_keyword">new</strong> <a href="../../../../org/elasticsearch/index/query/QueryParsingException.html">QueryParsingException</a>(index, <span class="jxr_string">"[_na] filter malformed, no field after start_object"</span>);
+<a class="jxr_linenumber" name="L348" href="#L348">348</a>         }
+<a class="jxr_linenumber" name="L349" href="#L349">349</a>         String filterName = parser.currentName();
+<a class="jxr_linenumber" name="L350" href="#L350">350</a>         <em class="jxr_comment">// move to the next START_OBJECT or START_ARRAY</em>
+<a class="jxr_linenumber" name="L351" href="#L351">351</a>         token = parser.nextToken();
+<a class="jxr_linenumber" name="L352" href="#L352">352</a>         <strong class="jxr_keyword">if</strong> (token != XContentParser.Token.START_OBJECT &amp;&amp; token != XContentParser.Token.START_ARRAY) {
+<a class="jxr_linenumber" name="L353" href="#L353">353</a>             <strong class="jxr_keyword">throw</strong> <strong class="jxr_keyword">new</strong> <a href="../../../../org/elasticsearch/index/query/QueryParsingException.html">QueryParsingException</a>(index, <span class="jxr_string">"[_na] filter malformed, no field after start_object"</span>);
+<a class="jxr_linenumber" name="L354" href="#L354">354</a>         }
+<a class="jxr_linenumber" name="L355" href="#L355">355</a> 
+<a class="jxr_linenumber" name="L356" href="#L356">356</a>         <a href="../../../../org/elasticsearch/index/query/FilterParser.html">FilterParser</a> filterParser = indexQueryParser.filterParser(filterName);
+<a class="jxr_linenumber" name="L357" href="#L357">357</a>         <strong class="jxr_keyword">if</strong> (filterParser == <strong class="jxr_keyword">null</strong>) {
+<a class="jxr_linenumber" name="L358" href="#L358">358</a>             <strong class="jxr_keyword">throw</strong> <strong class="jxr_keyword">new</strong> <a href="../../../../org/elasticsearch/index/query/QueryParsingException.html">QueryParsingException</a>(index, <span class="jxr_string">"No filter registered for ["</span> + filterName + <span class="jxr_string">"]"</span>);
+<a class="jxr_linenumber" name="L359" href="#L359">359</a>         }
+<a class="jxr_linenumber" name="L360" href="#L360">360</a>         Filter result = executeFilterParser(filterParser);
+<a class="jxr_linenumber" name="L361" href="#L361">361</a>         <strong class="jxr_keyword">if</strong> (parser.currentToken() == XContentParser.Token.END_OBJECT || parser.currentToken() == XContentParser.Token.END_ARRAY) {
+<a class="jxr_linenumber" name="L362" href="#L362">362</a>             <em class="jxr_comment">// if we are at END_OBJECT, move to the next one...</em>
+<a class="jxr_linenumber" name="L363" href="#L363">363</a>             parser.nextToken();
+<a class="jxr_linenumber" name="L364" href="#L364">364</a>         }
+<a class="jxr_linenumber" name="L365" href="#L365">365</a>         <strong class="jxr_keyword">return</strong> result;
+<a class="jxr_linenumber" name="L366" href="#L366">366</a>     }
+<a class="jxr_linenumber" name="L367" href="#L367">367</a> 
+<a class="jxr_linenumber" name="L368" href="#L368">368</a>     <strong class="jxr_keyword">public</strong> Filter parseInnerFilter(String filterName) <strong class="jxr_keyword">throws</strong> IOException, QueryParsingException {
+<a class="jxr_linenumber" name="L369" href="#L369">369</a>         <a href="../../../../org/elasticsearch/index/query/FilterParser.html">FilterParser</a> filterParser = indexQueryParser.filterParser(filterName);
+<a class="jxr_linenumber" name="L370" href="#L370">370</a>         <strong class="jxr_keyword">if</strong> (filterParser == <strong class="jxr_keyword">null</strong>) {
+<a class="jxr_linenumber" name="L371" href="#L371">371</a>             <strong class="jxr_keyword">throw</strong> <strong class="jxr_keyword">new</strong> <a href="../../../../org/elasticsearch/index/query/QueryParsingException.html">QueryParsingException</a>(index, <span class="jxr_string">"No filter registered for ["</span> + filterName + <span class="jxr_string">"]"</span>);
+<a class="jxr_linenumber" name="L372" href="#L372">372</a>         }
+<a class="jxr_linenumber" name="L373" href="#L373">373</a>         <strong class="jxr_keyword">return</strong> executeFilterParser(filterParser);
+<a class="jxr_linenumber" name="L374" href="#L374">374</a>     }
+<a class="jxr_linenumber" name="L375" href="#L375">375</a> 
+<a class="jxr_linenumber" name="L376" href="#L376">376</a>     <strong class="jxr_keyword">private</strong> Filter executeFilterParser(<a href="../../../../org/elasticsearch/index/query/FilterParser.html">FilterParser</a> filterParser) <strong class="jxr_keyword">throws</strong> IOException {
+<a class="jxr_linenumber" name="L377" href="#L377">377</a>         <strong class="jxr_keyword">final</strong> <strong class="jxr_keyword">boolean</strong> propagateNoCache = <strong class="jxr_keyword">this</strong>.propagateNoCache; <em class="jxr_comment">// first safe the state that we need to restore</em>
+<a class="jxr_linenumber" name="L378" href="#L378">378</a>         <strong class="jxr_keyword">this</strong>.propagateNoCache = false; <em class="jxr_comment">// parse the subfilter with caching, that's fine</em>
+<a class="jxr_linenumber" name="L379" href="#L379">379</a>         Filter result = filterParser.parse(<strong class="jxr_keyword">this</strong>);
+<a class="jxr_linenumber" name="L380" href="#L380">380</a>         <em class="jxr_comment">// now make sure we set propagateNoCache to true if it is true already or if the result is</em>
+<a class="jxr_linenumber" name="L381" href="#L381">381</a>         <em class="jxr_comment">// an instance of NoCacheFilter or if we used to be true! all filters above will</em>
+<a class="jxr_linenumber" name="L382" href="#L382">382</a>         <em class="jxr_comment">// be not cached ie. wrappers of this filter!</em>
+<a class="jxr_linenumber" name="L383" href="#L383">383</a>         <strong class="jxr_keyword">this</strong>.propagateNoCache |= (result instanceof NoCacheFilter) || propagateNoCache;
+<a class="jxr_linenumber" name="L384" href="#L384">384</a>         <strong class="jxr_keyword">return</strong> result;
+<a class="jxr_linenumber" name="L385" href="#L385">385</a>     }
+<a class="jxr_linenumber" name="L386" href="#L386">386</a> 
+<a class="jxr_linenumber" name="L387" href="#L387">387</a>     <strong class="jxr_keyword">public</strong> <a href="../../../../org/elasticsearch/index/mapper/FieldMapper.html">FieldMapper</a> fieldMapper(String name) {
+<a class="jxr_linenumber" name="L388" href="#L388">388</a>         <a href="../../../../org/elasticsearch/index/mapper/FieldMappers.html">FieldMappers</a> fieldMappers = indexQueryParser.mapperService.smartNameFieldMappers(name, getTypes());
+<a class="jxr_linenumber" name="L389" href="#L389">389</a>         <strong class="jxr_keyword">if</strong> (fieldMappers == <strong class="jxr_keyword">null</strong>) {
+<a class="jxr_linenumber" name="L390" href="#L390">390</a>             <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">null</strong>;
+<a class="jxr_linenumber" name="L391" href="#L391">391</a>         }
+<a class="jxr_linenumber" name="L392" href="#L392">392</a>         <strong class="jxr_keyword">return</strong> fieldMappers.mapper();
+<a class="jxr_linenumber" name="L393" href="#L393">393</a>     }
+<a class="jxr_linenumber" name="L394" href="#L394">394</a> 
+<a class="jxr_linenumber" name="L395" href="#L395">395</a>     <strong class="jxr_keyword">public</strong> String indexName(String name) {
+<a class="jxr_linenumber" name="L396" href="#L396">396</a>         <a href="../../../../org/elasticsearch/index/mapper/FieldMapper.html">FieldMapper</a> smartMapper = fieldMapper(name);
+<a class="jxr_linenumber" name="L397" href="#L397">397</a>         <strong class="jxr_keyword">if</strong> (smartMapper == <strong class="jxr_keyword">null</strong>) {
+<a class="jxr_linenumber" name="L398" href="#L398">398</a>             <strong class="jxr_keyword">return</strong> name;
+<a class="jxr_linenumber" name="L399" href="#L399">399</a>         }
+<a class="jxr_linenumber" name="L400" href="#L400">400</a>         <strong class="jxr_keyword">return</strong> smartMapper.names().indexName();
+<a class="jxr_linenumber" name="L401" href="#L401">401</a>     }
+<a class="jxr_linenumber" name="L402" href="#L402">402</a> 
+<a class="jxr_linenumber" name="L403" href="#L403">403</a>     <strong class="jxr_keyword">public</strong> List&lt;String&gt; simpleMatchToIndexNames(String pattern) {
+<a class="jxr_linenumber" name="L404" href="#L404">404</a>         <strong class="jxr_keyword">return</strong> indexQueryParser.mapperService.simpleMatchToIndexNames(pattern, getTypes());
+<a class="jxr_linenumber" name="L405" href="#L405">405</a>     }
+<a class="jxr_linenumber" name="L406" href="#L406">406</a> 
+<a class="jxr_linenumber" name="L407" href="#L407">407</a>     <strong class="jxr_keyword">public</strong> MapperService.SmartNameFieldMappers smartFieldMappers(String name) {
+<a class="jxr_linenumber" name="L408" href="#L408">408</a>         <strong class="jxr_keyword">return</strong> failIfFieldMappingNotFound(name, indexQueryParser.mapperService.smartName(name, getTypes()));
+<a class="jxr_linenumber" name="L409" href="#L409">409</a>     }
+<a class="jxr_linenumber" name="L410" href="#L410">410</a> 
+<a class="jxr_linenumber" name="L411" href="#L411">411</a>     <strong class="jxr_keyword">public</strong> MapperService.SmartNameObjectMapper smartObjectMapper(String name) {
+<a class="jxr_linenumber" name="L412" href="#L412">412</a>         <strong class="jxr_keyword">return</strong> indexQueryParser.mapperService.smartNameObjectMapper(name, getTypes());
+<a class="jxr_linenumber" name="L413" href="#L413">413</a>     }
+<a class="jxr_linenumber" name="L414" href="#L414">414</a> 
+<a class="jxr_linenumber" name="L415" href="#L415">415</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> setAllowUnmappedFields(<strong class="jxr_keyword">boolean</strong> allowUnmappedFields) {
+<a class="jxr_linenumber" name="L416" href="#L416">416</a>         <strong class="jxr_keyword">this</strong>.allowUnmappedFields = allowUnmappedFields;
+<a class="jxr_linenumber" name="L417" href="#L417">417</a>     }
+<a class="jxr_linenumber" name="L418" href="#L418">418</a> 
+<a class="jxr_linenumber" name="L419" href="#L419">419</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> setMapUnmappedFieldAsString(<strong class="jxr_keyword">boolean</strong> mapUnmappedFieldAsString) {
+<a class="jxr_linenumber" name="L420" href="#L420">420</a>         <strong class="jxr_keyword">this</strong>.mapUnmappedFieldAsString = mapUnmappedFieldAsString;
+<a class="jxr_linenumber" name="L421" href="#L421">421</a>     }
+<a class="jxr_linenumber" name="L422" href="#L422">422</a> 
+<a class="jxr_linenumber" name="L423" href="#L423">423</a>     <strong class="jxr_keyword">private</strong> MapperService.SmartNameFieldMappers failIfFieldMappingNotFound(String name, MapperService.SmartNameFieldMappers fieldMapping) {
+<a class="jxr_linenumber" name="L424" href="#L424">424</a>         <strong class="jxr_keyword">if</strong> (allowUnmappedFields) {
+<a class="jxr_linenumber" name="L425" href="#L425">425</a>             <strong class="jxr_keyword">return</strong> fieldMapping;
+<a class="jxr_linenumber" name="L426" href="#L426">426</a>         } <strong class="jxr_keyword">else</strong> <strong class="jxr_keyword">if</strong> (mapUnmappedFieldAsString){
+<a class="jxr_linenumber" name="L427" href="#L427">427</a>             StringFieldMapper.Builder builder = MapperBuilders.stringField(name);
+<a class="jxr_linenumber" name="L428" href="#L428">428</a>             <em class="jxr_comment">// it would be better to pass the real index settings, but they are not easily accessible from here...</em>
+<a class="jxr_linenumber" name="L429" href="#L429">429</a>             <a href="../../../../org/elasticsearch/common/settings/Settings.html">Settings</a> settings = ImmutableSettings.builder().put(IndexMetaData.SETTING_VERSION_CREATED, indexQueryParser.getIndexCreatedVersion()).build();
+<a class="jxr_linenumber" name="L430" href="#L430">430</a>             <a href="../../../../org/elasticsearch/index/mapper/core/StringFieldMapper.html">StringFieldMapper</a> stringFieldMapper = builder.build(<strong class="jxr_keyword">new</strong> Mapper.BuilderContext(settings, <strong class="jxr_keyword">new</strong> <a href="../../../../org/elasticsearch/index/mapper/ContentPath.html">ContentPath</a>(1)));
+<a class="jxr_linenumber" name="L431" href="#L431">431</a>             <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> MapperService.SmartNameFieldMappers(mapperService(), <strong class="jxr_keyword">new</strong> FieldMappers(stringFieldMapper), <strong class="jxr_keyword">null</strong>, false);
+<a class="jxr_linenumber" name="L432" href="#L432">432</a>         } <strong class="jxr_keyword">else</strong> {
+<a class="jxr_linenumber" name="L433" href="#L433">433</a>             <a href="../../../../org/elasticsearch/Version.html">Version</a> indexCreatedVersion = indexQueryParser.getIndexCreatedVersion();
+<a class="jxr_linenumber" name="L434" href="#L434">434</a>             <strong class="jxr_keyword">if</strong> (fieldMapping == <strong class="jxr_keyword">null</strong> &amp;&amp; indexCreatedVersion.onOrAfter(Version.V_1_4_0_Beta1)) {
+<a class="jxr_linenumber" name="L435" href="#L435">435</a>                 <strong class="jxr_keyword">throw</strong> <strong class="jxr_keyword">new</strong> <a href="../../../../org/elasticsearch/index/query/QueryParsingException.html">QueryParsingException</a>(index, <span class="jxr_string">"Strict field resolution and no field mapping can be found for the field with name ["</span> + name + <span class="jxr_string">"]"</span>);
+<a class="jxr_linenumber" name="L436" href="#L436">436</a>             } <strong class="jxr_keyword">else</strong> {
+<a class="jxr_linenumber" name="L437" href="#L437">437</a>                 <strong class="jxr_keyword">return</strong> fieldMapping;
+<a class="jxr_linenumber" name="L438" href="#L438">438</a>             }
+<a class="jxr_linenumber" name="L439" href="#L439">439</a>         }
+<a class="jxr_linenumber" name="L440" href="#L440">440</a>     }
+<a class="jxr_linenumber" name="L441" href="#L441">441</a> 
+<a class="jxr_linenumber" name="L442" href="#L442">442</a>     <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="L443" href="#L443">443</a> <em class="jxr_javadoccomment">     * Returns the narrowed down explicit types, or, if not set, all types.</em>
+<a class="jxr_linenumber" name="L444" href="#L444">444</a> <em class="jxr_javadoccomment">     */</em>
+<a class="jxr_linenumber" name="L445" href="#L445">445</a>     <strong class="jxr_keyword">public</strong> Collection&lt;String&gt; queryTypes() {
+<a class="jxr_linenumber" name="L446" href="#L446">446</a>         String[] types = getTypes();
+<a class="jxr_linenumber" name="L447" href="#L447">447</a>         <strong class="jxr_keyword">if</strong> (types == <strong class="jxr_keyword">null</strong> || types.length == 0) {
+<a class="jxr_linenumber" name="L448" href="#L448">448</a>             <strong class="jxr_keyword">return</strong> mapperService().types();
+<a class="jxr_linenumber" name="L449" href="#L449">449</a>         }
+<a class="jxr_linenumber" name="L450" href="#L450">450</a>         <strong class="jxr_keyword">if</strong> (types.length == 1 &amp;&amp; types[0].equals(<span class="jxr_string">"_all"</span>)) {
+<a class="jxr_linenumber" name="L451" href="#L451">451</a>             <strong class="jxr_keyword">return</strong> mapperService().types();
+<a class="jxr_linenumber" name="L452" href="#L452">452</a>         }
+<a class="jxr_linenumber" name="L453" href="#L453">453</a>         <strong class="jxr_keyword">return</strong> Arrays.asList(types);
+<a class="jxr_linenumber" name="L454" href="#L454">454</a>     }
+<a class="jxr_linenumber" name="L455" href="#L455">455</a> 
+<a class="jxr_linenumber" name="L456" href="#L456">456</a>     <strong class="jxr_keyword">private</strong> <a href="../../../../org/elasticsearch/search/lookup/SearchLookup.html">SearchLookup</a> lookup = <strong class="jxr_keyword">null</strong>;
+<a class="jxr_linenumber" name="L457" href="#L457">457</a> 
+<a class="jxr_linenumber" name="L458" href="#L458">458</a>     <strong class="jxr_keyword">public</strong> <a href="../../../../org/elasticsearch/search/lookup/SearchLookup.html">SearchLookup</a> lookup() {
+<a class="jxr_linenumber" name="L459" href="#L459">459</a>         <a href="../../../../org/elasticsearch/search/internal/SearchContext.html">SearchContext</a> current = SearchContext.current();
+<a class="jxr_linenumber" name="L460" href="#L460">460</a>         <strong class="jxr_keyword">if</strong> (current != <strong class="jxr_keyword">null</strong>) {
+<a class="jxr_linenumber" name="L461" href="#L461">461</a>             <strong class="jxr_keyword">return</strong> current.lookup();
+<a class="jxr_linenumber" name="L462" href="#L462">462</a>         }
+<a class="jxr_linenumber" name="L463" href="#L463">463</a>         <strong class="jxr_keyword">if</strong> (lookup == <strong class="jxr_keyword">null</strong>) {
+<a class="jxr_linenumber" name="L464" href="#L464">464</a>             lookup = <strong class="jxr_keyword">new</strong> <a href="../../../../org/elasticsearch/search/lookup/SearchLookup.html">SearchLookup</a>(mapperService(), indexQueryParser.fieldDataService, <strong class="jxr_keyword">null</strong>);
+<a class="jxr_linenumber" name="L465" href="#L465">465</a>         }
+<a class="jxr_linenumber" name="L466" href="#L466">466</a>         <strong class="jxr_keyword">return</strong> lookup;
+<a class="jxr_linenumber" name="L467" href="#L467">467</a>     }
+<a class="jxr_linenumber" name="L468" href="#L468">468</a> 
+<a class="jxr_linenumber" name="L469" href="#L469">469</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">long</strong> nowInMillis() {
+<a class="jxr_linenumber" name="L470" href="#L470">470</a>         <a href="../../../../org/elasticsearch/search/internal/SearchContext.html">SearchContext</a> current = SearchContext.current();
+<a class="jxr_linenumber" name="L471" href="#L471">471</a>         <strong class="jxr_keyword">if</strong> (current != <strong class="jxr_keyword">null</strong>) {
+<a class="jxr_linenumber" name="L472" href="#L472">472</a>             <strong class="jxr_keyword">return</strong> current.nowInMillis();
+<a class="jxr_linenumber" name="L473" href="#L473">473</a>         }
+<a class="jxr_linenumber" name="L474" href="#L474">474</a>         <strong class="jxr_keyword">return</strong> System.currentTimeMillis();
+<a class="jxr_linenumber" name="L475" href="#L475">475</a>     }
+<a class="jxr_linenumber" name="L476" href="#L476">476</a> 
+<a class="jxr_linenumber" name="L477" href="#L477">477</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">boolean</strong> requireCustomQueryWrappingFilter() {
+<a class="jxr_linenumber" name="L478" href="#L478">478</a>         <strong class="jxr_keyword">return</strong> requireCustomQueryWrappingFilter;
+<a class="jxr_linenumber" name="L479" href="#L479">479</a>     }
+<a class="jxr_linenumber" name="L480" href="#L480">480</a> 
+<a class="jxr_linenumber" name="L481" href="#L481">481</a>     <strong class="jxr_keyword">public</strong> <a href="../../../../org/elasticsearch/index/query/support/NestedScope.html">NestedScope</a> nestedScope() {
+<a class="jxr_linenumber" name="L482" href="#L482">482</a>         <strong class="jxr_keyword">return</strong> nestedScope;
+<a class="jxr_linenumber" name="L483" href="#L483">483</a>     }
+<a class="jxr_linenumber" name="L484" href="#L484">484</a> }
+</pre>
+<hr/>
+<div id="footer">Copyright &#169; 2015. All rights reserved.</div>
+</body>
+</html>

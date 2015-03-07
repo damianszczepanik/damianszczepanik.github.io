@@ -1,0 +1,492 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head><meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+<title>AbstractTestContextBootstrapper xref</title>
+<link type="text/css" rel="stylesheet" href="../../../../../stylesheet.css" />
+</head>
+<body>
+<div id="overview"><a href="../../../../../../../../../../../apidocs/org/springframework/test/context/support/AbstractTestContextBootstrapper.html">View Javadoc</a></div><pre>
+<a class="jxr_linenumber" name="L1" href="#L1">1</a>   <em class="jxr_comment">/*</em>
+<a class="jxr_linenumber" name="L2" href="#L2">2</a>   <em class="jxr_comment"> * Copyright 2002-2014 the original author or authors.</em>
+<a class="jxr_linenumber" name="L3" href="#L3">3</a>   <em class="jxr_comment"> *</em>
+<a class="jxr_linenumber" name="L4" href="#L4">4</a>   <em class="jxr_comment"> * Licensed under the Apache License, Version 2.0 (the "License");</em>
+<a class="jxr_linenumber" name="L5" href="#L5">5</a>   <em class="jxr_comment"> * you may not use this file except in compliance with the License.</em>
+<a class="jxr_linenumber" name="L6" href="#L6">6</a>   <em class="jxr_comment"> * You may obtain a copy of the License at</em>
+<a class="jxr_linenumber" name="L7" href="#L7">7</a>   <em class="jxr_comment"> *</em>
+<a class="jxr_linenumber" name="L8" href="#L8">8</a>   <em class="jxr_comment"> *      <a href="http://www.apache.org/licenses/LICENSE-2." target="alexandria_uri">http://www.apache.org/licenses/LICENSE-2.</a>0</em>
+<a class="jxr_linenumber" name="L9" href="#L9">9</a>   <em class="jxr_comment"> *</em>
+<a class="jxr_linenumber" name="L10" href="#L10">10</a>  <em class="jxr_comment"> * Unless required by applicable law or agreed to in writing, software</em>
+<a class="jxr_linenumber" name="L11" href="#L11">11</a>  <em class="jxr_comment"> * distributed under the License is distributed on an "AS IS" BASIS,</em>
+<a class="jxr_linenumber" name="L12" href="#L12">12</a>  <em class="jxr_comment"> * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</em>
+<a class="jxr_linenumber" name="L13" href="#L13">13</a>  <em class="jxr_comment"> * See the License for the specific language governing permissions and</em>
+<a class="jxr_linenumber" name="L14" href="#L14">14</a>  <em class="jxr_comment"> * limitations under the License.</em>
+<a class="jxr_linenumber" name="L15" href="#L15">15</a>  <em class="jxr_comment"> */</em>
+<a class="jxr_linenumber" name="L16" href="#L16">16</a>  
+<a class="jxr_linenumber" name="L17" href="#L17">17</a>  <strong class="jxr_keyword">package</strong> org.springframework.test.context.support;
+<a class="jxr_linenumber" name="L18" href="#L18">18</a>  
+<a class="jxr_linenumber" name="L19" href="#L19">19</a>  <strong class="jxr_keyword">import</strong> java.util.ArrayList;
+<a class="jxr_linenumber" name="L20" href="#L20">20</a>  <strong class="jxr_keyword">import</strong> java.util.Arrays;
+<a class="jxr_linenumber" name="L21" href="#L21">21</a>  <strong class="jxr_keyword">import</strong> java.util.Collections;
+<a class="jxr_linenumber" name="L22" href="#L22">22</a>  <strong class="jxr_keyword">import</strong> java.util.HashSet;
+<a class="jxr_linenumber" name="L23" href="#L23">23</a>  <strong class="jxr_keyword">import</strong> java.util.LinkedHashSet;
+<a class="jxr_linenumber" name="L24" href="#L24">24</a>  <strong class="jxr_keyword">import</strong> java.util.List;
+<a class="jxr_linenumber" name="L25" href="#L25">25</a>  <strong class="jxr_keyword">import</strong> java.util.Map;
+<a class="jxr_linenumber" name="L26" href="#L26">26</a>  <strong class="jxr_keyword">import</strong> java.util.Set;
+<a class="jxr_linenumber" name="L27" href="#L27">27</a>  
+<a class="jxr_linenumber" name="L28" href="#L28">28</a>  <strong class="jxr_keyword">import</strong> org.apache.commons.logging.Log;
+<a class="jxr_linenumber" name="L29" href="#L29">29</a>  <strong class="jxr_keyword">import</strong> org.apache.commons.logging.LogFactory;
+<a class="jxr_linenumber" name="L30" href="#L30">30</a>  
+<a class="jxr_linenumber" name="L31" href="#L31">31</a>  <strong class="jxr_keyword">import</strong> org.springframework.beans.BeanInstantiationException;
+<a class="jxr_linenumber" name="L32" href="#L32">32</a>  <strong class="jxr_keyword">import</strong> org.springframework.beans.BeanUtils;
+<a class="jxr_linenumber" name="L33" href="#L33">33</a>  <strong class="jxr_keyword">import</strong> org.springframework.context.ApplicationContextInitializer;
+<a class="jxr_linenumber" name="L34" href="#L34">34</a>  <strong class="jxr_keyword">import</strong> org.springframework.context.ConfigurableApplicationContext;
+<a class="jxr_linenumber" name="L35" href="#L35">35</a>  <strong class="jxr_keyword">import</strong> org.springframework.core.annotation.AnnotationAttributes;
+<a class="jxr_linenumber" name="L36" href="#L36">36</a>  <strong class="jxr_keyword">import</strong> org.springframework.core.annotation.AnnotationAwareOrderComparator;
+<a class="jxr_linenumber" name="L37" href="#L37">37</a>  <strong class="jxr_keyword">import</strong> org.springframework.core.annotation.AnnotationUtils;
+<a class="jxr_linenumber" name="L38" href="#L38">38</a>  <strong class="jxr_keyword">import</strong> org.springframework.core.io.support.SpringFactoriesLoader;
+<a class="jxr_linenumber" name="L39" href="#L39">39</a>  <strong class="jxr_keyword">import</strong> org.springframework.test.context.BootstrapContext;
+<a class="jxr_linenumber" name="L40" href="#L40">40</a>  <strong class="jxr_keyword">import</strong> org.springframework.test.context.CacheAwareContextLoaderDelegate;
+<a class="jxr_linenumber" name="L41" href="#L41">41</a>  <strong class="jxr_keyword">import</strong> org.springframework.test.context.ContextConfiguration;
+<a class="jxr_linenumber" name="L42" href="#L42">42</a>  <strong class="jxr_keyword">import</strong> org.springframework.test.context.ContextConfigurationAttributes;
+<a class="jxr_linenumber" name="L43" href="#L43">43</a>  <strong class="jxr_keyword">import</strong> org.springframework.test.context.ContextHierarchy;
+<a class="jxr_linenumber" name="L44" href="#L44">44</a>  <strong class="jxr_keyword">import</strong> org.springframework.test.context.ContextLoader;
+<a class="jxr_linenumber" name="L45" href="#L45">45</a>  <strong class="jxr_keyword">import</strong> org.springframework.test.context.MergedContextConfiguration;
+<a class="jxr_linenumber" name="L46" href="#L46">46</a>  <strong class="jxr_keyword">import</strong> org.springframework.test.context.SmartContextLoader;
+<a class="jxr_linenumber" name="L47" href="#L47">47</a>  <strong class="jxr_keyword">import</strong> org.springframework.test.context.TestContextBootstrapper;
+<a class="jxr_linenumber" name="L48" href="#L48">48</a>  <strong class="jxr_keyword">import</strong> org.springframework.test.context.TestExecutionListener;
+<a class="jxr_linenumber" name="L49" href="#L49">49</a>  <strong class="jxr_keyword">import</strong> org.springframework.test.context.TestExecutionListeners;
+<a class="jxr_linenumber" name="L50" href="#L50">50</a>  <strong class="jxr_keyword">import</strong> org.springframework.test.context.TestExecutionListeners.MergeMode;
+<a class="jxr_linenumber" name="L51" href="#L51">51</a>  <strong class="jxr_keyword">import</strong> org.springframework.test.util.MetaAnnotationUtils;
+<a class="jxr_linenumber" name="L52" href="#L52">52</a>  <strong class="jxr_keyword">import</strong> org.springframework.test.util.MetaAnnotationUtils.AnnotationDescriptor;
+<a class="jxr_linenumber" name="L53" href="#L53">53</a>  <strong class="jxr_keyword">import</strong> org.springframework.util.Assert;
+<a class="jxr_linenumber" name="L54" href="#L54">54</a>  <strong class="jxr_keyword">import</strong> org.springframework.util.ClassUtils;
+<a class="jxr_linenumber" name="L55" href="#L55">55</a>  <strong class="jxr_keyword">import</strong> org.springframework.util.ObjectUtils;
+<a class="jxr_linenumber" name="L56" href="#L56">56</a>  <strong class="jxr_keyword">import</strong> org.springframework.util.StringUtils;
+<a class="jxr_linenumber" name="L57" href="#L57">57</a>  
+<a class="jxr_linenumber" name="L58" href="#L58">58</a>  <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="L59" href="#L59">59</a>  <em class="jxr_javadoccomment"> * Abstract implementation of the {@link TestContextBootstrapper} interface which</em>
+<a class="jxr_linenumber" name="L60" href="#L60">60</a>  <em class="jxr_javadoccomment"> * provides most of the behavior required by a bootstrapper.</em>
+<a class="jxr_linenumber" name="L61" href="#L61">61</a>  <em class="jxr_javadoccomment"> *</em>
+<a class="jxr_linenumber" name="L62" href="#L62">62</a>  <em class="jxr_javadoccomment"> * &lt;p&gt;Concrete subclasses typically will only need to provide implementations for</em>
+<a class="jxr_linenumber" name="L63" href="#L63">63</a>  <em class="jxr_javadoccomment"> * the following methods:</em>
+<a class="jxr_linenumber" name="L64" href="#L64">64</a>  <em class="jxr_javadoccomment"> * &lt;ul&gt;</em>
+<a class="jxr_linenumber" name="L65" href="#L65">65</a>  <em class="jxr_javadoccomment"> * &lt;li&gt;{@link #getDefaultContextLoaderClass}</em>
+<a class="jxr_linenumber" name="L66" href="#L66">66</a>  <em class="jxr_javadoccomment"> * &lt;li&gt;{@link #processMergedContextConfiguration}</em>
+<a class="jxr_linenumber" name="L67" href="#L67">67</a>  <em class="jxr_javadoccomment"> * &lt;/ul&gt;</em>
+<a class="jxr_linenumber" name="L68" href="#L68">68</a>  <em class="jxr_javadoccomment"> *</em>
+<a class="jxr_linenumber" name="L69" href="#L69">69</a>  <em class="jxr_javadoccomment"> * @author Sam Brannen</em>
+<a class="jxr_linenumber" name="L70" href="#L70">70</a>  <em class="jxr_javadoccomment"> * @author Juergen Hoeller</em>
+<a class="jxr_linenumber" name="L71" href="#L71">71</a>  <em class="jxr_javadoccomment"> * @since 4.1</em>
+<a class="jxr_linenumber" name="L72" href="#L72">72</a>  <em class="jxr_javadoccomment"> */</em>
+<a class="jxr_linenumber" name="L73" href="#L73">73</a>  <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">abstract</strong> <strong class="jxr_keyword">class</strong> <a href="../../../../../org/springframework/test/context/support/AbstractTestContextBootstrapper.html">AbstractTestContextBootstrapper</a> <strong class="jxr_keyword">implements</strong> <a href="../../../../../org/springframework/test/context/TestContextBootstrapper.html">TestContextBootstrapper</a> {
+<a class="jxr_linenumber" name="L74" href="#L74">74</a>  
+<a class="jxr_linenumber" name="L75" href="#L75">75</a>  	<strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">final</strong> Log logger = LogFactory.getLog(getClass());
+<a class="jxr_linenumber" name="L76" href="#L76">76</a>  
+<a class="jxr_linenumber" name="L77" href="#L77">77</a>  	<strong class="jxr_keyword">private</strong> <a href="../../../../../org/springframework/test/context/BootstrapContext.html">BootstrapContext</a> bootstrapContext;
+<a class="jxr_linenumber" name="L78" href="#L78">78</a>  
+<a class="jxr_linenumber" name="L79" href="#L79">79</a>  
+<a class="jxr_linenumber" name="L80" href="#L80">80</a>  	<em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="L81" href="#L81">81</a>  <em class="jxr_javadoccomment">	 * {@inheritDoc}</em>
+<a class="jxr_linenumber" name="L82" href="#L82">82</a>  <em class="jxr_javadoccomment">	 */</em>
+<a class="jxr_linenumber" name="L83" href="#L83">83</a>  	@Override
+<a class="jxr_linenumber" name="L84" href="#L84">84</a>  	<strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> setBootstrapContext(<a href="../../../../../org/springframework/test/context/BootstrapContext.html">BootstrapContext</a> bootstrapContext) {
+<a class="jxr_linenumber" name="L85" href="#L85">85</a>  		<strong class="jxr_keyword">this</strong>.bootstrapContext = bootstrapContext;
+<a class="jxr_linenumber" name="L86" href="#L86">86</a>  	}
+<a class="jxr_linenumber" name="L87" href="#L87">87</a>  
+<a class="jxr_linenumber" name="L88" href="#L88">88</a>  	<em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="L89" href="#L89">89</a>  <em class="jxr_javadoccomment">	 * {@inheritDoc}</em>
+<a class="jxr_linenumber" name="L90" href="#L90">90</a>  <em class="jxr_javadoccomment">	 */</em>
+<a class="jxr_linenumber" name="L91" href="#L91">91</a>  	@Override
+<a class="jxr_linenumber" name="L92" href="#L92">92</a>  	<strong class="jxr_keyword">public</strong> <a href="../../../../../org/springframework/test/context/BootstrapContext.html">BootstrapContext</a> getBootstrapContext() {
+<a class="jxr_linenumber" name="L93" href="#L93">93</a>  		<strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">this</strong>.bootstrapContext;
+<a class="jxr_linenumber" name="L94" href="#L94">94</a>  	}
+<a class="jxr_linenumber" name="L95" href="#L95">95</a>  
+<a class="jxr_linenumber" name="L96" href="#L96">96</a>  	<em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="L97" href="#L97">97</a>  <em class="jxr_javadoccomment">	 * {@inheritDoc}</em>
+<a class="jxr_linenumber" name="L98" href="#L98">98</a>  <em class="jxr_javadoccomment">	 */</em>
+<a class="jxr_linenumber" name="L99" href="#L99">99</a>  	@SuppressWarnings(<span class="jxr_string">"unchecked"</span>)
+<a class="jxr_linenumber" name="L100" href="#L100">100</a> 	@Override
+<a class="jxr_linenumber" name="L101" href="#L101">101</a> 	<strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">final</strong> List&lt;TestExecutionListener&gt; getTestExecutionListeners() {
+<a class="jxr_linenumber" name="L102" href="#L102">102</a> 		Class&lt;?&gt; clazz = getBootstrapContext().getTestClass();
+<a class="jxr_linenumber" name="L103" href="#L103">103</a> 		Class&lt;TestExecutionListeners&gt; annotationType = TestExecutionListeners.<strong class="jxr_keyword">class</strong>;
+<a class="jxr_linenumber" name="L104" href="#L104">104</a> 		List&lt;Class&lt;? <strong class="jxr_keyword">extends</strong> TestExecutionListener&gt;&gt; classesList = <strong class="jxr_keyword">new</strong> ArrayList&lt;Class&lt;? <strong class="jxr_keyword">extends</strong> TestExecutionListener&gt;&gt;();
+<a class="jxr_linenumber" name="L105" href="#L105">105</a> 		<strong class="jxr_keyword">boolean</strong> usingDefaults = false;
+<a class="jxr_linenumber" name="L106" href="#L106">106</a> 
+<a class="jxr_linenumber" name="L107" href="#L107">107</a> 		AnnotationDescriptor&lt;TestExecutionListeners&gt; descriptor = MetaAnnotationUtils.findAnnotationDescriptor(clazz,
+<a class="jxr_linenumber" name="L108" href="#L108">108</a> 			annotationType);
+<a class="jxr_linenumber" name="L109" href="#L109">109</a> 
+<a class="jxr_linenumber" name="L110" href="#L110">110</a> 		<em class="jxr_comment">// Use defaults?</em>
+<a class="jxr_linenumber" name="L111" href="#L111">111</a> 		<strong class="jxr_keyword">if</strong> (descriptor == <strong class="jxr_keyword">null</strong>) {
+<a class="jxr_linenumber" name="L112" href="#L112">112</a> 			<strong class="jxr_keyword">if</strong> (logger.isDebugEnabled()) {
+<a class="jxr_linenumber" name="L113" href="#L113">113</a> 				logger.debug(String.format(<span class="jxr_string">"@TestExecutionListeners is not present for class [%s]: using defaults."</span>,
+<a class="jxr_linenumber" name="L114" href="#L114">114</a> 					clazz.getName()));
+<a class="jxr_linenumber" name="L115" href="#L115">115</a> 			}
+<a class="jxr_linenumber" name="L116" href="#L116">116</a> 			usingDefaults = <strong class="jxr_keyword">true</strong>;
+<a class="jxr_linenumber" name="L117" href="#L117">117</a> 			classesList.addAll(getDefaultTestExecutionListenerClasses());
+<a class="jxr_linenumber" name="L118" href="#L118">118</a> 		}
+<a class="jxr_linenumber" name="L119" href="#L119">119</a> 		<strong class="jxr_keyword">else</strong> {
+<a class="jxr_linenumber" name="L120" href="#L120">120</a> 			<em class="jxr_comment">// Traverse the class hierarchy...</em>
+<a class="jxr_linenumber" name="L121" href="#L121">121</a> 			<strong class="jxr_keyword">while</strong> (descriptor != <strong class="jxr_keyword">null</strong>) {
+<a class="jxr_linenumber" name="L122" href="#L122">122</a> 				Class&lt;?&gt; declaringClass = descriptor.getDeclaringClass();
+<a class="jxr_linenumber" name="L123" href="#L123">123</a> 				AnnotationAttributes annAttrs = descriptor.getAnnotationAttributes();
+<a class="jxr_linenumber" name="L124" href="#L124">124</a> 				<strong class="jxr_keyword">if</strong> (logger.isTraceEnabled()) {
+<a class="jxr_linenumber" name="L125" href="#L125">125</a> 					logger.trace(String.format(
+<a class="jxr_linenumber" name="L126" href="#L126">126</a> 						<span class="jxr_string">"Retrieved @TestExecutionListeners attributes [%s] for declaring class [%s]."</span>, annAttrs,
+<a class="jxr_linenumber" name="L127" href="#L127">127</a> 						declaringClass.getName()));
+<a class="jxr_linenumber" name="L128" href="#L128">128</a> 				}
+<a class="jxr_linenumber" name="L129" href="#L129">129</a> 
+<a class="jxr_linenumber" name="L130" href="#L130">130</a> 				Class&lt;? <strong class="jxr_keyword">extends</strong> TestExecutionListener&gt;[] valueListenerClasses = (Class&lt;? <strong class="jxr_keyword">extends</strong> TestExecutionListener&gt;[]) annAttrs.getClassArray(<span class="jxr_string">"value"</span>);
+<a class="jxr_linenumber" name="L131" href="#L131">131</a> 				Class&lt;? <strong class="jxr_keyword">extends</strong> TestExecutionListener&gt;[] listenerClasses = (Class&lt;? <strong class="jxr_keyword">extends</strong> TestExecutionListener&gt;[]) annAttrs.getClassArray(<span class="jxr_string">"listeners"</span>);
+<a class="jxr_linenumber" name="L132" href="#L132">132</a> 				<strong class="jxr_keyword">if</strong> (!ObjectUtils.isEmpty(valueListenerClasses) &amp;&amp; !ObjectUtils.isEmpty(listenerClasses)) {
+<a class="jxr_linenumber" name="L133" href="#L133">133</a> 					<strong class="jxr_keyword">throw</strong> <strong class="jxr_keyword">new</strong> IllegalStateException(String.format(
+<a class="jxr_linenumber" name="L134" href="#L134">134</a> 						<span class="jxr_string">"Class [%s] configured with @TestExecutionListeners' "</span>
+<a class="jxr_linenumber" name="L135" href="#L135">135</a> 								+ <span class="jxr_string">"'value' [%s] and 'listeners' [%s] attributes. Use one or the other, but not both."</span>,
+<a class="jxr_linenumber" name="L136" href="#L136">136</a> 						declaringClass.getName(), ObjectUtils.nullSafeToString(valueListenerClasses),
+<a class="jxr_linenumber" name="L137" href="#L137">137</a> 						ObjectUtils.nullSafeToString(listenerClasses)));
+<a class="jxr_linenumber" name="L138" href="#L138">138</a> 				}
+<a class="jxr_linenumber" name="L139" href="#L139">139</a> 				<strong class="jxr_keyword">else</strong> <strong class="jxr_keyword">if</strong> (!ObjectUtils.isEmpty(valueListenerClasses)) {
+<a class="jxr_linenumber" name="L140" href="#L140">140</a> 					listenerClasses = valueListenerClasses;
+<a class="jxr_linenumber" name="L141" href="#L141">141</a> 				}
+<a class="jxr_linenumber" name="L142" href="#L142">142</a> 
+<a class="jxr_linenumber" name="L143" href="#L143">143</a> 				<strong class="jxr_keyword">boolean</strong> inheritListeners = annAttrs.getBoolean(<span class="jxr_string">"inheritListeners"</span>);
+<a class="jxr_linenumber" name="L144" href="#L144">144</a> 				AnnotationDescriptor&lt;TestExecutionListeners&gt; superDescriptor = MetaAnnotationUtils.findAnnotationDescriptor(
+<a class="jxr_linenumber" name="L145" href="#L145">145</a> 					descriptor.getRootDeclaringClass().getSuperclass(), annotationType);
+<a class="jxr_linenumber" name="L146" href="#L146">146</a> 
+<a class="jxr_linenumber" name="L147" href="#L147">147</a> 				<em class="jxr_comment">// If there are no listeners to inherit, we might need to merge the</em>
+<a class="jxr_linenumber" name="L148" href="#L148">148</a> 				<em class="jxr_comment">// locally declared listeners with the defaults.</em>
+<a class="jxr_linenumber" name="L149" href="#L149">149</a> 				<strong class="jxr_keyword">if</strong> ((!inheritListeners || superDescriptor == <strong class="jxr_keyword">null</strong>)
+<a class="jxr_linenumber" name="L150" href="#L150">150</a> 						&amp;&amp; (annAttrs.getEnum(<span class="jxr_string">"mergeMode"</span>) == MergeMode.MERGE_WITH_DEFAULTS)) {
+<a class="jxr_linenumber" name="L151" href="#L151">151</a> 					<strong class="jxr_keyword">if</strong> (logger.isDebugEnabled()) {
+<a class="jxr_linenumber" name="L152" href="#L152">152</a> 						logger.debug(String.format(
+<a class="jxr_linenumber" name="L153" href="#L153">153</a> 							<span class="jxr_string">"Merging default listeners with listeners configured via @TestExecutionListeners for class [%s]."</span>,
+<a class="jxr_linenumber" name="L154" href="#L154">154</a> 							descriptor.getRootDeclaringClass().getName()));
+<a class="jxr_linenumber" name="L155" href="#L155">155</a> 					}
+<a class="jxr_linenumber" name="L156" href="#L156">156</a> 					usingDefaults = <strong class="jxr_keyword">true</strong>;
+<a class="jxr_linenumber" name="L157" href="#L157">157</a> 					classesList.addAll(getDefaultTestExecutionListenerClasses());
+<a class="jxr_linenumber" name="L158" href="#L158">158</a> 				}
+<a class="jxr_linenumber" name="L159" href="#L159">159</a> 
+<a class="jxr_linenumber" name="L160" href="#L160">160</a> 				classesList.addAll(0, Arrays.&lt;Class&lt;? <strong class="jxr_keyword">extends</strong> TestExecutionListener&gt;&gt; asList(listenerClasses));
+<a class="jxr_linenumber" name="L161" href="#L161">161</a> 
+<a class="jxr_linenumber" name="L162" href="#L162">162</a> 				descriptor = (inheritListeners ? superDescriptor : <strong class="jxr_keyword">null</strong>);
+<a class="jxr_linenumber" name="L163" href="#L163">163</a> 			}
+<a class="jxr_linenumber" name="L164" href="#L164">164</a> 		}
+<a class="jxr_linenumber" name="L165" href="#L165">165</a> 
+<a class="jxr_linenumber" name="L166" href="#L166">166</a> 		<em class="jxr_comment">// Remove possible duplicates if we loaded default listeners.</em>
+<a class="jxr_linenumber" name="L167" href="#L167">167</a> 		<strong class="jxr_keyword">if</strong> (usingDefaults) {
+<a class="jxr_linenumber" name="L168" href="#L168">168</a> 			Set&lt;Class&lt;? <strong class="jxr_keyword">extends</strong> TestExecutionListener&gt;&gt; classesSet = <strong class="jxr_keyword">new</strong> HashSet&lt;Class&lt;? <strong class="jxr_keyword">extends</strong> TestExecutionListener&gt;&gt;();
+<a class="jxr_linenumber" name="L169" href="#L169">169</a> 			classesSet.addAll(classesList);
+<a class="jxr_linenumber" name="L170" href="#L170">170</a> 			classesList.clear();
+<a class="jxr_linenumber" name="L171" href="#L171">171</a> 			classesList.addAll(classesSet);
+<a class="jxr_linenumber" name="L172" href="#L172">172</a> 		}
+<a class="jxr_linenumber" name="L173" href="#L173">173</a> 
+<a class="jxr_linenumber" name="L174" href="#L174">174</a> 		List&lt;TestExecutionListener&gt; listeners = instantiateListeners(classesList);
+<a class="jxr_linenumber" name="L175" href="#L175">175</a> 
+<a class="jxr_linenumber" name="L176" href="#L176">176</a> 		<em class="jxr_comment">// Sort by Ordered/@Order if we loaded default listeners.</em>
+<a class="jxr_linenumber" name="L177" href="#L177">177</a> 		<strong class="jxr_keyword">if</strong> (usingDefaults) {
+<a class="jxr_linenumber" name="L178" href="#L178">178</a> 			AnnotationAwareOrderComparator.sort(listeners);
+<a class="jxr_linenumber" name="L179" href="#L179">179</a> 		}
+<a class="jxr_linenumber" name="L180" href="#L180">180</a> 
+<a class="jxr_linenumber" name="L181" href="#L181">181</a> 		<strong class="jxr_keyword">if</strong> (logger.isInfoEnabled()) {
+<a class="jxr_linenumber" name="L182" href="#L182">182</a> 			logger.info(String.format(<span class="jxr_string">"Using TestExecutionListeners: %s"</span>, listeners));
+<a class="jxr_linenumber" name="L183" href="#L183">183</a> 		}
+<a class="jxr_linenumber" name="L184" href="#L184">184</a> 		<strong class="jxr_keyword">return</strong> listeners;
+<a class="jxr_linenumber" name="L185" href="#L185">185</a> 	}
+<a class="jxr_linenumber" name="L186" href="#L186">186</a> 
+<a class="jxr_linenumber" name="L187" href="#L187">187</a> 	<strong class="jxr_keyword">private</strong> List&lt;TestExecutionListener&gt; instantiateListeners(List&lt;Class&lt;? <strong class="jxr_keyword">extends</strong> TestExecutionListener&gt;&gt; classesList) {
+<a class="jxr_linenumber" name="L188" href="#L188">188</a> 		List&lt;TestExecutionListener&gt; listeners = <strong class="jxr_keyword">new</strong> ArrayList&lt;TestExecutionListener&gt;(classesList.size());
+<a class="jxr_linenumber" name="L189" href="#L189">189</a> 		<strong class="jxr_keyword">for</strong> (Class&lt;? <strong class="jxr_keyword">extends</strong> TestExecutionListener&gt; listenerClass : classesList) {
+<a class="jxr_linenumber" name="L190" href="#L190">190</a> 			NoClassDefFoundError ncdfe = <strong class="jxr_keyword">null</strong>;
+<a class="jxr_linenumber" name="L191" href="#L191">191</a> 			<strong class="jxr_keyword">try</strong> {
+<a class="jxr_linenumber" name="L192" href="#L192">192</a> 				listeners.add(BeanUtils.instantiateClass(listenerClass));
+<a class="jxr_linenumber" name="L193" href="#L193">193</a> 			}
+<a class="jxr_linenumber" name="L194" href="#L194">194</a> 			<strong class="jxr_keyword">catch</strong> (NoClassDefFoundError err) {
+<a class="jxr_linenumber" name="L195" href="#L195">195</a> 				ncdfe = err;
+<a class="jxr_linenumber" name="L196" href="#L196">196</a> 			}
+<a class="jxr_linenumber" name="L197" href="#L197">197</a> 			<strong class="jxr_keyword">catch</strong> (BeanInstantiationException ex) {
+<a class="jxr_linenumber" name="L198" href="#L198">198</a> 				<strong class="jxr_keyword">if</strong> (ex.getCause() instanceof NoClassDefFoundError) {
+<a class="jxr_linenumber" name="L199" href="#L199">199</a> 					ncdfe = (NoClassDefFoundError) ex.getCause();
+<a class="jxr_linenumber" name="L200" href="#L200">200</a> 				}
+<a class="jxr_linenumber" name="L201" href="#L201">201</a> 			}
+<a class="jxr_linenumber" name="L202" href="#L202">202</a> 			<strong class="jxr_keyword">if</strong> (ncdfe != <strong class="jxr_keyword">null</strong>) {
+<a class="jxr_linenumber" name="L203" href="#L203">203</a> 				<strong class="jxr_keyword">if</strong> (logger.isInfoEnabled()) {
+<a class="jxr_linenumber" name="L204" href="#L204">204</a> 					logger.info(String.format(<span class="jxr_string">"Could not instantiate TestExecutionListener [%s]. "</span>
+<a class="jxr_linenumber" name="L205" href="#L205">205</a> 							+ <span class="jxr_string">"Specify custom listener classes or make the default listener classes "</span>
+<a class="jxr_linenumber" name="L206" href="#L206">206</a> 							+ <span class="jxr_string">"(and their required dependencies) available. Offending class: [%s]"</span>,
+<a class="jxr_linenumber" name="L207" href="#L207">207</a> 						listenerClass.getName(), ncdfe.getMessage()));
+<a class="jxr_linenumber" name="L208" href="#L208">208</a> 				}
+<a class="jxr_linenumber" name="L209" href="#L209">209</a> 			}
+<a class="jxr_linenumber" name="L210" href="#L210">210</a> 		}
+<a class="jxr_linenumber" name="L211" href="#L211">211</a> 		<strong class="jxr_keyword">return</strong> listeners;
+<a class="jxr_linenumber" name="L212" href="#L212">212</a> 	}
+<a class="jxr_linenumber" name="L213" href="#L213">213</a> 
+<a class="jxr_linenumber" name="L214" href="#L214">214</a> 	<em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="L215" href="#L215">215</a> <em class="jxr_javadoccomment">	 * Get the default {@link TestExecutionListener} classes for this bootstrapper.</em>
+<a class="jxr_linenumber" name="L216" href="#L216">216</a> <em class="jxr_javadoccomment">	 * &lt;p&gt;This method is invoked by {@link #getTestExecutionListeners()} and</em>
+<a class="jxr_linenumber" name="L217" href="#L217">217</a> <em class="jxr_javadoccomment">	 * delegates to {@link #getDefaultTestExecutionListenerClassNames()} to</em>
+<a class="jxr_linenumber" name="L218" href="#L218">218</a> <em class="jxr_javadoccomment">	 * retrieve the class names.</em>
+<a class="jxr_linenumber" name="L219" href="#L219">219</a> <em class="jxr_javadoccomment">	 * &lt;p&gt;If a particular class cannot be loaded, a {@code DEBUG} message will</em>
+<a class="jxr_linenumber" name="L220" href="#L220">220</a> <em class="jxr_javadoccomment">	 * be logged, but the associated exception will not be rethrown.</em>
+<a class="jxr_linenumber" name="L221" href="#L221">221</a> <em class="jxr_javadoccomment">	 */</em>
+<a class="jxr_linenumber" name="L222" href="#L222">222</a> 	@SuppressWarnings(<span class="jxr_string">"unchecked"</span>)
+<a class="jxr_linenumber" name="L223" href="#L223">223</a> 	<strong class="jxr_keyword">protected</strong> Set&lt;Class&lt;? <strong class="jxr_keyword">extends</strong> TestExecutionListener&gt;&gt; getDefaultTestExecutionListenerClasses() {
+<a class="jxr_linenumber" name="L224" href="#L224">224</a> 		Set&lt;Class&lt;? <strong class="jxr_keyword">extends</strong> TestExecutionListener&gt;&gt; defaultListenerClasses = <strong class="jxr_keyword">new</strong> LinkedHashSet&lt;Class&lt;? <strong class="jxr_keyword">extends</strong> TestExecutionListener&gt;&gt;();
+<a class="jxr_linenumber" name="L225" href="#L225">225</a> 		ClassLoader cl = getClass().getClassLoader();
+<a class="jxr_linenumber" name="L226" href="#L226">226</a> 		<strong class="jxr_keyword">for</strong> (String className : getDefaultTestExecutionListenerClassNames()) {
+<a class="jxr_linenumber" name="L227" href="#L227">227</a> 			<strong class="jxr_keyword">try</strong> {
+<a class="jxr_linenumber" name="L228" href="#L228">228</a> 				defaultListenerClasses.add((Class&lt;? <strong class="jxr_keyword">extends</strong> TestExecutionListener&gt;) ClassUtils.forName(className, cl));
+<a class="jxr_linenumber" name="L229" href="#L229">229</a> 			}
+<a class="jxr_linenumber" name="L230" href="#L230">230</a> 			<strong class="jxr_keyword">catch</strong> (Throwable ex) {
+<a class="jxr_linenumber" name="L231" href="#L231">231</a> 				<strong class="jxr_keyword">if</strong> (logger.isDebugEnabled()) {
+<a class="jxr_linenumber" name="L232" href="#L232">232</a> 					logger.debug(<span class="jxr_string">"Could not load default TestExecutionListener class ["</span> + className
+<a class="jxr_linenumber" name="L233" href="#L233">233</a> 							+ <span class="jxr_string">"]. Specify custom listener classes or make the default listener classes available."</span>, ex);
+<a class="jxr_linenumber" name="L234" href="#L234">234</a> 				}
+<a class="jxr_linenumber" name="L235" href="#L235">235</a> 			}
+<a class="jxr_linenumber" name="L236" href="#L236">236</a> 		}
+<a class="jxr_linenumber" name="L237" href="#L237">237</a> 		<strong class="jxr_keyword">return</strong> defaultListenerClasses;
+<a class="jxr_linenumber" name="L238" href="#L238">238</a> 	}
+<a class="jxr_linenumber" name="L239" href="#L239">239</a> 
+<a class="jxr_linenumber" name="L240" href="#L240">240</a> 	<em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="L241" href="#L241">241</a> <em class="jxr_javadoccomment">	 * Get the names of the default {@link TestExecutionListener} classes for</em>
+<a class="jxr_linenumber" name="L242" href="#L242">242</a> <em class="jxr_javadoccomment">	 * this bootstrapper.</em>
+<a class="jxr_linenumber" name="L243" href="#L243">243</a> <em class="jxr_javadoccomment">	 * &lt;p&gt;The default implementation looks up all</em>
+<a class="jxr_linenumber" name="L244" href="#L244">244</a> <em class="jxr_javadoccomment">	 * {@code org.springframework.test.context.TestExecutionListener} entries</em>
+<a class="jxr_linenumber" name="L245" href="#L245">245</a> <em class="jxr_javadoccomment">	 * configured in all {@code META-INF/spring.factories} files on the classpath.</em>
+<a class="jxr_linenumber" name="L246" href="#L246">246</a> <em class="jxr_javadoccomment">	 * &lt;p&gt;This method is invoked by {@link #getDefaultTestExecutionListenerClasses()}.</em>
+<a class="jxr_linenumber" name="L247" href="#L247">247</a> <em class="jxr_javadoccomment">	 * @return an &lt;em&gt;unmodifiable&lt;/em&gt; list of names of default {@code TestExecutionListener}</em>
+<a class="jxr_linenumber" name="L248" href="#L248">248</a> <em class="jxr_javadoccomment">	 * classes</em>
+<a class="jxr_linenumber" name="L249" href="#L249">249</a> <em class="jxr_javadoccomment">	 * @see SpringFactoriesLoader#loadFactoryNames</em>
+<a class="jxr_linenumber" name="L250" href="#L250">250</a> <em class="jxr_javadoccomment">	 */</em>
+<a class="jxr_linenumber" name="L251" href="#L251">251</a> 	<strong class="jxr_keyword">protected</strong> List&lt;String&gt; getDefaultTestExecutionListenerClassNames() {
+<a class="jxr_linenumber" name="L252" href="#L252">252</a> 		<strong class="jxr_keyword">final</strong> List&lt;String&gt; classNames = SpringFactoriesLoader.loadFactoryNames(TestExecutionListener.<strong class="jxr_keyword">class</strong>,
+<a class="jxr_linenumber" name="L253" href="#L253">253</a> 			getClass().getClassLoader());
+<a class="jxr_linenumber" name="L254" href="#L254">254</a> 
+<a class="jxr_linenumber" name="L255" href="#L255">255</a> 		<strong class="jxr_keyword">if</strong> (logger.isInfoEnabled()) {
+<a class="jxr_linenumber" name="L256" href="#L256">256</a> 			logger.info(String.format(<span class="jxr_string">"Loaded default TestExecutionListener class names from location [%s]: %s"</span>,
+<a class="jxr_linenumber" name="L257" href="#L257">257</a> 				SpringFactoriesLoader.FACTORIES_RESOURCE_LOCATION, classNames));
+<a class="jxr_linenumber" name="L258" href="#L258">258</a> 		}
+<a class="jxr_linenumber" name="L259" href="#L259">259</a> 		<strong class="jxr_keyword">return</strong> Collections.unmodifiableList(classNames);
+<a class="jxr_linenumber" name="L260" href="#L260">260</a> 	}
+<a class="jxr_linenumber" name="L261" href="#L261">261</a> 
+<a class="jxr_linenumber" name="L262" href="#L262">262</a> 	<em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="L263" href="#L263">263</a> <em class="jxr_javadoccomment">	 * {@inheritDoc}</em>
+<a class="jxr_linenumber" name="L264" href="#L264">264</a> <em class="jxr_javadoccomment">	 */</em>
+<a class="jxr_linenumber" name="L265" href="#L265">265</a> 	@SuppressWarnings(<span class="jxr_string">"unchecked"</span>)
+<a class="jxr_linenumber" name="L266" href="#L266">266</a> 	@Override
+<a class="jxr_linenumber" name="L267" href="#L267">267</a> 	<strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">final</strong> <a href="../../../../../org/springframework/test/context/MergedContextConfiguration.html">MergedContextConfiguration</a> buildMergedContextConfiguration() {
+<a class="jxr_linenumber" name="L268" href="#L268">268</a> 		Class&lt;?&gt; testClass = getBootstrapContext().getTestClass();
+<a class="jxr_linenumber" name="L269" href="#L269">269</a> 		CacheAwareContextLoaderDelegate cacheAwareContextLoaderDelegate = getBootstrapContext().getCacheAwareContextLoaderDelegate();
+<a class="jxr_linenumber" name="L270" href="#L270">270</a> 
+<a class="jxr_linenumber" name="L271" href="#L271">271</a> 		<strong class="jxr_keyword">if</strong> (MetaAnnotationUtils.findAnnotationDescriptorForTypes(testClass, ContextConfiguration.<strong class="jxr_keyword">class</strong>,
+<a class="jxr_linenumber" name="L272" href="#L272">272</a> 			ContextHierarchy.<strong class="jxr_keyword">class</strong>) == <strong class="jxr_keyword">null</strong>) {
+<a class="jxr_linenumber" name="L273" href="#L273">273</a> 			<strong class="jxr_keyword">if</strong> (logger.isInfoEnabled()) {
+<a class="jxr_linenumber" name="L274" href="#L274">274</a> 				logger.info(String.format(
+<a class="jxr_linenumber" name="L275" href="#L275">275</a> 					<span class="jxr_string">"Neither @ContextConfiguration nor @ContextHierarchy found for test class [%s]"</span>,
+<a class="jxr_linenumber" name="L276" href="#L276">276</a> 					testClass.getName()));
+<a class="jxr_linenumber" name="L277" href="#L277">277</a> 			}
+<a class="jxr_linenumber" name="L278" href="#L278">278</a> 			<strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> <a href="../../../../../org/springframework/test/context/MergedContextConfiguration.html">MergedContextConfiguration</a>(testClass, <strong class="jxr_keyword">null</strong>, <strong class="jxr_keyword">null</strong>, <strong class="jxr_keyword">null</strong>, <strong class="jxr_keyword">null</strong>);
+<a class="jxr_linenumber" name="L279" href="#L279">279</a> 		}
+<a class="jxr_linenumber" name="L280" href="#L280">280</a> 
+<a class="jxr_linenumber" name="L281" href="#L281">281</a> 		<strong class="jxr_keyword">if</strong> (AnnotationUtils.findAnnotation(testClass, ContextHierarchy.<strong class="jxr_keyword">class</strong>) != <strong class="jxr_keyword">null</strong>) {
+<a class="jxr_linenumber" name="L282" href="#L282">282</a> 			Map&lt;String, List&lt;ContextConfigurationAttributes&gt;&gt; hierarchyMap = ContextLoaderUtils.buildContextHierarchyMap(testClass);
+<a class="jxr_linenumber" name="L283" href="#L283">283</a> 			MergedContextConfiguration parentConfig = <strong class="jxr_keyword">null</strong>;
+<a class="jxr_linenumber" name="L284" href="#L284">284</a> 			MergedContextConfiguration mergedConfig = <strong class="jxr_keyword">null</strong>;
+<a class="jxr_linenumber" name="L285" href="#L285">285</a> 
+<a class="jxr_linenumber" name="L286" href="#L286">286</a> 			<strong class="jxr_keyword">for</strong> (List&lt;ContextConfigurationAttributes&gt; list : hierarchyMap.values()) {
+<a class="jxr_linenumber" name="L287" href="#L287">287</a> 				List&lt;ContextConfigurationAttributes&gt; reversedList = <strong class="jxr_keyword">new</strong> ArrayList&lt;ContextConfigurationAttributes&gt;(list);
+<a class="jxr_linenumber" name="L288" href="#L288">288</a> 				Collections.reverse(reversedList);
+<a class="jxr_linenumber" name="L289" href="#L289">289</a> 
+<a class="jxr_linenumber" name="L290" href="#L290">290</a> 				<em class="jxr_comment">// Don't use the supplied testClass; instead ensure that we are</em>
+<a class="jxr_linenumber" name="L291" href="#L291">291</a> 				<em class="jxr_comment">// building the MCC for the actual test class that declared the</em>
+<a class="jxr_linenumber" name="L292" href="#L292">292</a> 				<em class="jxr_comment">// configuration for the current level in the context hierarchy.</em>
+<a class="jxr_linenumber" name="L293" href="#L293">293</a> 				Assert.notEmpty(reversedList, <span class="jxr_string">"ContextConfigurationAttributes list must not be empty"</span>);
+<a class="jxr_linenumber" name="L294" href="#L294">294</a> 				Class&lt;?&gt; declaringClass = reversedList.get(0).getDeclaringClass();
+<a class="jxr_linenumber" name="L295" href="#L295">295</a> 
+<a class="jxr_linenumber" name="L296" href="#L296">296</a> 				mergedConfig = buildMergedContextConfiguration(declaringClass, reversedList, parentConfig,
+<a class="jxr_linenumber" name="L297" href="#L297">297</a> 					cacheAwareContextLoaderDelegate);
+<a class="jxr_linenumber" name="L298" href="#L298">298</a> 				parentConfig = mergedConfig;
+<a class="jxr_linenumber" name="L299" href="#L299">299</a> 			}
+<a class="jxr_linenumber" name="L300" href="#L300">300</a> 
+<a class="jxr_linenumber" name="L301" href="#L301">301</a> 			<em class="jxr_comment">// Return the last level in the context hierarchy</em>
+<a class="jxr_linenumber" name="L302" href="#L302">302</a> 			<strong class="jxr_keyword">return</strong> mergedConfig;
+<a class="jxr_linenumber" name="L303" href="#L303">303</a> 		}
+<a class="jxr_linenumber" name="L304" href="#L304">304</a> 		<strong class="jxr_keyword">else</strong> {
+<a class="jxr_linenumber" name="L305" href="#L305">305</a> 			<strong class="jxr_keyword">return</strong> buildMergedContextConfiguration(testClass,
+<a class="jxr_linenumber" name="L306" href="#L306">306</a> 				ContextLoaderUtils.resolveContextConfigurationAttributes(testClass), <strong class="jxr_keyword">null</strong>,
+<a class="jxr_linenumber" name="L307" href="#L307">307</a> 				cacheAwareContextLoaderDelegate);
+<a class="jxr_linenumber" name="L308" href="#L308">308</a> 		}
+<a class="jxr_linenumber" name="L309" href="#L309">309</a> 	}
+<a class="jxr_linenumber" name="L310" href="#L310">310</a> 
+<a class="jxr_linenumber" name="L311" href="#L311">311</a> 	<em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="L312" href="#L312">312</a> <em class="jxr_javadoccomment">	 * Build the {@link MergedContextConfiguration merged context configuration}</em>
+<a class="jxr_linenumber" name="L313" href="#L313">313</a> <em class="jxr_javadoccomment">	 * for the supplied {@link Class testClass}, context configuration attributes,</em>
+<a class="jxr_linenumber" name="L314" href="#L314">314</a> <em class="jxr_javadoccomment">	 * and parent context configuration.</em>
+<a class="jxr_linenumber" name="L315" href="#L315">315</a> <em class="jxr_javadoccomment">	 * @param testClass the test class for which the {@code MergedContextConfiguration}</em>
+<a class="jxr_linenumber" name="L316" href="#L316">316</a> <em class="jxr_javadoccomment">	 * should be built (must not be {@code null})</em>
+<a class="jxr_linenumber" name="L317" href="#L317">317</a> <em class="jxr_javadoccomment">	 * @param configAttributesList the list of context configuration attributes for the</em>
+<a class="jxr_linenumber" name="L318" href="#L318">318</a> <em class="jxr_javadoccomment">	 * specified test class, ordered &lt;em&gt;bottom-up&lt;/em&gt; (i.e., as if we were</em>
+<a class="jxr_linenumber" name="L319" href="#L319">319</a> <em class="jxr_javadoccomment">	 * traversing up the class hierarchy); never {@code null} or empty</em>
+<a class="jxr_linenumber" name="L320" href="#L320">320</a> <em class="jxr_javadoccomment">	 * @param parentConfig the merged context configuration for the parent application</em>
+<a class="jxr_linenumber" name="L321" href="#L321">321</a> <em class="jxr_javadoccomment">	 * context in a context hierarchy, or {@code null} if there is no parent</em>
+<a class="jxr_linenumber" name="L322" href="#L322">322</a> <em class="jxr_javadoccomment">	 * @param cacheAwareContextLoaderDelegate the cache-aware context loader delegate to</em>
+<a class="jxr_linenumber" name="L323" href="#L323">323</a> <em class="jxr_javadoccomment">	 * be passed to the {@code MergedContextConfiguration} constructor</em>
+<a class="jxr_linenumber" name="L324" href="#L324">324</a> <em class="jxr_javadoccomment">	 * @return the merged context configuration</em>
+<a class="jxr_linenumber" name="L325" href="#L325">325</a> <em class="jxr_javadoccomment">	 * @see #resolveContextLoader</em>
+<a class="jxr_linenumber" name="L326" href="#L326">326</a> <em class="jxr_javadoccomment">	 * @see ContextLoaderUtils#resolveContextConfigurationAttributes</em>
+<a class="jxr_linenumber" name="L327" href="#L327">327</a> <em class="jxr_javadoccomment">	 * @see SmartContextLoader#processContextConfiguration</em>
+<a class="jxr_linenumber" name="L328" href="#L328">328</a> <em class="jxr_javadoccomment">	 * @see ContextLoader#processLocations</em>
+<a class="jxr_linenumber" name="L329" href="#L329">329</a> <em class="jxr_javadoccomment">	 * @see ActiveProfilesUtils#resolveActiveProfiles</em>
+<a class="jxr_linenumber" name="L330" href="#L330">330</a> <em class="jxr_javadoccomment">	 * @see ApplicationContextInitializerUtils#resolveInitializerClasses</em>
+<a class="jxr_linenumber" name="L331" href="#L331">331</a> <em class="jxr_javadoccomment">	 * @see MergedContextConfiguration</em>
+<a class="jxr_linenumber" name="L332" href="#L332">332</a> <em class="jxr_javadoccomment">	 */</em>
+<a class="jxr_linenumber" name="L333" href="#L333">333</a> 	<strong class="jxr_keyword">private</strong> <a href="../../../../../org/springframework/test/context/MergedContextConfiguration.html">MergedContextConfiguration</a> buildMergedContextConfiguration(Class&lt;?&gt; testClass,
+<a class="jxr_linenumber" name="L334" href="#L334">334</a> 			List&lt;ContextConfigurationAttributes&gt; configAttributesList, <a href="../../../../../org/springframework/test/context/MergedContextConfiguration.html">MergedContextConfiguration</a> parentConfig,
+<a class="jxr_linenumber" name="L335" href="#L335">335</a> 			CacheAwareContextLoaderDelegate cacheAwareContextLoaderDelegate) {
+<a class="jxr_linenumber" name="L336" href="#L336">336</a> 
+<a class="jxr_linenumber" name="L337" href="#L337">337</a> 		ContextLoader contextLoader = resolveContextLoader(testClass, configAttributesList);
+<a class="jxr_linenumber" name="L338" href="#L338">338</a> 		List&lt;String&gt; locationsList = <strong class="jxr_keyword">new</strong> ArrayList&lt;String&gt;();
+<a class="jxr_linenumber" name="L339" href="#L339">339</a> 		List&lt;Class&lt;?&gt;&gt; classesList = <strong class="jxr_keyword">new</strong> ArrayList&lt;Class&lt;?&gt;&gt;();
+<a class="jxr_linenumber" name="L340" href="#L340">340</a> 
+<a class="jxr_linenumber" name="L341" href="#L341">341</a> 		<strong class="jxr_keyword">for</strong> (ContextConfigurationAttributes configAttributes : configAttributesList) {
+<a class="jxr_linenumber" name="L342" href="#L342">342</a> 			<strong class="jxr_keyword">if</strong> (logger.isTraceEnabled()) {
+<a class="jxr_linenumber" name="L343" href="#L343">343</a> 				logger.trace(String.format(<span class="jxr_string">"Processing locations and classes for context configuration attributes %s"</span>,
+<a class="jxr_linenumber" name="L344" href="#L344">344</a> 					configAttributes));
+<a class="jxr_linenumber" name="L345" href="#L345">345</a> 			}
+<a class="jxr_linenumber" name="L346" href="#L346">346</a> 			<strong class="jxr_keyword">if</strong> (contextLoader instanceof SmartContextLoader) {
+<a class="jxr_linenumber" name="L347" href="#L347">347</a> 				SmartContextLoader smartContextLoader = (SmartContextLoader) contextLoader;
+<a class="jxr_linenumber" name="L348" href="#L348">348</a> 				smartContextLoader.processContextConfiguration(configAttributes);
+<a class="jxr_linenumber" name="L349" href="#L349">349</a> 				locationsList.addAll(0, Arrays.asList(configAttributes.getLocations()));
+<a class="jxr_linenumber" name="L350" href="#L350">350</a> 				classesList.addAll(0, Arrays.asList(configAttributes.getClasses()));
+<a class="jxr_linenumber" name="L351" href="#L351">351</a> 			}
+<a class="jxr_linenumber" name="L352" href="#L352">352</a> 			<strong class="jxr_keyword">else</strong> {
+<a class="jxr_linenumber" name="L353" href="#L353">353</a> 				String[] processedLocations = contextLoader.processLocations(configAttributes.getDeclaringClass(),
+<a class="jxr_linenumber" name="L354" href="#L354">354</a> 					configAttributes.getLocations());
+<a class="jxr_linenumber" name="L355" href="#L355">355</a> 				locationsList.addAll(0, Arrays.asList(processedLocations));
+<a class="jxr_linenumber" name="L356" href="#L356">356</a> 				<em class="jxr_comment">// Legacy ContextLoaders don't know how to process classes</em>
+<a class="jxr_linenumber" name="L357" href="#L357">357</a> 			}
+<a class="jxr_linenumber" name="L358" href="#L358">358</a> 			<strong class="jxr_keyword">if</strong> (!configAttributes.isInheritLocations()) {
+<a class="jxr_linenumber" name="L359" href="#L359">359</a> 				<strong class="jxr_keyword">break</strong>;
+<a class="jxr_linenumber" name="L360" href="#L360">360</a> 			}
+<a class="jxr_linenumber" name="L361" href="#L361">361</a> 		}
+<a class="jxr_linenumber" name="L362" href="#L362">362</a> 
+<a class="jxr_linenumber" name="L363" href="#L363">363</a> 		String[] locations = StringUtils.toStringArray(locationsList);
+<a class="jxr_linenumber" name="L364" href="#L364">364</a> 		Class&lt;?&gt;[] classes = ClassUtils.toClassArray(classesList);
+<a class="jxr_linenumber" name="L365" href="#L365">365</a> 		Set&lt;Class&lt;? <strong class="jxr_keyword">extends</strong> ApplicationContextInitializer&lt;? <strong class="jxr_keyword">extends</strong> ConfigurableApplicationContext&gt;&gt;&gt; initializerClasses = <em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L366" href="#L366">366</a> 		ApplicationContextInitializerUtils.resolveInitializerClasses(configAttributesList);
+<a class="jxr_linenumber" name="L367" href="#L367">367</a> 		String[] activeProfiles = ActiveProfilesUtils.resolveActiveProfiles(testClass);
+<a class="jxr_linenumber" name="L368" href="#L368">368</a> 		MergedTestPropertySources mergedTestPropertySources = TestPropertySourceUtils.buildMergedTestPropertySources(testClass);
+<a class="jxr_linenumber" name="L369" href="#L369">369</a> 
+<a class="jxr_linenumber" name="L370" href="#L370">370</a> 		MergedContextConfiguration mergedConfig = <strong class="jxr_keyword">new</strong> <a href="../../../../../org/springframework/test/context/MergedContextConfiguration.html">MergedContextConfiguration</a>(testClass, locations, classes,
+<a class="jxr_linenumber" name="L371" href="#L371">371</a> 			initializerClasses, activeProfiles, mergedTestPropertySources.getLocations(),
+<a class="jxr_linenumber" name="L372" href="#L372">372</a> 			mergedTestPropertySources.getProperties(), contextLoader, cacheAwareContextLoaderDelegate, parentConfig);
+<a class="jxr_linenumber" name="L373" href="#L373">373</a> 
+<a class="jxr_linenumber" name="L374" href="#L374">374</a> 		<strong class="jxr_keyword">return</strong> processMergedContextConfiguration(mergedConfig);
+<a class="jxr_linenumber" name="L375" href="#L375">375</a> 	}
+<a class="jxr_linenumber" name="L376" href="#L376">376</a> 
+<a class="jxr_linenumber" name="L377" href="#L377">377</a> 	<em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="L378" href="#L378">378</a> <em class="jxr_javadoccomment">	 * Resolve the {@link ContextLoader} {@linkplain Class class} to use for the</em>
+<a class="jxr_linenumber" name="L379" href="#L379">379</a> <em class="jxr_javadoccomment">	 * supplied list of {@link ContextConfigurationAttributes} and then instantiate</em>
+<a class="jxr_linenumber" name="L380" href="#L380">380</a> <em class="jxr_javadoccomment">	 * and return that {@code ContextLoader}.</em>
+<a class="jxr_linenumber" name="L381" href="#L381">381</a> <em class="jxr_javadoccomment">	 * &lt;p&gt;If the user has not explicitly declared which loader to use, the value</em>
+<a class="jxr_linenumber" name="L382" href="#L382">382</a> <em class="jxr_javadoccomment">	 * returned from {@link #getDefaultContextLoaderClass} will be used as the</em>
+<a class="jxr_linenumber" name="L383" href="#L383">383</a> <em class="jxr_javadoccomment">	 * default context loader class. For details on the class resolution process,</em>
+<a class="jxr_linenumber" name="L384" href="#L384">384</a> <em class="jxr_javadoccomment">	 * see {@link #resolveExplicitContextLoaderClass} and</em>
+<a class="jxr_linenumber" name="L385" href="#L385">385</a> <em class="jxr_javadoccomment">	 * {@link #getDefaultContextLoaderClass}.</em>
+<a class="jxr_linenumber" name="L386" href="#L386">386</a> <em class="jxr_javadoccomment">	 * @param testClass the test class for which the {@code ContextLoader} should be</em>
+<a class="jxr_linenumber" name="L387" href="#L387">387</a> <em class="jxr_javadoccomment">	 * resolved; must not be {@code null}</em>
+<a class="jxr_linenumber" name="L388" href="#L388">388</a> <em class="jxr_javadoccomment">	 * @param configAttributesList the list of configuration attributes to process; must</em>
+<a class="jxr_linenumber" name="L389" href="#L389">389</a> <em class="jxr_javadoccomment">	 * not be {@code null} or &lt;em&gt;empty&lt;/em&gt;; must be ordered &lt;em&gt;bottom-up&lt;/em&gt;</em>
+<a class="jxr_linenumber" name="L390" href="#L390">390</a> <em class="jxr_javadoccomment">	 * (i.e., as if we were traversing up the class hierarchy)</em>
+<a class="jxr_linenumber" name="L391" href="#L391">391</a> <em class="jxr_javadoccomment">	 * @return the resolved {@code ContextLoader} for the supplied {@code testClass}</em>
+<a class="jxr_linenumber" name="L392" href="#L392">392</a> <em class="jxr_javadoccomment">	 * (never {@code null})</em>
+<a class="jxr_linenumber" name="L393" href="#L393">393</a> <em class="jxr_javadoccomment">	 */</em>
+<a class="jxr_linenumber" name="L394" href="#L394">394</a> 	<strong class="jxr_keyword">private</strong> <a href="../../../../../org/springframework/test/context/ContextLoader.html">ContextLoader</a> resolveContextLoader(Class&lt;?&gt; testClass,
+<a class="jxr_linenumber" name="L395" href="#L395">395</a> 			List&lt;ContextConfigurationAttributes&gt; configAttributesList) {
+<a class="jxr_linenumber" name="L396" href="#L396">396</a> 
+<a class="jxr_linenumber" name="L397" href="#L397">397</a> 		Assert.notNull(testClass, <span class="jxr_string">"Class must not be null"</span>);
+<a class="jxr_linenumber" name="L398" href="#L398">398</a> 		Assert.notEmpty(configAttributesList, <span class="jxr_string">"ContextConfigurationAttributes list must not be empty"</span>);
+<a class="jxr_linenumber" name="L399" href="#L399">399</a> 
+<a class="jxr_linenumber" name="L400" href="#L400">400</a> 		Class&lt;? <strong class="jxr_keyword">extends</strong> ContextLoader&gt; contextLoaderClass = resolveExplicitContextLoaderClass(configAttributesList);
+<a class="jxr_linenumber" name="L401" href="#L401">401</a> 		<strong class="jxr_keyword">if</strong> (contextLoaderClass == <strong class="jxr_keyword">null</strong>) {
+<a class="jxr_linenumber" name="L402" href="#L402">402</a> 			contextLoaderClass = getDefaultContextLoaderClass(testClass);
+<a class="jxr_linenumber" name="L403" href="#L403">403</a> 		}
+<a class="jxr_linenumber" name="L404" href="#L404">404</a> 		<strong class="jxr_keyword">if</strong> (logger.isTraceEnabled()) {
+<a class="jxr_linenumber" name="L405" href="#L405">405</a> 			logger.trace(String.format(<span class="jxr_string">"Using ContextLoader class [%s] for test class [%s]"</span>,
+<a class="jxr_linenumber" name="L406" href="#L406">406</a> 				contextLoaderClass.getName(), testClass.getName()));
+<a class="jxr_linenumber" name="L407" href="#L407">407</a> 		}
+<a class="jxr_linenumber" name="L408" href="#L408">408</a> 		<strong class="jxr_keyword">return</strong> BeanUtils.instantiateClass(contextLoaderClass, ContextLoader.<strong class="jxr_keyword">class</strong>);
+<a class="jxr_linenumber" name="L409" href="#L409">409</a> 	}
+<a class="jxr_linenumber" name="L410" href="#L410">410</a> 
+<a class="jxr_linenumber" name="L411" href="#L411">411</a> 	<em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="L412" href="#L412">412</a> <em class="jxr_javadoccomment">	 * Resolve the {@link ContextLoader} {@linkplain Class class} to use for the supplied</em>
+<a class="jxr_linenumber" name="L413" href="#L413">413</a> <em class="jxr_javadoccomment">	 * list of {@link ContextConfigurationAttributes}.</em>
+<a class="jxr_linenumber" name="L414" href="#L414">414</a> <em class="jxr_javadoccomment">	 * &lt;p&gt;Beginning with the first level in the context configuration attributes hierarchy:</em>
+<a class="jxr_linenumber" name="L415" href="#L415">415</a> <em class="jxr_javadoccomment">	 * &lt;ol&gt;</em>
+<a class="jxr_linenumber" name="L416" href="#L416">416</a> <em class="jxr_javadoccomment">	 * &lt;li&gt;If the {@link ContextConfigurationAttributes#getContextLoaderClass()</em>
+<a class="jxr_linenumber" name="L417" href="#L417">417</a> <em class="jxr_javadoccomment">	 * contextLoaderClass} property of {@link ContextConfigurationAttributes} is</em>
+<a class="jxr_linenumber" name="L418" href="#L418">418</a> <em class="jxr_javadoccomment">	 * configured with an explicit class, that class will be returned.&lt;/li&gt;</em>
+<a class="jxr_linenumber" name="L419" href="#L419">419</a> <em class="jxr_javadoccomment">	 * &lt;li&gt;If an explicit {@code ContextLoader} class is not specified at the current</em>
+<a class="jxr_linenumber" name="L420" href="#L420">420</a> <em class="jxr_javadoccomment">	 * level in the hierarchy, traverse to the next level in the hierarchy and return to</em>
+<a class="jxr_linenumber" name="L421" href="#L421">421</a> <em class="jxr_javadoccomment">	 * step #1.&lt;/li&gt;</em>
+<a class="jxr_linenumber" name="L422" href="#L422">422</a> <em class="jxr_javadoccomment">	 * &lt;/ol&gt;</em>
+<a class="jxr_linenumber" name="L423" href="#L423">423</a> <em class="jxr_javadoccomment">	 * @param configAttributesList the list of configuration attributes to process;</em>
+<a class="jxr_linenumber" name="L424" href="#L424">424</a> <em class="jxr_javadoccomment">	 * must not be {@code null} or &lt;em&gt;empty&lt;/em&gt;; must be ordered &lt;em&gt;bottom-up&lt;/em&gt;</em>
+<a class="jxr_linenumber" name="L425" href="#L425">425</a> <em class="jxr_javadoccomment">	 * (i.e., as if we were traversing up the class hierarchy)</em>
+<a class="jxr_linenumber" name="L426" href="#L426">426</a> <em class="jxr_javadoccomment">	 * @return the {@code ContextLoader} class to use for the supplied configuration</em>
+<a class="jxr_linenumber" name="L427" href="#L427">427</a> <em class="jxr_javadoccomment">	 * attributes, or {@code null} if no explicit loader is found</em>
+<a class="jxr_linenumber" name="L428" href="#L428">428</a> <em class="jxr_javadoccomment">	 * @throws IllegalArgumentException if supplied configuration attributes are</em>
+<a class="jxr_linenumber" name="L429" href="#L429">429</a> <em class="jxr_javadoccomment">	 * {@code null} or &lt;em&gt;empty&lt;/em&gt;</em>
+<a class="jxr_linenumber" name="L430" href="#L430">430</a> <em class="jxr_javadoccomment">	 */</em>
+<a class="jxr_linenumber" name="L431" href="#L431">431</a> 	<strong class="jxr_keyword">private</strong> Class&lt;? <strong class="jxr_keyword">extends</strong> ContextLoader&gt; resolveExplicitContextLoaderClass(
+<a class="jxr_linenumber" name="L432" href="#L432">432</a> 			List&lt;ContextConfigurationAttributes&gt; configAttributesList) {
+<a class="jxr_linenumber" name="L433" href="#L433">433</a> 
+<a class="jxr_linenumber" name="L434" href="#L434">434</a> 		Assert.notEmpty(configAttributesList, <span class="jxr_string">"ContextConfigurationAttributes list must not be empty"</span>);
+<a class="jxr_linenumber" name="L435" href="#L435">435</a> 		<strong class="jxr_keyword">for</strong> (ContextConfigurationAttributes configAttributes : configAttributesList) {
+<a class="jxr_linenumber" name="L436" href="#L436">436</a> 			<strong class="jxr_keyword">if</strong> (logger.isTraceEnabled()) {
+<a class="jxr_linenumber" name="L437" href="#L437">437</a> 				logger.trace(String.format(<span class="jxr_string">"Resolving ContextLoader for context configuration attributes %s"</span>,
+<a class="jxr_linenumber" name="L438" href="#L438">438</a> 					configAttributes));
+<a class="jxr_linenumber" name="L439" href="#L439">439</a> 			}
+<a class="jxr_linenumber" name="L440" href="#L440">440</a> 			Class&lt;? <strong class="jxr_keyword">extends</strong> ContextLoader&gt; contextLoaderClass = configAttributes.getContextLoaderClass();
+<a class="jxr_linenumber" name="L441" href="#L441">441</a> 			<strong class="jxr_keyword">if</strong> (!ContextLoader.<strong class="jxr_keyword">class</strong>.equals(contextLoaderClass)) {
+<a class="jxr_linenumber" name="L442" href="#L442">442</a> 				<strong class="jxr_keyword">if</strong> (logger.isDebugEnabled()) {
+<a class="jxr_linenumber" name="L443" href="#L443">443</a> 					logger.debug(String.format(
+<a class="jxr_linenumber" name="L444" href="#L444">444</a> 						<span class="jxr_string">"Found explicit ContextLoader class [%s] for context configuration attributes %s"</span>,
+<a class="jxr_linenumber" name="L445" href="#L445">445</a> 						contextLoaderClass.getName(), configAttributes));
+<a class="jxr_linenumber" name="L446" href="#L446">446</a> 				}
+<a class="jxr_linenumber" name="L447" href="#L447">447</a> 				<strong class="jxr_keyword">return</strong> contextLoaderClass;
+<a class="jxr_linenumber" name="L448" href="#L448">448</a> 			}
+<a class="jxr_linenumber" name="L449" href="#L449">449</a> 		}
+<a class="jxr_linenumber" name="L450" href="#L450">450</a> 		<strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">null</strong>;
+<a class="jxr_linenumber" name="L451" href="#L451">451</a> 	}
+<a class="jxr_linenumber" name="L452" href="#L452">452</a> 
+<a class="jxr_linenumber" name="L453" href="#L453">453</a> 	<em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="L454" href="#L454">454</a> <em class="jxr_javadoccomment">	 * Determine the default {@link ContextLoader} class to use for the supplied</em>
+<a class="jxr_linenumber" name="L455" href="#L455">455</a> <em class="jxr_javadoccomment">	 * test class.</em>
+<a class="jxr_linenumber" name="L456" href="#L456">456</a> <em class="jxr_javadoccomment">	 * &lt;p&gt;The class returned by this method will only be used if a {@code ContextLoader}</em>
+<a class="jxr_linenumber" name="L457" href="#L457">457</a> <em class="jxr_javadoccomment">	 * class has not been explicitly declared via {@link ContextConfiguration#loader}.</em>
+<a class="jxr_linenumber" name="L458" href="#L458">458</a> <em class="jxr_javadoccomment">	 * @param testClass the test class for which to retrieve the default</em>
+<a class="jxr_linenumber" name="L459" href="#L459">459</a> <em class="jxr_javadoccomment">	 * {@code ContextLoader} class</em>
+<a class="jxr_linenumber" name="L460" href="#L460">460</a> <em class="jxr_javadoccomment">	 */</em>
+<a class="jxr_linenumber" name="L461" href="#L461">461</a> 	<strong class="jxr_keyword">protected</strong> <strong class="jxr_keyword">abstract</strong> Class&lt;? <strong class="jxr_keyword">extends</strong> ContextLoader&gt; getDefaultContextLoaderClass(Class&lt;?&gt; testClass);
+<a class="jxr_linenumber" name="L462" href="#L462">462</a> 
+<a class="jxr_linenumber" name="L463" href="#L463">463</a> 	<em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="L464" href="#L464">464</a> <em class="jxr_javadoccomment">	 * Process the supplied, newly instantiated {@link MergedContextConfiguration} instance.</em>
+<a class="jxr_linenumber" name="L465" href="#L465">465</a> <em class="jxr_javadoccomment">	 * &lt;p&gt;The returned {@link MergedContextConfiguration} instance may be a wrapper</em>
+<a class="jxr_linenumber" name="L466" href="#L466">466</a> <em class="jxr_javadoccomment">	 * around or a replacement for the original.</em>
+<a class="jxr_linenumber" name="L467" href="#L467">467</a> <em class="jxr_javadoccomment">	 * &lt;p&gt;The default implementation simply returns the supplied instance unmodified.</em>
+<a class="jxr_linenumber" name="L468" href="#L468">468</a> <em class="jxr_javadoccomment">	 * &lt;p&gt;Concrete subclasses may choose to return a specialized subclass of</em>
+<a class="jxr_linenumber" name="L469" href="#L469">469</a> <em class="jxr_javadoccomment">	 * {@link MergedContextConfiguration} based on properties in the supplied instance.</em>
+<a class="jxr_linenumber" name="L470" href="#L470">470</a> <em class="jxr_javadoccomment">	 * @param mergedConfig the {@code MergedContextConfiguration} to process;</em>
+<a class="jxr_linenumber" name="L471" href="#L471">471</a> <em class="jxr_javadoccomment">	 * never {@code null}</em>
+<a class="jxr_linenumber" name="L472" href="#L472">472</a> <em class="jxr_javadoccomment">	 * @return a fully initialized {@code MergedContextConfiguration}; never</em>
+<a class="jxr_linenumber" name="L473" href="#L473">473</a> <em class="jxr_javadoccomment">	 * {@code null}</em>
+<a class="jxr_linenumber" name="L474" href="#L474">474</a> <em class="jxr_javadoccomment">	 */</em>
+<a class="jxr_linenumber" name="L475" href="#L475">475</a> 	<strong class="jxr_keyword">protected</strong> <a href="../../../../../org/springframework/test/context/MergedContextConfiguration.html">MergedContextConfiguration</a> processMergedContextConfiguration(<a href="../../../../../org/springframework/test/context/MergedContextConfiguration.html">MergedContextConfiguration</a> mergedConfig) {
+<a class="jxr_linenumber" name="L476" href="#L476">476</a> 		<strong class="jxr_keyword">return</strong> mergedConfig;
+<a class="jxr_linenumber" name="L477" href="#L477">477</a> 	}
+<a class="jxr_linenumber" name="L478" href="#L478">478</a> 
+<a class="jxr_linenumber" name="L479" href="#L479">479</a> }
+</pre>
+<hr/>
+<div id="footer">Copyright &#169; 2015. All rights reserved.</div>
+</body>
+</html>

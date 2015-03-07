@@ -1,0 +1,766 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head><meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+<title>IndicesService xref</title>
+<link type="text/css" rel="stylesheet" href="../../../stylesheet.css" />
+</head>
+<body>
+<div id="overview"><a href="../../../../../../../../apidocs/org/elasticsearch/indices/IndicesService.html">View Javadoc</a></div><pre>
+<a class="jxr_linenumber" name="L1" href="#L1">1</a>   <em class="jxr_comment">/*</em>
+<a class="jxr_linenumber" name="L2" href="#L2">2</a>   <em class="jxr_comment"> * Licensed to Elasticsearch under one or more contributor</em>
+<a class="jxr_linenumber" name="L3" href="#L3">3</a>   <em class="jxr_comment"> * license agreements. See the NOTICE file distributed with</em>
+<a class="jxr_linenumber" name="L4" href="#L4">4</a>   <em class="jxr_comment"> * this work for additional information regarding copyright</em>
+<a class="jxr_linenumber" name="L5" href="#L5">5</a>   <em class="jxr_comment"> * ownership. Elasticsearch licenses this file to you under</em>
+<a class="jxr_linenumber" name="L6" href="#L6">6</a>   <em class="jxr_comment"> * the Apache License, Version 2.0 (the "License"); you may</em>
+<a class="jxr_linenumber" name="L7" href="#L7">7</a>   <em class="jxr_comment"> * not use this file except in compliance with the License.</em>
+<a class="jxr_linenumber" name="L8" href="#L8">8</a>   <em class="jxr_comment"> * You may obtain a copy of the License at</em>
+<a class="jxr_linenumber" name="L9" href="#L9">9</a>   <em class="jxr_comment"> *</em>
+<a class="jxr_linenumber" name="L10" href="#L10">10</a>  <em class="jxr_comment"> *    <a href="http://www.apache.org/licenses/LICENSE-2." target="alexandria_uri">http://www.apache.org/licenses/LICENSE-2.</a>0</em>
+<a class="jxr_linenumber" name="L11" href="#L11">11</a>  <em class="jxr_comment"> *</em>
+<a class="jxr_linenumber" name="L12" href="#L12">12</a>  <em class="jxr_comment"> * Unless required by applicable law or agreed to in writing,</em>
+<a class="jxr_linenumber" name="L13" href="#L13">13</a>  <em class="jxr_comment"> * software distributed under the License is distributed on an</em>
+<a class="jxr_linenumber" name="L14" href="#L14">14</a>  <em class="jxr_comment"> * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY</em>
+<a class="jxr_linenumber" name="L15" href="#L15">15</a>  <em class="jxr_comment"> * KIND, either express or implied.  See the License for the</em>
+<a class="jxr_linenumber" name="L16" href="#L16">16</a>  <em class="jxr_comment"> * specific language governing permissions and limitations</em>
+<a class="jxr_linenumber" name="L17" href="#L17">17</a>  <em class="jxr_comment"> * under the License.</em>
+<a class="jxr_linenumber" name="L18" href="#L18">18</a>  <em class="jxr_comment"> */</em>
+<a class="jxr_linenumber" name="L19" href="#L19">19</a>  
+<a class="jxr_linenumber" name="L20" href="#L20">20</a>  <strong class="jxr_keyword">package</strong> org.elasticsearch.indices;
+<a class="jxr_linenumber" name="L21" href="#L21">21</a>  
+<a class="jxr_linenumber" name="L22" href="#L22">22</a>  <strong class="jxr_keyword">import</strong> com.google.common.base.Function;
+<a class="jxr_linenumber" name="L23" href="#L23">23</a>  <strong class="jxr_keyword">import</strong> com.google.common.collect.ImmutableMap;
+<a class="jxr_linenumber" name="L24" href="#L24">24</a>  <strong class="jxr_keyword">import</strong> com.google.common.collect.ImmutableSet;
+<a class="jxr_linenumber" name="L25" href="#L25">25</a>  <strong class="jxr_keyword">import</strong> com.google.common.collect.Iterables;
+<a class="jxr_linenumber" name="L26" href="#L26">26</a>  <strong class="jxr_keyword">import</strong> com.google.common.collect.Iterators;
+<a class="jxr_linenumber" name="L27" href="#L27">27</a>  <strong class="jxr_keyword">import</strong> com.google.common.collect.Lists;
+<a class="jxr_linenumber" name="L28" href="#L28">28</a>  <strong class="jxr_keyword">import</strong> com.google.common.collect.Maps;
+<a class="jxr_linenumber" name="L29" href="#L29">29</a>  
+<a class="jxr_linenumber" name="L30" href="#L30">30</a>  <strong class="jxr_keyword">import</strong> org.apache.lucene.store.LockObtainFailedException;
+<a class="jxr_linenumber" name="L31" href="#L31">31</a>  <strong class="jxr_keyword">import</strong> org.apache.lucene.util.CollectionUtil;
+<a class="jxr_linenumber" name="L32" href="#L32">32</a>  <strong class="jxr_keyword">import</strong> org.apache.lucene.util.IOUtils;
+<a class="jxr_linenumber" name="L33" href="#L33">33</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.ElasticsearchException;
+<a class="jxr_linenumber" name="L34" href="#L34">34</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.ElasticsearchIllegalArgumentException;
+<a class="jxr_linenumber" name="L35" href="#L35">35</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.ElasticsearchIllegalStateException;
+<a class="jxr_linenumber" name="L36" href="#L36">36</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.action.admin.indices.stats.CommonStats;
+<a class="jxr_linenumber" name="L37" href="#L37">37</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.action.admin.indices.stats.CommonStatsFlags;
+<a class="jxr_linenumber" name="L38" href="#L38">38</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.action.admin.indices.stats.CommonStatsFlags.Flag;
+<a class="jxr_linenumber" name="L39" href="#L39">39</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.action.admin.indices.stats.IndexShardStats;
+<a class="jxr_linenumber" name="L40" href="#L40">40</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.action.admin.indices.stats.ShardStats;
+<a class="jxr_linenumber" name="L41" href="#L41">41</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.bootstrap.Elasticsearch;
+<a class="jxr_linenumber" name="L42" href="#L42">42</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.cluster.ClusterService;
+<a class="jxr_linenumber" name="L43" href="#L43">43</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.cluster.ClusterState;
+<a class="jxr_linenumber" name="L44" href="#L44">44</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.cluster.metadata.IndexMetaData;
+<a class="jxr_linenumber" name="L45" href="#L45">45</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.common.Nullable;
+<a class="jxr_linenumber" name="L46" href="#L46">46</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.common.collect.Tuple;
+<a class="jxr_linenumber" name="L47" href="#L47">47</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.common.component.AbstractLifecycleComponent;
+<a class="jxr_linenumber" name="L48" href="#L48">48</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.common.inject.CreationException;
+<a class="jxr_linenumber" name="L49" href="#L49">49</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.common.inject.Inject;
+<a class="jxr_linenumber" name="L50" href="#L50">50</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.common.inject.Injector;
+<a class="jxr_linenumber" name="L51" href="#L51">51</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.common.inject.Injectors;
+<a class="jxr_linenumber" name="L52" href="#L52">52</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.common.inject.ModulesBuilder;
+<a class="jxr_linenumber" name="L53" href="#L53">53</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.common.io.FileSystemUtils;
+<a class="jxr_linenumber" name="L54" href="#L54">54</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.common.settings.ImmutableSettings;
+<a class="jxr_linenumber" name="L55" href="#L55">55</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.common.settings.Settings;
+<a class="jxr_linenumber" name="L56" href="#L56">56</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.common.unit.TimeValue;
+<a class="jxr_linenumber" name="L57" href="#L57">57</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.common.util.concurrent.EsExecutors;
+<a class="jxr_linenumber" name="L58" href="#L58">58</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.env.NodeEnvironment;
+<a class="jxr_linenumber" name="L59" href="#L59">59</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.env.ShardLock;
+<a class="jxr_linenumber" name="L60" href="#L60">60</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.gateway.MetaDataStateFormat;
+<a class="jxr_linenumber" name="L61" href="#L61">61</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.index.Index;
+<a class="jxr_linenumber" name="L62" href="#L62">62</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.index.IndexModule;
+<a class="jxr_linenumber" name="L63" href="#L63">63</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.index.IndexNameModule;
+<a class="jxr_linenumber" name="L64" href="#L64">64</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.index.IndexService;
+<a class="jxr_linenumber" name="L65" href="#L65">65</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.index.LocalNodeIdModule;
+<a class="jxr_linenumber" name="L66" href="#L66">66</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.index.aliases.IndexAliasesServiceModule;
+<a class="jxr_linenumber" name="L67" href="#L67">67</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.index.analysis.AnalysisModule;
+<a class="jxr_linenumber" name="L68" href="#L68">68</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.index.analysis.AnalysisService;
+<a class="jxr_linenumber" name="L69" href="#L69">69</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.index.cache.IndexCache;
+<a class="jxr_linenumber" name="L70" href="#L70">70</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.index.cache.IndexCacheModule;
+<a class="jxr_linenumber" name="L71" href="#L71">71</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.index.fielddata.IndexFieldDataModule;
+<a class="jxr_linenumber" name="L72" href="#L72">72</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.index.fielddata.IndexFieldDataService;
+<a class="jxr_linenumber" name="L73" href="#L73">73</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.index.flush.FlushStats;
+<a class="jxr_linenumber" name="L74" href="#L74">74</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.index.get.GetStats;
+<a class="jxr_linenumber" name="L75" href="#L75">75</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.index.indexing.IndexingStats;
+<a class="jxr_linenumber" name="L76" href="#L76">76</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.index.mapper.MapperService;
+<a class="jxr_linenumber" name="L77" href="#L77">77</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.index.mapper.MapperServiceModule;
+<a class="jxr_linenumber" name="L78" href="#L78">78</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.index.merge.MergeStats;
+<a class="jxr_linenumber" name="L79" href="#L79">79</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.index.query.IndexQueryParserModule;
+<a class="jxr_linenumber" name="L80" href="#L80">80</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.index.query.IndexQueryParserService;
+<a class="jxr_linenumber" name="L81" href="#L81">81</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.index.refresh.RefreshStats;
+<a class="jxr_linenumber" name="L82" href="#L82">82</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.index.search.stats.SearchStats;
+<a class="jxr_linenumber" name="L83" href="#L83">83</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.index.settings.IndexSettings;
+<a class="jxr_linenumber" name="L84" href="#L84">84</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.index.settings.IndexSettingsModule;
+<a class="jxr_linenumber" name="L85" href="#L85">85</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.index.shard.IllegalIndexShardStateException;
+<a class="jxr_linenumber" name="L86" href="#L86">86</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.index.shard.IndexShard;
+<a class="jxr_linenumber" name="L87" href="#L87">87</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.index.shard.ShardId;
+<a class="jxr_linenumber" name="L88" href="#L88">88</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.index.similarity.SimilarityModule;
+<a class="jxr_linenumber" name="L89" href="#L89">89</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.index.store.IndexStore;
+<a class="jxr_linenumber" name="L90" href="#L90">90</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.index.store.IndexStoreModule;
+<a class="jxr_linenumber" name="L91" href="#L91">91</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.indices.analysis.IndicesAnalysisService;
+<a class="jxr_linenumber" name="L92" href="#L92">92</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.indices.recovery.RecoverySettings;
+<a class="jxr_linenumber" name="L93" href="#L93">93</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.plugins.IndexPluginsModule;
+<a class="jxr_linenumber" name="L94" href="#L94">94</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.plugins.PluginsService;
+<a class="jxr_linenumber" name="L95" href="#L95">95</a>  
+<a class="jxr_linenumber" name="L96" href="#L96">96</a>  <strong class="jxr_keyword">import</strong> java.io.Closeable;
+<a class="jxr_linenumber" name="L97" href="#L97">97</a>  <strong class="jxr_keyword">import</strong> java.io.IOException;
+<a class="jxr_linenumber" name="L98" href="#L98">98</a>  <strong class="jxr_keyword">import</strong> java.nio.file.Path;
+<a class="jxr_linenumber" name="L99" href="#L99">99</a>  <strong class="jxr_keyword">import</strong> java.util.*;
+<a class="jxr_linenumber" name="L100" href="#L100">100</a> <strong class="jxr_keyword">import</strong> java.util.concurrent.*;
+<a class="jxr_linenumber" name="L101" href="#L101">101</a> 
+<a class="jxr_linenumber" name="L102" href="#L102">102</a> <strong class="jxr_keyword">import</strong> <strong class="jxr_keyword">static</strong> com.google.common.collect.Maps.newHashMap;
+<a class="jxr_linenumber" name="L103" href="#L103">103</a> <strong class="jxr_keyword">import</strong> <strong class="jxr_keyword">static</strong> org.elasticsearch.cluster.metadata.IndexMetaData.SETTING_NUMBER_OF_REPLICAS;
+<a class="jxr_linenumber" name="L104" href="#L104">104</a> <strong class="jxr_keyword">import</strong> <strong class="jxr_keyword">static</strong> org.elasticsearch.cluster.metadata.IndexMetaData.SETTING_NUMBER_OF_SHARDS;
+<a class="jxr_linenumber" name="L105" href="#L105">105</a> <strong class="jxr_keyword">import</strong> <strong class="jxr_keyword">static</strong> org.elasticsearch.common.collect.MapBuilder.newMapBuilder;
+<a class="jxr_linenumber" name="L106" href="#L106">106</a> <strong class="jxr_keyword">import</strong> <strong class="jxr_keyword">static</strong> org.elasticsearch.common.settings.ImmutableSettings.settingsBuilder;
+<a class="jxr_linenumber" name="L107" href="#L107">107</a> 
+<a class="jxr_linenumber" name="L108" href="#L108">108</a> <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="L109" href="#L109">109</a> <em class="jxr_javadoccomment"> *</em>
+<a class="jxr_linenumber" name="L110" href="#L110">110</a> <em class="jxr_javadoccomment"> */</em>
+<a class="jxr_linenumber" name="L111" href="#L111">111</a> <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">class</strong> <a href="../../../org/elasticsearch/indices/IndicesService.html">IndicesService</a> <strong class="jxr_keyword">extends</strong> AbstractLifecycleComponent&lt;IndicesService&gt; <strong class="jxr_keyword">implements</strong> Iterable&lt;IndexService&gt; {
+<a class="jxr_linenumber" name="L112" href="#L112">112</a> 
+<a class="jxr_linenumber" name="L113" href="#L113">113</a>     <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">final</strong> <a href="../../../org/elasticsearch/indices/InternalIndicesLifecycle.html">InternalIndicesLifecycle</a> indicesLifecycle;
+<a class="jxr_linenumber" name="L114" href="#L114">114</a> 
+<a class="jxr_linenumber" name="L115" href="#L115">115</a>     <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">final</strong> <a href="../../../org/elasticsearch/indices/analysis/IndicesAnalysisService.html">IndicesAnalysisService</a> indicesAnalysisService;
+<a class="jxr_linenumber" name="L116" href="#L116">116</a> 
+<a class="jxr_linenumber" name="L117" href="#L117">117</a>     <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">final</strong> <a href="../../../org/elasticsearch/common/inject/Injector.html">Injector</a> injector;
+<a class="jxr_linenumber" name="L118" href="#L118">118</a> 
+<a class="jxr_linenumber" name="L119" href="#L119">119</a>     <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">final</strong> <a href="../../../org/elasticsearch/plugins/PluginsService.html">PluginsService</a> pluginsService;
+<a class="jxr_linenumber" name="L120" href="#L120">120</a>     <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">final</strong> <a href="../../../org/elasticsearch/env/NodeEnvironment.html">NodeEnvironment</a> nodeEnv;
+<a class="jxr_linenumber" name="L121" href="#L121">121</a> 
+<a class="jxr_linenumber" name="L122" href="#L122">122</a>     <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">volatile</strong> Map&lt;String, Tuple&lt;IndexService, Injector&gt;&gt; indices = ImmutableMap.of();
+<a class="jxr_linenumber" name="L123" href="#L123">123</a>     <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">final</strong> Map&lt;Index, List&lt;PendingDelete&gt;&gt; pendingDeletes = <strong class="jxr_keyword">new</strong> HashMap&lt;&gt;();
+<a class="jxr_linenumber" name="L124" href="#L124">124</a> 
+<a class="jxr_linenumber" name="L125" href="#L125">125</a>     <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">final</strong> <a href="../../../org/elasticsearch/indices/IndicesService.html">OldShardsStats</a> oldShardsStats = <strong class="jxr_keyword">new</strong> <a href="../../../org/elasticsearch/indices/IndicesService.html">OldShardsStats</a>();
+<a class="jxr_linenumber" name="L126" href="#L126">126</a> 
+<a class="jxr_linenumber" name="L127" href="#L127">127</a>     @Inject
+<a class="jxr_linenumber" name="L128" href="#L128">128</a>     <strong class="jxr_keyword">public</strong> <a href="../../../org/elasticsearch/indices/IndicesService.html">IndicesService</a>(<a href="../../../org/elasticsearch/common/settings/Settings.html">Settings</a> settings, <a href="../../../org/elasticsearch/indices/IndicesLifecycle.html">IndicesLifecycle</a> indicesLifecycle, <a href="../../../org/elasticsearch/indices/analysis/IndicesAnalysisService.html">IndicesAnalysisService</a> indicesAnalysisService, <a href="../../../org/elasticsearch/common/inject/Injector.html">Injector</a> injector, <a href="../../../org/elasticsearch/env/NodeEnvironment.html">NodeEnvironment</a> nodeEnv) {
+<a class="jxr_linenumber" name="L129" href="#L129">129</a>         <strong class="jxr_keyword">super</strong>(settings);
+<a class="jxr_linenumber" name="L130" href="#L130">130</a>         <strong class="jxr_keyword">this</strong>.indicesLifecycle = (InternalIndicesLifecycle) indicesLifecycle;
+<a class="jxr_linenumber" name="L131" href="#L131">131</a>         <strong class="jxr_keyword">this</strong>.indicesAnalysisService = indicesAnalysisService;
+<a class="jxr_linenumber" name="L132" href="#L132">132</a>         <strong class="jxr_keyword">this</strong>.injector = injector;
+<a class="jxr_linenumber" name="L133" href="#L133">133</a>         <strong class="jxr_keyword">this</strong>.pluginsService = injector.getInstance(PluginsService.<strong class="jxr_keyword">class</strong>);
+<a class="jxr_linenumber" name="L134" href="#L134">134</a>         <strong class="jxr_keyword">this</strong>.indicesLifecycle.addListener(oldShardsStats);
+<a class="jxr_linenumber" name="L135" href="#L135">135</a>         <strong class="jxr_keyword">this</strong>.nodeEnv = nodeEnv;
+<a class="jxr_linenumber" name="L136" href="#L136">136</a>     }
+<a class="jxr_linenumber" name="L137" href="#L137">137</a> 
+<a class="jxr_linenumber" name="L138" href="#L138">138</a>     @Override
+<a class="jxr_linenumber" name="L139" href="#L139">139</a>     <strong class="jxr_keyword">protected</strong> <strong class="jxr_keyword">void</strong> doStart() <strong class="jxr_keyword">throws</strong> ElasticsearchException {
+<a class="jxr_linenumber" name="L140" href="#L140">140</a>     }
+<a class="jxr_linenumber" name="L141" href="#L141">141</a> 
+<a class="jxr_linenumber" name="L142" href="#L142">142</a>     @Override
+<a class="jxr_linenumber" name="L143" href="#L143">143</a>     <strong class="jxr_keyword">protected</strong> <strong class="jxr_keyword">void</strong> doStop() <strong class="jxr_keyword">throws</strong> ElasticsearchException {
+<a class="jxr_linenumber" name="L144" href="#L144">144</a>         ImmutableSet&lt;String&gt; indices = ImmutableSet.copyOf(<strong class="jxr_keyword">this</strong>.indices.keySet());
+<a class="jxr_linenumber" name="L145" href="#L145">145</a>         <strong class="jxr_keyword">final</strong> CountDownLatch latch = <strong class="jxr_keyword">new</strong> CountDownLatch(indices.size());
+<a class="jxr_linenumber" name="L146" href="#L146">146</a> 
+<a class="jxr_linenumber" name="L147" href="#L147">147</a>         <strong class="jxr_keyword">final</strong> ExecutorService indicesStopExecutor = Executors.newFixedThreadPool(5, EsExecutors.daemonThreadFactory(<span class="jxr_string">"indices_shutdown"</span>));
+<a class="jxr_linenumber" name="L148" href="#L148">148</a> 
+<a class="jxr_linenumber" name="L149" href="#L149">149</a>         <strong class="jxr_keyword">for</strong> (<strong class="jxr_keyword">final</strong> String index : indices) {
+<a class="jxr_linenumber" name="L150" href="#L150">150</a>             indicesStopExecutor.execute(<strong class="jxr_keyword">new</strong> Runnable() {
+<a class="jxr_linenumber" name="L151" href="#L151">151</a>                 @Override
+<a class="jxr_linenumber" name="L152" href="#L152">152</a>                 <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> run() {
+<a class="jxr_linenumber" name="L153" href="#L153">153</a>                     <strong class="jxr_keyword">try</strong> {
+<a class="jxr_linenumber" name="L154" href="#L154">154</a>                         removeIndex(index, <span class="jxr_string">"shutdown"</span>, false);
+<a class="jxr_linenumber" name="L155" href="#L155">155</a>                     } <strong class="jxr_keyword">catch</strong> (Throwable e) {
+<a class="jxr_linenumber" name="L156" href="#L156">156</a>                         logger.warn(<span class="jxr_string">"failed to remove index on stop ["</span> + index + <span class="jxr_string">"]"</span>, e);
+<a class="jxr_linenumber" name="L157" href="#L157">157</a>                     } <strong class="jxr_keyword">finally</strong> {
+<a class="jxr_linenumber" name="L158" href="#L158">158</a>                         latch.countDown();
+<a class="jxr_linenumber" name="L159" href="#L159">159</a>                     }
+<a class="jxr_linenumber" name="L160" href="#L160">160</a>                 }
+<a class="jxr_linenumber" name="L161" href="#L161">161</a>             });
+<a class="jxr_linenumber" name="L162" href="#L162">162</a>         }
+<a class="jxr_linenumber" name="L163" href="#L163">163</a>         <strong class="jxr_keyword">try</strong> {
+<a class="jxr_linenumber" name="L164" href="#L164">164</a>             <strong class="jxr_keyword">if</strong> (latch.await(30, TimeUnit.SECONDS) == false) {
+<a class="jxr_linenumber" name="L165" href="#L165">165</a>               logger.warn(<span class="jxr_string">"Not all shards are closed yet, waited 30sec - stopping service"</span>);
+<a class="jxr_linenumber" name="L166" href="#L166">166</a>             }
+<a class="jxr_linenumber" name="L167" href="#L167">167</a>         } <strong class="jxr_keyword">catch</strong> (InterruptedException e) {
+<a class="jxr_linenumber" name="L168" href="#L168">168</a>             <em class="jxr_comment">// ignore</em>
+<a class="jxr_linenumber" name="L169" href="#L169">169</a>         } <strong class="jxr_keyword">finally</strong> {
+<a class="jxr_linenumber" name="L170" href="#L170">170</a>             indicesStopExecutor.shutdown();
+<a class="jxr_linenumber" name="L171" href="#L171">171</a>         }
+<a class="jxr_linenumber" name="L172" href="#L172">172</a>     }
+<a class="jxr_linenumber" name="L173" href="#L173">173</a> 
+<a class="jxr_linenumber" name="L174" href="#L174">174</a>     @Override
+<a class="jxr_linenumber" name="L175" href="#L175">175</a>     <strong class="jxr_keyword">protected</strong> <strong class="jxr_keyword">void</strong> doClose() <strong class="jxr_keyword">throws</strong> ElasticsearchException {
+<a class="jxr_linenumber" name="L176" href="#L176">176</a>         IOUtils.closeWhileHandlingException(injector.getInstance(RecoverySettings.<strong class="jxr_keyword">class</strong>),
+<a class="jxr_linenumber" name="L177" href="#L177">177</a>             indicesAnalysisService);
+<a class="jxr_linenumber" name="L178" href="#L178">178</a>     }
+<a class="jxr_linenumber" name="L179" href="#L179">179</a> 
+<a class="jxr_linenumber" name="L180" href="#L180">180</a>     <strong class="jxr_keyword">public</strong> <a href="../../../org/elasticsearch/indices/IndicesLifecycle.html">IndicesLifecycle</a> indicesLifecycle() {
+<a class="jxr_linenumber" name="L181" href="#L181">181</a>         <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">this</strong>.indicesLifecycle;
+<a class="jxr_linenumber" name="L182" href="#L182">182</a>     }
+<a class="jxr_linenumber" name="L183" href="#L183">183</a> 
+<a class="jxr_linenumber" name="L184" href="#L184">184</a>     <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="L185" href="#L185">185</a> <em class="jxr_javadoccomment">     * Returns the node stats indices stats. The &lt;tt&gt;includePrevious&lt;/tt&gt; flag controls</em>
+<a class="jxr_linenumber" name="L186" href="#L186">186</a> <em class="jxr_javadoccomment">     * if old shards stats will be aggregated as well (only for relevant stats, such as</em>
+<a class="jxr_linenumber" name="L187" href="#L187">187</a> <em class="jxr_javadoccomment">     * refresh and indexing, not for docs/store).</em>
+<a class="jxr_linenumber" name="L188" href="#L188">188</a> <em class="jxr_javadoccomment">     */</em>
+<a class="jxr_linenumber" name="L189" href="#L189">189</a>     <strong class="jxr_keyword">public</strong> <a href="../../../org/elasticsearch/indices/NodeIndicesStats.html">NodeIndicesStats</a> stats(<strong class="jxr_keyword">boolean</strong> includePrevious) {
+<a class="jxr_linenumber" name="L190" href="#L190">190</a>         <strong class="jxr_keyword">return</strong> stats(includePrevious, <strong class="jxr_keyword">new</strong> <a href="../../../org/elasticsearch/action/admin/indices/stats/CommonStatsFlags.html">CommonStatsFlags</a>().all());
+<a class="jxr_linenumber" name="L191" href="#L191">191</a>     }
+<a class="jxr_linenumber" name="L192" href="#L192">192</a> 
+<a class="jxr_linenumber" name="L193" href="#L193">193</a>     <strong class="jxr_keyword">public</strong> <a href="../../../org/elasticsearch/indices/NodeIndicesStats.html">NodeIndicesStats</a> stats(<strong class="jxr_keyword">boolean</strong> includePrevious, <a href="../../../org/elasticsearch/action/admin/indices/stats/CommonStatsFlags.html">CommonStatsFlags</a> flags) {
+<a class="jxr_linenumber" name="L194" href="#L194">194</a>         <a href="../../../org/elasticsearch/action/admin/indices/stats/CommonStats.html">CommonStats</a> oldStats = <strong class="jxr_keyword">new</strong> <a href="../../../org/elasticsearch/action/admin/indices/stats/CommonStats.html">CommonStats</a>(flags);
+<a class="jxr_linenumber" name="L195" href="#L195">195</a> 
+<a class="jxr_linenumber" name="L196" href="#L196">196</a>         <strong class="jxr_keyword">if</strong> (includePrevious) {
+<a class="jxr_linenumber" name="L197" href="#L197">197</a>             <a href="../../../org/elasticsearch/action/admin/indices/stats/CommonStatsFlags.html">Flag</a>[] setFlags = flags.getFlags();
+<a class="jxr_linenumber" name="L198" href="#L198">198</a>             <strong class="jxr_keyword">for</strong> (Flag flag : setFlags) {
+<a class="jxr_linenumber" name="L199" href="#L199">199</a>                 <strong class="jxr_keyword">switch</strong> (flag) {
+<a class="jxr_linenumber" name="L200" href="#L200">200</a>                     <strong class="jxr_keyword">case</strong> Get:
+<a class="jxr_linenumber" name="L201" href="#L201">201</a>                         oldStats.get.add(oldShardsStats.getStats);
+<a class="jxr_linenumber" name="L202" href="#L202">202</a>                         <strong class="jxr_keyword">break</strong>;
+<a class="jxr_linenumber" name="L203" href="#L203">203</a>                     <strong class="jxr_keyword">case</strong> Indexing:
+<a class="jxr_linenumber" name="L204" href="#L204">204</a>                         oldStats.indexing.add(oldShardsStats.indexingStats);
+<a class="jxr_linenumber" name="L205" href="#L205">205</a>                         <strong class="jxr_keyword">break</strong>;
+<a class="jxr_linenumber" name="L206" href="#L206">206</a>                     <strong class="jxr_keyword">case</strong> Search:
+<a class="jxr_linenumber" name="L207" href="#L207">207</a>                         oldStats.search.add(oldShardsStats.searchStats);
+<a class="jxr_linenumber" name="L208" href="#L208">208</a>                         <strong class="jxr_keyword">break</strong>;
+<a class="jxr_linenumber" name="L209" href="#L209">209</a>                     <strong class="jxr_keyword">case</strong> Merge:
+<a class="jxr_linenumber" name="L210" href="#L210">210</a>                         oldStats.merge.add(oldShardsStats.mergeStats);
+<a class="jxr_linenumber" name="L211" href="#L211">211</a>                         <strong class="jxr_keyword">break</strong>;
+<a class="jxr_linenumber" name="L212" href="#L212">212</a>                     <strong class="jxr_keyword">case</strong> Refresh:
+<a class="jxr_linenumber" name="L213" href="#L213">213</a>                         oldStats.refresh.add(oldShardsStats.refreshStats);
+<a class="jxr_linenumber" name="L214" href="#L214">214</a>                         <strong class="jxr_keyword">break</strong>;
+<a class="jxr_linenumber" name="L215" href="#L215">215</a>                     <strong class="jxr_keyword">case</strong> Flush:
+<a class="jxr_linenumber" name="L216" href="#L216">216</a>                         oldStats.flush.add(oldShardsStats.flushStats);
+<a class="jxr_linenumber" name="L217" href="#L217">217</a>                         <strong class="jxr_keyword">break</strong>;
+<a class="jxr_linenumber" name="L218" href="#L218">218</a>                 }
+<a class="jxr_linenumber" name="L219" href="#L219">219</a>             }
+<a class="jxr_linenumber" name="L220" href="#L220">220</a>         }
+<a class="jxr_linenumber" name="L221" href="#L221">221</a> 
+<a class="jxr_linenumber" name="L222" href="#L222">222</a>         Map&lt;Index, List&lt;IndexShardStats&gt;&gt; statsByShard = Maps.newHashMap();
+<a class="jxr_linenumber" name="L223" href="#L223">223</a>         <strong class="jxr_keyword">for</strong> (Tuple&lt;IndexService, Injector&gt; value : indices.values()) {
+<a class="jxr_linenumber" name="L224" href="#L224">224</a>             <a href="../../../org/elasticsearch/index/IndexService.html">IndexService</a> indexService = value.v1();
+<a class="jxr_linenumber" name="L225" href="#L225">225</a>             <strong class="jxr_keyword">for</strong> (IndexShard indexShard : indexService) {
+<a class="jxr_linenumber" name="L226" href="#L226">226</a>                 <strong class="jxr_keyword">try</strong> {
+<a class="jxr_linenumber" name="L227" href="#L227">227</a>                     <strong class="jxr_keyword">if</strong> (indexShard.routingEntry() == <strong class="jxr_keyword">null</strong>) {
+<a class="jxr_linenumber" name="L228" href="#L228">228</a>                         <strong class="jxr_keyword">continue</strong>;
+<a class="jxr_linenumber" name="L229" href="#L229">229</a>                     }
+<a class="jxr_linenumber" name="L230" href="#L230">230</a>                     <a href="../../../org/elasticsearch/action/admin/indices/stats/IndexShardStats.html">IndexShardStats</a> indexShardStats = <strong class="jxr_keyword">new</strong> <a href="../../../org/elasticsearch/action/admin/indices/stats/IndexShardStats.html">IndexShardStats</a>(indexShard.shardId(), <strong class="jxr_keyword">new</strong> ShardStats[] { <strong class="jxr_keyword">new</strong> ShardStats(indexShard, indexShard.routingEntry(), flags) });
+<a class="jxr_linenumber" name="L231" href="#L231">231</a>                     <strong class="jxr_keyword">if</strong> (!statsByShard.containsKey(indexService.index())) {
+<a class="jxr_linenumber" name="L232" href="#L232">232</a>                         statsByShard.put(indexService.index(), Lists.&lt;IndexShardStats&gt;newArrayList(indexShardStats));
+<a class="jxr_linenumber" name="L233" href="#L233">233</a>                     } <strong class="jxr_keyword">else</strong> {
+<a class="jxr_linenumber" name="L234" href="#L234">234</a>                         statsByShard.get(indexService.index()).add(indexShardStats);
+<a class="jxr_linenumber" name="L235" href="#L235">235</a>                     }
+<a class="jxr_linenumber" name="L236" href="#L236">236</a>                 } <strong class="jxr_keyword">catch</strong> (IllegalIndexShardStateException e) {
+<a class="jxr_linenumber" name="L237" href="#L237">237</a>                     <em class="jxr_comment">// we can safely ignore illegal state on ones that are closing for example</em>
+<a class="jxr_linenumber" name="L238" href="#L238">238</a>                 }
+<a class="jxr_linenumber" name="L239" href="#L239">239</a>             }
+<a class="jxr_linenumber" name="L240" href="#L240">240</a>         }
+<a class="jxr_linenumber" name="L241" href="#L241">241</a>         <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> <a href="../../../org/elasticsearch/indices/NodeIndicesStats.html">NodeIndicesStats</a>(oldStats, statsByShard);
+<a class="jxr_linenumber" name="L242" href="#L242">242</a>     }
+<a class="jxr_linenumber" name="L243" href="#L243">243</a> 
+<a class="jxr_linenumber" name="L244" href="#L244">244</a>     <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="L245" href="#L245">245</a> <em class="jxr_javadoccomment">     * Returns &lt;tt&gt;true&lt;/tt&gt; if changes (adding / removing) indices, shards and so on are allowed.</em>
+<a class="jxr_linenumber" name="L246" href="#L246">246</a> <em class="jxr_javadoccomment">     */</em>
+<a class="jxr_linenumber" name="L247" href="#L247">247</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">boolean</strong> changesAllowed() {
+<a class="jxr_linenumber" name="L248" href="#L248">248</a>         <em class="jxr_comment">// we check on stop here since we defined stop when we delete the indices</em>
+<a class="jxr_linenumber" name="L249" href="#L249">249</a>         <strong class="jxr_keyword">return</strong> lifecycle.started();
+<a class="jxr_linenumber" name="L250" href="#L250">250</a>     }
+<a class="jxr_linenumber" name="L251" href="#L251">251</a> 
+<a class="jxr_linenumber" name="L252" href="#L252">252</a>     @Override
+<a class="jxr_linenumber" name="L253" href="#L253">253</a>     <strong class="jxr_keyword">public</strong> Iterator&lt;IndexService&gt; iterator() {
+<a class="jxr_linenumber" name="L254" href="#L254">254</a>         <strong class="jxr_keyword">return</strong> Iterators.transform(indices.values().iterator(), <strong class="jxr_keyword">new</strong> Function&lt;Tuple&lt;IndexService, Injector&gt;, IndexService&gt;() {
+<a class="jxr_linenumber" name="L255" href="#L255">255</a>             @Override
+<a class="jxr_linenumber" name="L256" href="#L256">256</a>             <strong class="jxr_keyword">public</strong> <a href="../../../org/elasticsearch/index/IndexService.html">IndexService</a> apply(Tuple&lt;IndexService, Injector&gt; input) {
+<a class="jxr_linenumber" name="L257" href="#L257">257</a>                 <strong class="jxr_keyword">return</strong> input.v1();
+<a class="jxr_linenumber" name="L258" href="#L258">258</a>             }
+<a class="jxr_linenumber" name="L259" href="#L259">259</a>         });
+<a class="jxr_linenumber" name="L260" href="#L260">260</a>     }
+<a class="jxr_linenumber" name="L261" href="#L261">261</a> 
+<a class="jxr_linenumber" name="L262" href="#L262">262</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">boolean</strong> hasIndex(String index) {
+<a class="jxr_linenumber" name="L263" href="#L263">263</a>         <strong class="jxr_keyword">return</strong> indices.containsKey(index);
+<a class="jxr_linenumber" name="L264" href="#L264">264</a>     }
+<a class="jxr_linenumber" name="L265" href="#L265">265</a> 
+<a class="jxr_linenumber" name="L266" href="#L266">266</a>     <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="L267" href="#L267">267</a> <em class="jxr_javadoccomment">     * Returns an IndexService for the specified index if exists otherwise returns &lt;code&gt;null&lt;/code&gt;.</em>
+<a class="jxr_linenumber" name="L268" href="#L268">268</a> <em class="jxr_javadoccomment">     *</em>
+<a class="jxr_linenumber" name="L269" href="#L269">269</a> <em class="jxr_javadoccomment">     */</em>
+<a class="jxr_linenumber" name="L270" href="#L270">270</a>     @Nullable
+<a class="jxr_linenumber" name="L271" href="#L271">271</a>     <strong class="jxr_keyword">public</strong> <a href="../../../org/elasticsearch/index/IndexService.html">IndexService</a> indexService(String index) {
+<a class="jxr_linenumber" name="L272" href="#L272">272</a>         Tuple&lt;IndexService, Injector&gt; indexServiceInjectorTuple = indices.get(index);
+<a class="jxr_linenumber" name="L273" href="#L273">273</a>         <strong class="jxr_keyword">if</strong> (indexServiceInjectorTuple == <strong class="jxr_keyword">null</strong>) {
+<a class="jxr_linenumber" name="L274" href="#L274">274</a>             <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">null</strong>;
+<a class="jxr_linenumber" name="L275" href="#L275">275</a>         } <strong class="jxr_keyword">else</strong> {
+<a class="jxr_linenumber" name="L276" href="#L276">276</a>             <strong class="jxr_keyword">return</strong> indexServiceInjectorTuple.v1();
+<a class="jxr_linenumber" name="L277" href="#L277">277</a>         }
+<a class="jxr_linenumber" name="L278" href="#L278">278</a>     }
+<a class="jxr_linenumber" name="L279" href="#L279">279</a> 
+<a class="jxr_linenumber" name="L280" href="#L280">280</a>     <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="L281" href="#L281">281</a> <em class="jxr_javadoccomment">     * Returns an IndexService for the specified index if exists otherwise a {@link IndexMissingException} is thrown.</em>
+<a class="jxr_linenumber" name="L282" href="#L282">282</a> <em class="jxr_javadoccomment">     */</em>
+<a class="jxr_linenumber" name="L283" href="#L283">283</a>     <strong class="jxr_keyword">public</strong> <a href="../../../org/elasticsearch/index/IndexService.html">IndexService</a> indexServiceSafe(String index) <strong class="jxr_keyword">throws</strong> IndexMissingException {
+<a class="jxr_linenumber" name="L284" href="#L284">284</a>         <a href="../../../org/elasticsearch/index/IndexService.html">IndexService</a> indexService = indexService(index);
+<a class="jxr_linenumber" name="L285" href="#L285">285</a>         <strong class="jxr_keyword">if</strong> (indexService == <strong class="jxr_keyword">null</strong>) {
+<a class="jxr_linenumber" name="L286" href="#L286">286</a>             <strong class="jxr_keyword">throw</strong> <strong class="jxr_keyword">new</strong> <a href="../../../org/elasticsearch/indices/IndexMissingException.html">IndexMissingException</a>(<strong class="jxr_keyword">new</strong> <a href="../../../org/elasticsearch/index/Index.html">Index</a>(index));
+<a class="jxr_linenumber" name="L287" href="#L287">287</a>         }
+<a class="jxr_linenumber" name="L288" href="#L288">288</a>         <strong class="jxr_keyword">return</strong> indexService;
+<a class="jxr_linenumber" name="L289" href="#L289">289</a>     }
+<a class="jxr_linenumber" name="L290" href="#L290">290</a> 
+<a class="jxr_linenumber" name="L291" href="#L291">291</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">synchronized</strong> <a href="../../../org/elasticsearch/index/IndexService.html">IndexService</a> createIndex(String sIndexName, @IndexSettings <a href="../../../org/elasticsearch/common/settings/Settings.html">Settings</a> settings, String localNodeId) <strong class="jxr_keyword">throws</strong> ElasticsearchException {
+<a class="jxr_linenumber" name="L292" href="#L292">292</a>         <strong class="jxr_keyword">if</strong> (!lifecycle.started()) {
+<a class="jxr_linenumber" name="L293" href="#L293">293</a>             <strong class="jxr_keyword">throw</strong> <strong class="jxr_keyword">new</strong> <a href="../../../org/elasticsearch/ElasticsearchIllegalStateException.html">ElasticsearchIllegalStateException</a>(<span class="jxr_string">"Can't create an index ["</span> + sIndexName + <span class="jxr_string">"], node is closed"</span>);
+<a class="jxr_linenumber" name="L294" href="#L294">294</a>         }
+<a class="jxr_linenumber" name="L295" href="#L295">295</a>         <a href="../../../org/elasticsearch/index/Index.html">Index</a> index = <strong class="jxr_keyword">new</strong> <a href="../../../org/elasticsearch/index/Index.html">Index</a>(sIndexName);
+<a class="jxr_linenumber" name="L296" href="#L296">296</a>         <strong class="jxr_keyword">if</strong> (indices.containsKey(index.name())) {
+<a class="jxr_linenumber" name="L297" href="#L297">297</a>             <strong class="jxr_keyword">throw</strong> <strong class="jxr_keyword">new</strong> <a href="../../../org/elasticsearch/indices/IndexAlreadyExistsException.html">IndexAlreadyExistsException</a>(index);
+<a class="jxr_linenumber" name="L298" href="#L298">298</a>         }
+<a class="jxr_linenumber" name="L299" href="#L299">299</a> 
+<a class="jxr_linenumber" name="L300" href="#L300">300</a>         indicesLifecycle.beforeIndexCreated(index, settings);
+<a class="jxr_linenumber" name="L301" href="#L301">301</a> 
+<a class="jxr_linenumber" name="L302" href="#L302">302</a>         logger.debug(<span class="jxr_string">"creating Index [{}], shards [{}]/[{}]"</span>, sIndexName, settings.get(SETTING_NUMBER_OF_SHARDS), settings.get(SETTING_NUMBER_OF_REPLICAS));
+<a class="jxr_linenumber" name="L303" href="#L303">303</a> 
+<a class="jxr_linenumber" name="L304" href="#L304">304</a>         <a href="../../../org/elasticsearch/common/settings/Settings.html">Settings</a> indexSettings = settingsBuilder()
+<a class="jxr_linenumber" name="L305" href="#L305">305</a>                 .put(<strong class="jxr_keyword">this</strong>.settings)
+<a class="jxr_linenumber" name="L306" href="#L306">306</a>                 .put(settings)
+<a class="jxr_linenumber" name="L307" href="#L307">307</a>                 .classLoader(settings.getClassLoader())
+<a class="jxr_linenumber" name="L308" href="#L308">308</a>                 .build();
+<a class="jxr_linenumber" name="L309" href="#L309">309</a> 
+<a class="jxr_linenumber" name="L310" href="#L310">310</a>         <a href="../../../org/elasticsearch/common/inject/ModulesBuilder.html">ModulesBuilder</a> modules = <strong class="jxr_keyword">new</strong> <a href="../../../org/elasticsearch/common/inject/ModulesBuilder.html">ModulesBuilder</a>();
+<a class="jxr_linenumber" name="L311" href="#L311">311</a>         modules.add(<strong class="jxr_keyword">new</strong> <a href="../../../org/elasticsearch/index/IndexNameModule.html">IndexNameModule</a>(index));
+<a class="jxr_linenumber" name="L312" href="#L312">312</a>         modules.add(<strong class="jxr_keyword">new</strong> <a href="../../../org/elasticsearch/index/LocalNodeIdModule.html">LocalNodeIdModule</a>(localNodeId));
+<a class="jxr_linenumber" name="L313" href="#L313">313</a>         modules.add(<strong class="jxr_keyword">new</strong> <a href="../../../org/elasticsearch/index/settings/IndexSettingsModule.html">IndexSettingsModule</a>(index, indexSettings));
+<a class="jxr_linenumber" name="L314" href="#L314">314</a>         modules.add(<strong class="jxr_keyword">new</strong> <a href="../../../org/elasticsearch/plugins/IndexPluginsModule.html">IndexPluginsModule</a>(indexSettings, pluginsService));
+<a class="jxr_linenumber" name="L315" href="#L315">315</a>         modules.add(<strong class="jxr_keyword">new</strong> <a href="../../../org/elasticsearch/index/store/IndexStoreModule.html">IndexStoreModule</a>(indexSettings));
+<a class="jxr_linenumber" name="L316" href="#L316">316</a>         modules.add(<strong class="jxr_keyword">new</strong> <a href="../../../org/elasticsearch/index/analysis/AnalysisModule.html">AnalysisModule</a>(indexSettings, indicesAnalysisService));
+<a class="jxr_linenumber" name="L317" href="#L317">317</a>         modules.add(<strong class="jxr_keyword">new</strong> <a href="../../../org/elasticsearch/index/similarity/SimilarityModule.html">SimilarityModule</a>(indexSettings));
+<a class="jxr_linenumber" name="L318" href="#L318">318</a>         modules.add(<strong class="jxr_keyword">new</strong> <a href="../../../org/elasticsearch/index/cache/IndexCacheModule.html">IndexCacheModule</a>(indexSettings));
+<a class="jxr_linenumber" name="L319" href="#L319">319</a>         modules.add(<strong class="jxr_keyword">new</strong> <a href="../../../org/elasticsearch/index/fielddata/IndexFieldDataModule.html">IndexFieldDataModule</a>(indexSettings));
+<a class="jxr_linenumber" name="L320" href="#L320">320</a>         modules.add(<strong class="jxr_keyword">new</strong> <a href="../../../org/elasticsearch/index/mapper/MapperServiceModule.html">MapperServiceModule</a>());
+<a class="jxr_linenumber" name="L321" href="#L321">321</a>         modules.add(<strong class="jxr_keyword">new</strong> <a href="../../../org/elasticsearch/index/query/IndexQueryParserModule.html">IndexQueryParserModule</a>(indexSettings));
+<a class="jxr_linenumber" name="L322" href="#L322">322</a>         modules.add(<strong class="jxr_keyword">new</strong> <a href="../../../org/elasticsearch/index/aliases/IndexAliasesServiceModule.html">IndexAliasesServiceModule</a>());
+<a class="jxr_linenumber" name="L323" href="#L323">323</a>         modules.add(<strong class="jxr_keyword">new</strong> <a href="../../../org/elasticsearch/index/IndexModule.html">IndexModule</a>(indexSettings));
+<a class="jxr_linenumber" name="L324" href="#L324">324</a> 
+<a class="jxr_linenumber" name="L325" href="#L325">325</a>         <a href="../../../org/elasticsearch/common/inject/Injector.html">Injector</a> indexInjector;
+<a class="jxr_linenumber" name="L326" href="#L326">326</a>         <strong class="jxr_keyword">try</strong> {
+<a class="jxr_linenumber" name="L327" href="#L327">327</a>             indexInjector = modules.createChildInjector(injector);
+<a class="jxr_linenumber" name="L328" href="#L328">328</a>         } <strong class="jxr_keyword">catch</strong> (CreationException e) {
+<a class="jxr_linenumber" name="L329" href="#L329">329</a>             <strong class="jxr_keyword">throw</strong> <strong class="jxr_keyword">new</strong> <a href="../../../org/elasticsearch/indices/IndexCreationException.html">IndexCreationException</a>(index, Injectors.getFirstErrorFailure(e));
+<a class="jxr_linenumber" name="L330" href="#L330">330</a>         } <strong class="jxr_keyword">catch</strong> (Throwable e) {
+<a class="jxr_linenumber" name="L331" href="#L331">331</a>             <strong class="jxr_keyword">throw</strong> <strong class="jxr_keyword">new</strong> <a href="../../../org/elasticsearch/indices/IndexCreationException.html">IndexCreationException</a>(index, e);
+<a class="jxr_linenumber" name="L332" href="#L332">332</a>         }
+<a class="jxr_linenumber" name="L333" href="#L333">333</a> 
+<a class="jxr_linenumber" name="L334" href="#L334">334</a>         <a href="../../../org/elasticsearch/index/IndexService.html">IndexService</a> indexService = indexInjector.getInstance(IndexService.<strong class="jxr_keyword">class</strong>);
+<a class="jxr_linenumber" name="L335" href="#L335">335</a> 
+<a class="jxr_linenumber" name="L336" href="#L336">336</a>         indicesLifecycle.afterIndexCreated(indexService);
+<a class="jxr_linenumber" name="L337" href="#L337">337</a> 
+<a class="jxr_linenumber" name="L338" href="#L338">338</a>         indices = newMapBuilder(indices).put(index.name(), <strong class="jxr_keyword">new</strong> Tuple&lt;&gt;(indexService, indexInjector)).immutableMap();
+<a class="jxr_linenumber" name="L339" href="#L339">339</a> 
+<a class="jxr_linenumber" name="L340" href="#L340">340</a>         <strong class="jxr_keyword">return</strong> indexService;
+<a class="jxr_linenumber" name="L341" href="#L341">341</a>     }
+<a class="jxr_linenumber" name="L342" href="#L342">342</a> 
+<a class="jxr_linenumber" name="L343" href="#L343">343</a>     <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="L344" href="#L344">344</a> <em class="jxr_javadoccomment">     * Removes the given index from this service and releases all associated resources. Persistent parts of the index</em>
+<a class="jxr_linenumber" name="L345" href="#L345">345</a> <em class="jxr_javadoccomment">     * like the shards files, state and transaction logs are kept around in the case of a disaster recovery.</em>
+<a class="jxr_linenumber" name="L346" href="#L346">346</a> <em class="jxr_javadoccomment">     * @param index the index to remove</em>
+<a class="jxr_linenumber" name="L347" href="#L347">347</a> <em class="jxr_javadoccomment">     * @param reason  the high level reason causing this removal</em>
+<a class="jxr_linenumber" name="L348" href="#L348">348</a> <em class="jxr_javadoccomment">     */</em>
+<a class="jxr_linenumber" name="L349" href="#L349">349</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> removeIndex(String index, String reason) <strong class="jxr_keyword">throws</strong> ElasticsearchException {
+<a class="jxr_linenumber" name="L350" href="#L350">350</a>         removeIndex(index, reason, false);
+<a class="jxr_linenumber" name="L351" href="#L351">351</a>     }
+<a class="jxr_linenumber" name="L352" href="#L352">352</a> 
+<a class="jxr_linenumber" name="L353" href="#L353">353</a>     <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">void</strong> removeIndex(String index, String reason, <strong class="jxr_keyword">boolean</strong> delete) <strong class="jxr_keyword">throws</strong> ElasticsearchException {
+<a class="jxr_linenumber" name="L354" href="#L354">354</a>         <strong class="jxr_keyword">try</strong> {
+<a class="jxr_linenumber" name="L355" href="#L355">355</a>             <strong class="jxr_keyword">final</strong> <a href="../../../org/elasticsearch/index/IndexService.html">IndexService</a> indexService;
+<a class="jxr_linenumber" name="L356" href="#L356">356</a>             <strong class="jxr_keyword">final</strong> <a href="../../../org/elasticsearch/common/inject/Injector.html">Injector</a> indexInjector;
+<a class="jxr_linenumber" name="L357" href="#L357">357</a>             <strong class="jxr_keyword">synchronized</strong> (<strong class="jxr_keyword">this</strong>) {
+<a class="jxr_linenumber" name="L358" href="#L358">358</a>                 <strong class="jxr_keyword">if</strong> (indices.containsKey(index) == false) {
+<a class="jxr_linenumber" name="L359" href="#L359">359</a>                     <strong class="jxr_keyword">return</strong>;
+<a class="jxr_linenumber" name="L360" href="#L360">360</a>                 }
+<a class="jxr_linenumber" name="L361" href="#L361">361</a> 
+<a class="jxr_linenumber" name="L362" href="#L362">362</a>                 logger.debug(<span class="jxr_string">"[{}] closing ... (reason [{}])"</span>, index, reason);
+<a class="jxr_linenumber" name="L363" href="#L363">363</a>                 Map&lt;String, Tuple&lt;IndexService, Injector&gt;&gt; tmpMap = newHashMap(indices);
+<a class="jxr_linenumber" name="L364" href="#L364">364</a>                 Tuple&lt;IndexService, Injector&gt; remove = tmpMap.remove(index);
+<a class="jxr_linenumber" name="L365" href="#L365">365</a>                 indexService = remove.v1();
+<a class="jxr_linenumber" name="L366" href="#L366">366</a>                 indexInjector = remove.v2();
+<a class="jxr_linenumber" name="L367" href="#L367">367</a>                 indices = ImmutableMap.copyOf(tmpMap);
+<a class="jxr_linenumber" name="L368" href="#L368">368</a>             }
+<a class="jxr_linenumber" name="L369" href="#L369">369</a> 
+<a class="jxr_linenumber" name="L370" href="#L370">370</a>             indicesLifecycle.beforeIndexClosed(indexService);
+<a class="jxr_linenumber" name="L371" href="#L371">371</a>             <strong class="jxr_keyword">if</strong> (delete) {
+<a class="jxr_linenumber" name="L372" href="#L372">372</a>                 indicesLifecycle.beforeIndexDeleted(indexService);
+<a class="jxr_linenumber" name="L373" href="#L373">373</a>             }
+<a class="jxr_linenumber" name="L374" href="#L374">374</a>             IOUtils.close(Iterables.transform(pluginsService.indexServices(), <strong class="jxr_keyword">new</strong> Function&lt;Class&lt;? <strong class="jxr_keyword">extends</strong> Closeable&gt;, Closeable&gt;() {
+<a class="jxr_linenumber" name="L375" href="#L375">375</a>                 @Override
+<a class="jxr_linenumber" name="L376" href="#L376">376</a>                 <strong class="jxr_keyword">public</strong> Closeable apply(Class&lt;? <strong class="jxr_keyword">extends</strong> Closeable&gt; input) {
+<a class="jxr_linenumber" name="L377" href="#L377">377</a>                     <strong class="jxr_keyword">return</strong> indexInjector.getInstance(input);
+<a class="jxr_linenumber" name="L378" href="#L378">378</a>                 }
+<a class="jxr_linenumber" name="L379" href="#L379">379</a>             }));
+<a class="jxr_linenumber" name="L380" href="#L380">380</a> 
+<a class="jxr_linenumber" name="L381" href="#L381">381</a>             logger.debug(<span class="jxr_string">"[{}] closing index service (reason [{}])"</span>, index, reason);
+<a class="jxr_linenumber" name="L382" href="#L382">382</a>             indexService.close(reason, delete);
+<a class="jxr_linenumber" name="L383" href="#L383">383</a> 
+<a class="jxr_linenumber" name="L384" href="#L384">384</a>             logger.debug(<span class="jxr_string">"[{}] closing index cache (reason [{}])"</span>, index, reason);
+<a class="jxr_linenumber" name="L385" href="#L385">385</a>             indexInjector.getInstance(IndexCache.<strong class="jxr_keyword">class</strong>).close();
+<a class="jxr_linenumber" name="L386" href="#L386">386</a>             logger.debug(<span class="jxr_string">"[{}] clearing index field data (reason [{}])"</span>, index, reason);
+<a class="jxr_linenumber" name="L387" href="#L387">387</a>             indexInjector.getInstance(IndexFieldDataService.<strong class="jxr_keyword">class</strong>).clear();
+<a class="jxr_linenumber" name="L388" href="#L388">388</a>             logger.debug(<span class="jxr_string">"[{}] closing analysis service (reason [{}])"</span>, index, reason);
+<a class="jxr_linenumber" name="L389" href="#L389">389</a>             indexInjector.getInstance(AnalysisService.<strong class="jxr_keyword">class</strong>).close();
+<a class="jxr_linenumber" name="L390" href="#L390">390</a> 
+<a class="jxr_linenumber" name="L391" href="#L391">391</a>             logger.debug(<span class="jxr_string">"[{}] closing mapper service (reason [{}])"</span>, index, reason);
+<a class="jxr_linenumber" name="L392" href="#L392">392</a>             indexInjector.getInstance(MapperService.<strong class="jxr_keyword">class</strong>).close();
+<a class="jxr_linenumber" name="L393" href="#L393">393</a>             logger.debug(<span class="jxr_string">"[{}] closing index query parser service (reason [{}])"</span>, index, reason);
+<a class="jxr_linenumber" name="L394" href="#L394">394</a>             indexInjector.getInstance(IndexQueryParserService.<strong class="jxr_keyword">class</strong>).close();
+<a class="jxr_linenumber" name="L395" href="#L395">395</a> 
+<a class="jxr_linenumber" name="L396" href="#L396">396</a>             logger.debug(<span class="jxr_string">"[{}] closing index service (reason [{}])"</span>, index, reason);
+<a class="jxr_linenumber" name="L397" href="#L397">397</a>             indexInjector.getInstance(IndexStore.<strong class="jxr_keyword">class</strong>).close();
+<a class="jxr_linenumber" name="L398" href="#L398">398</a> 
+<a class="jxr_linenumber" name="L399" href="#L399">399</a>             logger.debug(<span class="jxr_string">"[{}] closed... (reason [{}])"</span>, index, reason);
+<a class="jxr_linenumber" name="L400" href="#L400">400</a>             indicesLifecycle.afterIndexClosed(indexService.index(), indexService.settingsService().getSettings());
+<a class="jxr_linenumber" name="L401" href="#L401">401</a>             <strong class="jxr_keyword">if</strong> (delete) {
+<a class="jxr_linenumber" name="L402" href="#L402">402</a>                 <strong class="jxr_keyword">final</strong> <a href="../../../org/elasticsearch/common/settings/Settings.html">Settings</a> indexSettings = indexService.getIndexSettings();
+<a class="jxr_linenumber" name="L403" href="#L403">403</a>                 indicesLifecycle.afterIndexDeleted(indexService.index(), indexSettings);
+<a class="jxr_linenumber" name="L404" href="#L404">404</a>                 <em class="jxr_comment">// now we are done - try to wipe data on disk if possible</em>
+<a class="jxr_linenumber" name="L405" href="#L405">405</a>                 deleteIndexStore(reason, indexService.index(), indexSettings);
+<a class="jxr_linenumber" name="L406" href="#L406">406</a>             }
+<a class="jxr_linenumber" name="L407" href="#L407">407</a>         } <strong class="jxr_keyword">catch</strong> (IOException ex) {
+<a class="jxr_linenumber" name="L408" href="#L408">408</a>             <strong class="jxr_keyword">throw</strong> <strong class="jxr_keyword">new</strong> <a href="../../../org/elasticsearch/ElasticsearchException.html">ElasticsearchException</a>(<span class="jxr_string">"failed to remove index "</span> + index, ex);
+<a class="jxr_linenumber" name="L409" href="#L409">409</a>         }
+<a class="jxr_linenumber" name="L410" href="#L410">410</a>     }
+<a class="jxr_linenumber" name="L411" href="#L411">411</a> 
+<a class="jxr_linenumber" name="L412" href="#L412">412</a>     <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">class</strong> <a href="../../../org/elasticsearch/indices/IndicesService.html">OldShardsStats</a> <strong class="jxr_keyword">extends</strong> IndicesLifecycle.Listener {
+<a class="jxr_linenumber" name="L413" href="#L413">413</a> 
+<a class="jxr_linenumber" name="L414" href="#L414">414</a>         <strong class="jxr_keyword">final</strong> <a href="../../../org/elasticsearch/index/search/stats/SearchStats.html">SearchStats</a> searchStats = <strong class="jxr_keyword">new</strong> <a href="../../../org/elasticsearch/index/search/stats/SearchStats.html">SearchStats</a>();
+<a class="jxr_linenumber" name="L415" href="#L415">415</a>         <strong class="jxr_keyword">final</strong> <a href="../../../org/elasticsearch/index/get/GetStats.html">GetStats</a> getStats = <strong class="jxr_keyword">new</strong> <a href="../../../org/elasticsearch/index/get/GetStats.html">GetStats</a>();
+<a class="jxr_linenumber" name="L416" href="#L416">416</a>         <strong class="jxr_keyword">final</strong> <a href="../../../org/elasticsearch/index/indexing/IndexingStats.html">IndexingStats</a> indexingStats = <strong class="jxr_keyword">new</strong> <a href="../../../org/elasticsearch/index/indexing/IndexingStats.html">IndexingStats</a>();
+<a class="jxr_linenumber" name="L417" href="#L417">417</a>         <strong class="jxr_keyword">final</strong> <a href="../../../org/elasticsearch/index/merge/MergeStats.html">MergeStats</a> mergeStats = <strong class="jxr_keyword">new</strong> <a href="../../../org/elasticsearch/index/merge/MergeStats.html">MergeStats</a>();
+<a class="jxr_linenumber" name="L418" href="#L418">418</a>         <strong class="jxr_keyword">final</strong> <a href="../../../org/elasticsearch/index/refresh/RefreshStats.html">RefreshStats</a> refreshStats = <strong class="jxr_keyword">new</strong> <a href="../../../org/elasticsearch/index/refresh/RefreshStats.html">RefreshStats</a>();
+<a class="jxr_linenumber" name="L419" href="#L419">419</a>         <strong class="jxr_keyword">final</strong> <a href="../../../org/elasticsearch/index/flush/FlushStats.html">FlushStats</a> flushStats = <strong class="jxr_keyword">new</strong> <a href="../../../org/elasticsearch/index/flush/FlushStats.html">FlushStats</a>();
+<a class="jxr_linenumber" name="L420" href="#L420">420</a> 
+<a class="jxr_linenumber" name="L421" href="#L421">421</a>         @Override
+<a class="jxr_linenumber" name="L422" href="#L422">422</a>         <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">synchronized</strong> <strong class="jxr_keyword">void</strong> beforeIndexShardClosed(<a href="../../../org/elasticsearch/index/shard/ShardId.html">ShardId</a> shardId, @Nullable <a href="../../../org/elasticsearch/index/shard/IndexShard.html">IndexShard</a> indexShard,
+<a class="jxr_linenumber" name="L423" href="#L423">423</a>                                                         @IndexSettings <a href="../../../org/elasticsearch/common/settings/Settings.html">Settings</a> indexSettings) {
+<a class="jxr_linenumber" name="L424" href="#L424">424</a>             <strong class="jxr_keyword">if</strong> (indexShard != <strong class="jxr_keyword">null</strong>) {
+<a class="jxr_linenumber" name="L425" href="#L425">425</a>                 getStats.add(indexShard.getStats());
+<a class="jxr_linenumber" name="L426" href="#L426">426</a>                 indexingStats.add(indexShard.indexingStats(), false);
+<a class="jxr_linenumber" name="L427" href="#L427">427</a>                 searchStats.add(indexShard.searchStats(), false);
+<a class="jxr_linenumber" name="L428" href="#L428">428</a>                 mergeStats.add(indexShard.mergeStats());
+<a class="jxr_linenumber" name="L429" href="#L429">429</a>                 refreshStats.add(indexShard.refreshStats());
+<a class="jxr_linenumber" name="L430" href="#L430">430</a>                 flushStats.add(indexShard.flushStats());
+<a class="jxr_linenumber" name="L431" href="#L431">431</a>             }
+<a class="jxr_linenumber" name="L432" href="#L432">432</a>         }
+<a class="jxr_linenumber" name="L433" href="#L433">433</a>     }
+<a class="jxr_linenumber" name="L434" href="#L434">434</a> 
+<a class="jxr_linenumber" name="L435" href="#L435">435</a>     <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="L436" href="#L436">436</a> <em class="jxr_javadoccomment">     * Deletes the given index. Persistent parts of the index</em>
+<a class="jxr_linenumber" name="L437" href="#L437">437</a> <em class="jxr_javadoccomment">     * like the shards files, state and transaction logs are removed once all resources are released.</em>
+<a class="jxr_linenumber" name="L438" href="#L438">438</a> <em class="jxr_javadoccomment">     *</em>
+<a class="jxr_linenumber" name="L439" href="#L439">439</a> <em class="jxr_javadoccomment">     * Equivalent to {@link #removeIndex(String, String)} but fires</em>
+<a class="jxr_linenumber" name="L440" href="#L440">440</a> <em class="jxr_javadoccomment">     * different lifecycle events to ensure pending resources of this index are immediately removed.</em>
+<a class="jxr_linenumber" name="L441" href="#L441">441</a> <em class="jxr_javadoccomment">     * @param index the index to delete</em>
+<a class="jxr_linenumber" name="L442" href="#L442">442</a> <em class="jxr_javadoccomment">     * @param reason the high level reason causing this delete</em>
+<a class="jxr_linenumber" name="L443" href="#L443">443</a> <em class="jxr_javadoccomment">     */</em>
+<a class="jxr_linenumber" name="L444" href="#L444">444</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> deleteIndex(String index, String reason) <strong class="jxr_keyword">throws</strong> IOException {
+<a class="jxr_linenumber" name="L445" href="#L445">445</a>         removeIndex(index, reason, <strong class="jxr_keyword">true</strong>);
+<a class="jxr_linenumber" name="L446" href="#L446">446</a>     }
+<a class="jxr_linenumber" name="L447" href="#L447">447</a> 
+<a class="jxr_linenumber" name="L448" href="#L448">448</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> deleteClosedIndex(String reason, <a href="../../../org/elasticsearch/cluster/metadata/IndexMetaData.html">IndexMetaData</a> metaData, <a href="../../../org/elasticsearch/cluster/ClusterState.html">ClusterState</a> clusterState) {
+<a class="jxr_linenumber" name="L449" href="#L449">449</a>         <strong class="jxr_keyword">if</strong> (nodeEnv.hasNodeFile()) {
+<a class="jxr_linenumber" name="L450" href="#L450">450</a>             String indexName = metaData.getIndex();
+<a class="jxr_linenumber" name="L451" href="#L451">451</a>             <strong class="jxr_keyword">try</strong> {
+<a class="jxr_linenumber" name="L452" href="#L452">452</a>                 <strong class="jxr_keyword">if</strong> (clusterState.metaData().hasIndex(indexName)) {
+<a class="jxr_linenumber" name="L453" href="#L453">453</a>                     <strong class="jxr_keyword">final</strong> <a href="../../../org/elasticsearch/cluster/metadata/IndexMetaData.html">IndexMetaData</a> index = clusterState.metaData().index(indexName);
+<a class="jxr_linenumber" name="L454" href="#L454">454</a>                     <strong class="jxr_keyword">throw</strong> <strong class="jxr_keyword">new</strong> <a href="../../../org/elasticsearch/ElasticsearchIllegalStateException.html">ElasticsearchIllegalStateException</a>(<span class="jxr_string">"Can't delete closed index store for ["</span> + indexName + <span class="jxr_string">"] - it's still part of the cluster state ["</span> + index.getUUID() + <span class="jxr_string">"] ["</span> + metaData.getUUID() + <span class="jxr_string">"]"</span>);
+<a class="jxr_linenumber" name="L455" href="#L455">455</a>                 }
+<a class="jxr_linenumber" name="L456" href="#L456">456</a>                 deleteIndexStore(reason, metaData, clusterState);
+<a class="jxr_linenumber" name="L457" href="#L457">457</a>             } <strong class="jxr_keyword">catch</strong> (IOException e) {
+<a class="jxr_linenumber" name="L458" href="#L458">458</a>                 logger.warn(<span class="jxr_string">"[{}] failed to delete closed index"</span>, e, metaData.index());
+<a class="jxr_linenumber" name="L459" href="#L459">459</a>             }
+<a class="jxr_linenumber" name="L460" href="#L460">460</a>         }
+<a class="jxr_linenumber" name="L461" href="#L461">461</a>     }
+<a class="jxr_linenumber" name="L462" href="#L462">462</a> 
+<a class="jxr_linenumber" name="L463" href="#L463">463</a>     <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="L464" href="#L464">464</a> <em class="jxr_javadoccomment">     * Deletes the index store trying to acquire all shards locks for this index.</em>
+<a class="jxr_linenumber" name="L465" href="#L465">465</a> <em class="jxr_javadoccomment">     * This method will delete the metadata for the index even if the actual shards can't be locked.</em>
+<a class="jxr_linenumber" name="L466" href="#L466">466</a> <em class="jxr_javadoccomment">     */</em>
+<a class="jxr_linenumber" name="L467" href="#L467">467</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> deleteIndexStore(String reason, <a href="../../../org/elasticsearch/cluster/metadata/IndexMetaData.html">IndexMetaData</a> metaData, <a href="../../../org/elasticsearch/cluster/ClusterState.html">ClusterState</a> clusterState) <strong class="jxr_keyword">throws</strong> IOException {
+<a class="jxr_linenumber" name="L468" href="#L468">468</a>         <strong class="jxr_keyword">if</strong> (nodeEnv.hasNodeFile()) {
+<a class="jxr_linenumber" name="L469" href="#L469">469</a>             <strong class="jxr_keyword">synchronized</strong> (<strong class="jxr_keyword">this</strong>) {
+<a class="jxr_linenumber" name="L470" href="#L470">470</a>                 String indexName = metaData.index();
+<a class="jxr_linenumber" name="L471" href="#L471">471</a>                 <strong class="jxr_keyword">if</strong> (indices.containsKey(indexName)) {
+<a class="jxr_linenumber" name="L472" href="#L472">472</a>                     String localUUid = indices.get(indexName).v1().indexUUID();
+<a class="jxr_linenumber" name="L473" href="#L473">473</a>                     <strong class="jxr_keyword">throw</strong> <strong class="jxr_keyword">new</strong> <a href="../../../org/elasticsearch/ElasticsearchIllegalStateException.html">ElasticsearchIllegalStateException</a>(<span class="jxr_string">"Can't delete index store for ["</span> + indexName + <span class="jxr_string">"] - it's still part of the indices service ["</span> + localUUid+ <span class="jxr_string">"] ["</span> + metaData.getUUID() + <span class="jxr_string">"]"</span>);
+<a class="jxr_linenumber" name="L474" href="#L474">474</a>                 }
+<a class="jxr_linenumber" name="L475" href="#L475">475</a>                 <strong class="jxr_keyword">if</strong> (clusterState.metaData().hasIndex(indexName) &amp;&amp; (clusterState.nodes().localNode().masterNode() == <strong class="jxr_keyword">true</strong>)) {
+<a class="jxr_linenumber" name="L476" href="#L476">476</a>                     <em class="jxr_comment">// we do not delete the store if it is a master eligible node and the index is still in the cluster state</em>
+<a class="jxr_linenumber" name="L477" href="#L477">477</a>                     <em class="jxr_comment">// because we want to keep the meta data for indices around even if no shards are left here</em>
+<a class="jxr_linenumber" name="L478" href="#L478">478</a>                     <strong class="jxr_keyword">final</strong> <a href="../../../org/elasticsearch/cluster/metadata/IndexMetaData.html">IndexMetaData</a> index = clusterState.metaData().index(indexName);
+<a class="jxr_linenumber" name="L479" href="#L479">479</a>                     <strong class="jxr_keyword">throw</strong> <strong class="jxr_keyword">new</strong> <a href="../../../org/elasticsearch/ElasticsearchIllegalStateException.html">ElasticsearchIllegalStateException</a>(<span class="jxr_string">"Can't delete closed index store for ["</span> + indexName + <span class="jxr_string">"] - it's still part of the cluster state ["</span> + index.getUUID() + <span class="jxr_string">"] ["</span> + metaData.getUUID() + <span class="jxr_string">"]"</span>);
+<a class="jxr_linenumber" name="L480" href="#L480">480</a>                 }
+<a class="jxr_linenumber" name="L481" href="#L481">481</a>             }
+<a class="jxr_linenumber" name="L482" href="#L482">482</a>             <a href="../../../org/elasticsearch/index/Index.html">Index</a> index = <strong class="jxr_keyword">new</strong> <a href="../../../org/elasticsearch/index/Index.html">Index</a>(metaData.index());
+<a class="jxr_linenumber" name="L483" href="#L483">483</a>             <strong class="jxr_keyword">final</strong> <a href="../../../org/elasticsearch/common/settings/Settings.html">Settings</a> indexSettings = buildIndexSettings(metaData);
+<a class="jxr_linenumber" name="L484" href="#L484">484</a>             deleteIndexStore(reason, index, indexSettings);
+<a class="jxr_linenumber" name="L485" href="#L485">485</a>         }
+<a class="jxr_linenumber" name="L486" href="#L486">486</a>     }
+<a class="jxr_linenumber" name="L487" href="#L487">487</a> 
+<a class="jxr_linenumber" name="L488" href="#L488">488</a>     <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">void</strong> deleteIndexStore(String reason, <a href="../../../org/elasticsearch/index/Index.html">Index</a> index, <a href="../../../org/elasticsearch/common/settings/Settings.html">Settings</a> indexSettings) <strong class="jxr_keyword">throws</strong> IOException {
+<a class="jxr_linenumber" name="L489" href="#L489">489</a>         <strong class="jxr_keyword">boolean</strong> success = false;
+<a class="jxr_linenumber" name="L490" href="#L490">490</a>         <strong class="jxr_keyword">try</strong> {
+<a class="jxr_linenumber" name="L491" href="#L491">491</a>             <em class="jxr_comment">// we are trying to delete the index store here - not a big deal if the lock can't be obtained</em>
+<a class="jxr_linenumber" name="L492" href="#L492">492</a>             <em class="jxr_comment">// the store metadata gets wiped anyway even without the lock this is just best effort since</em>
+<a class="jxr_linenumber" name="L493" href="#L493">493</a>             <em class="jxr_comment">// every shards deletes its content under the shard lock it owns.</em>
+<a class="jxr_linenumber" name="L494" href="#L494">494</a>             logger.debug(<span class="jxr_string">"{} deleting index store reason [{}]"</span>, index, reason);
+<a class="jxr_linenumber" name="L495" href="#L495">495</a>             <strong class="jxr_keyword">if</strong> (canDeleteIndexContents(index, indexSettings)) {
+<a class="jxr_linenumber" name="L496" href="#L496">496</a>                 nodeEnv.deleteIndexDirectorySafe(index, 0, indexSettings);
+<a class="jxr_linenumber" name="L497" href="#L497">497</a>             }
+<a class="jxr_linenumber" name="L498" href="#L498">498</a>             success = <strong class="jxr_keyword">true</strong>;
+<a class="jxr_linenumber" name="L499" href="#L499">499</a>         } <strong class="jxr_keyword">catch</strong> (LockObtainFailedException ex) {
+<a class="jxr_linenumber" name="L500" href="#L500">500</a>             logger.debug(<span class="jxr_string">"{} failed to delete index store - at least one shards is still locked"</span>, ex, index);
+<a class="jxr_linenumber" name="L501" href="#L501">501</a>         } <strong class="jxr_keyword">catch</strong> (Exception ex) {
+<a class="jxr_linenumber" name="L502" href="#L502">502</a>             logger.warn(<span class="jxr_string">"{} failed to delete index"</span>, ex, index);
+<a class="jxr_linenumber" name="L503" href="#L503">503</a>         } <strong class="jxr_keyword">finally</strong> {
+<a class="jxr_linenumber" name="L504" href="#L504">504</a>             <strong class="jxr_keyword">if</strong> (success == false) {
+<a class="jxr_linenumber" name="L505" href="#L505">505</a>                 addPendingDelete(index, indexSettings);
+<a class="jxr_linenumber" name="L506" href="#L506">506</a>             }
+<a class="jxr_linenumber" name="L507" href="#L507">507</a>             <em class="jxr_comment">// this is a pure protection to make sure this index doesn't get re-imported as a dangeling index.</em>
+<a class="jxr_linenumber" name="L508" href="#L508">508</a>             <em class="jxr_comment">// we should in the future rather write a tombstone rather than wiping the metadata.</em>
+<a class="jxr_linenumber" name="L509" href="#L509">509</a>             MetaDataStateFormat.deleteMetaState(nodeEnv.indexPaths(index));
+<a class="jxr_linenumber" name="L510" href="#L510">510</a>         }
+<a class="jxr_linenumber" name="L511" href="#L511">511</a>     }
+<a class="jxr_linenumber" name="L512" href="#L512">512</a> 
+<a class="jxr_linenumber" name="L513" href="#L513">513</a>     <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="L514" href="#L514">514</a> <em class="jxr_javadoccomment">     * Deletes the shard with an already acquired shard lock.</em>
+<a class="jxr_linenumber" name="L515" href="#L515">515</a> <em class="jxr_javadoccomment">     * @param reason the reason for the shard deletion</em>
+<a class="jxr_linenumber" name="L516" href="#L516">516</a> <em class="jxr_javadoccomment">     * @param lock the lock of the shard to delete</em>
+<a class="jxr_linenumber" name="L517" href="#L517">517</a> <em class="jxr_javadoccomment">     * @param indexSettings the shards index settings.</em>
+<a class="jxr_linenumber" name="L518" href="#L518">518</a> <em class="jxr_javadoccomment">     * @throws IOException if an IOException occurs</em>
+<a class="jxr_linenumber" name="L519" href="#L519">519</a> <em class="jxr_javadoccomment">     */</em>
+<a class="jxr_linenumber" name="L520" href="#L520">520</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> deleteShardStore(String reason, <a href="../../../org/elasticsearch/env/ShardLock.html">ShardLock</a> lock, <a href="../../../org/elasticsearch/common/settings/Settings.html">Settings</a> indexSettings) <strong class="jxr_keyword">throws</strong> IOException {
+<a class="jxr_linenumber" name="L521" href="#L521">521</a>         <a href="../../../org/elasticsearch/index/shard/ShardId.html">ShardId</a> shardId = lock.getShardId();
+<a class="jxr_linenumber" name="L522" href="#L522">522</a>         logger.trace(<span class="jxr_string">"{} deleting shard reason [{}]"</span>, shardId, reason);
+<a class="jxr_linenumber" name="L523" href="#L523">523</a>         nodeEnv.deleteShardDirectoryUnderLock(lock, indexSettings);
+<a class="jxr_linenumber" name="L524" href="#L524">524</a>     }
+<a class="jxr_linenumber" name="L525" href="#L525">525</a> 
+<a class="jxr_linenumber" name="L526" href="#L526">526</a>     <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="L527" href="#L527">527</a> <em class="jxr_javadoccomment">     * This method deletes the shard contents on disk for the given shard ID. This method will fail if the shard deleting</em>
+<a class="jxr_linenumber" name="L528" href="#L528">528</a> <em class="jxr_javadoccomment">     * is prevented by {@link #canDeleteShardContent(org.elasticsearch.index.shard.ShardId, org.elasticsearch.cluster.metadata.IndexMetaData)}</em>
+<a class="jxr_linenumber" name="L529" href="#L529">529</a> <em class="jxr_javadoccomment">     * of if the shards lock can not be acquired.</em>
+<a class="jxr_linenumber" name="L530" href="#L530">530</a> <em class="jxr_javadoccomment">     * @param reason the reason for the shard deletion</em>
+<a class="jxr_linenumber" name="L531" href="#L531">531</a> <em class="jxr_javadoccomment">     * @param shardId the shards ID to delete</em>
+<a class="jxr_linenumber" name="L532" href="#L532">532</a> <em class="jxr_javadoccomment">     * @param metaData the shards index metadata. This is required to access the indexes settings etc.</em>
+<a class="jxr_linenumber" name="L533" href="#L533">533</a> <em class="jxr_javadoccomment">     * @throws IOException if an IOException occurs</em>
+<a class="jxr_linenumber" name="L534" href="#L534">534</a> <em class="jxr_javadoccomment">     */</em>
+<a class="jxr_linenumber" name="L535" href="#L535">535</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> deleteShardStore(String reason, <a href="../../../org/elasticsearch/index/shard/ShardId.html">ShardId</a> shardId, <a href="../../../org/elasticsearch/cluster/metadata/IndexMetaData.html">IndexMetaData</a> metaData) <strong class="jxr_keyword">throws</strong> IOException {
+<a class="jxr_linenumber" name="L536" href="#L536">536</a>         <strong class="jxr_keyword">final</strong> <a href="../../../org/elasticsearch/common/settings/Settings.html">Settings</a> indexSettings = buildIndexSettings(metaData);
+<a class="jxr_linenumber" name="L537" href="#L537">537</a>         <strong class="jxr_keyword">if</strong> (canDeleteShardContent(shardId, indexSettings) == false) {
+<a class="jxr_linenumber" name="L538" href="#L538">538</a>             <strong class="jxr_keyword">throw</strong> <strong class="jxr_keyword">new</strong> <a href="../../../org/elasticsearch/ElasticsearchIllegalStateException.html">ElasticsearchIllegalStateException</a>(<span class="jxr_string">"Can't delete shard "</span> + shardId);
+<a class="jxr_linenumber" name="L539" href="#L539">539</a>         }
+<a class="jxr_linenumber" name="L540" href="#L540">540</a>         nodeEnv.deleteShardDirectorySafe(shardId, indexSettings);
+<a class="jxr_linenumber" name="L541" href="#L541">541</a>         logger.trace(<span class="jxr_string">"{} deleting shard reason [{}]"</span>, shardId, reason);
+<a class="jxr_linenumber" name="L542" href="#L542">542</a>     }
+<a class="jxr_linenumber" name="L543" href="#L543">543</a> 
+<a class="jxr_linenumber" name="L544" href="#L544">544</a>     <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="L545" href="#L545">545</a> <em class="jxr_javadoccomment">     * This method returns true if the current node is allowed to delete the</em>
+<a class="jxr_linenumber" name="L546" href="#L546">546</a> <em class="jxr_javadoccomment">     * given index. If the index uses a shared filesystem this method always</em>
+<a class="jxr_linenumber" name="L547" href="#L547">547</a> <em class="jxr_javadoccomment">     * returns false.</em>
+<a class="jxr_linenumber" name="L548" href="#L548">548</a> <em class="jxr_javadoccomment">     * @param index {@code Index} to check whether deletion is allowed</em>
+<a class="jxr_linenumber" name="L549" href="#L549">549</a> <em class="jxr_javadoccomment">     * @param indexSettings {@code Settings} for the given index</em>
+<a class="jxr_linenumber" name="L550" href="#L550">550</a> <em class="jxr_javadoccomment">     * @return true if the index can be deleted on this node</em>
+<a class="jxr_linenumber" name="L551" href="#L551">551</a> <em class="jxr_javadoccomment">     */</em>
+<a class="jxr_linenumber" name="L552" href="#L552">552</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">boolean</strong> canDeleteIndexContents(<a href="../../../org/elasticsearch/index/Index.html">Index</a> index, <a href="../../../org/elasticsearch/common/settings/Settings.html">Settings</a> indexSettings) {
+<a class="jxr_linenumber" name="L553" href="#L553">553</a>         <strong class="jxr_keyword">final</strong> Tuple&lt;IndexService, Injector&gt; indexServiceInjectorTuple = <strong class="jxr_keyword">this</strong>.indices.get(index.name());
+<a class="jxr_linenumber" name="L554" href="#L554">554</a>         <strong class="jxr_keyword">if</strong> (IndexMetaData.isOnSharedFilesystem(indexSettings) == false) {
+<a class="jxr_linenumber" name="L555" href="#L555">555</a>             <strong class="jxr_keyword">if</strong> (indexServiceInjectorTuple == <strong class="jxr_keyword">null</strong> &amp;&amp; nodeEnv.hasNodeFile()) {
+<a class="jxr_linenumber" name="L556" href="#L556">556</a>                 <strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">true</strong>;
+<a class="jxr_linenumber" name="L557" href="#L557">557</a>             }
+<a class="jxr_linenumber" name="L558" href="#L558">558</a>         } <strong class="jxr_keyword">else</strong> {
+<a class="jxr_linenumber" name="L559" href="#L559">559</a>             logger.trace(<span class="jxr_string">"{} skipping index directory deletion due to shadow replicas"</span>, index);
+<a class="jxr_linenumber" name="L560" href="#L560">560</a>         }
+<a class="jxr_linenumber" name="L561" href="#L561">561</a>         <strong class="jxr_keyword">return</strong> false;
+<a class="jxr_linenumber" name="L562" href="#L562">562</a>     }
+<a class="jxr_linenumber" name="L563" href="#L563">563</a> 
+<a class="jxr_linenumber" name="L564" href="#L564">564</a>     <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="L565" href="#L565">565</a> <em class="jxr_javadoccomment">     * Returns &lt;code&gt;true&lt;/code&gt; iff the shards content for the given shard can be deleted.</em>
+<a class="jxr_linenumber" name="L566" href="#L566">566</a> <em class="jxr_javadoccomment">     * This method will return &lt;code&gt;false&lt;/code&gt; if:</em>
+<a class="jxr_linenumber" name="L567" href="#L567">567</a> <em class="jxr_javadoccomment">     * &lt;ul&gt;</em>
+<a class="jxr_linenumber" name="L568" href="#L568">568</a> <em class="jxr_javadoccomment">     *     &lt;li&gt;if the shard is still allocated / active on this node&lt;/li&gt;</em>
+<a class="jxr_linenumber" name="L569" href="#L569">569</a> <em class="jxr_javadoccomment">     *     &lt;li&gt;if for instance if the shard is located on shared and should not be deleted&lt;/li&gt;</em>
+<a class="jxr_linenumber" name="L570" href="#L570">570</a> <em class="jxr_javadoccomment">     *     &lt;li&gt;if the shards data locations do not exists&lt;/li&gt;</em>
+<a class="jxr_linenumber" name="L571" href="#L571">571</a> <em class="jxr_javadoccomment">     * &lt;/ul&gt;</em>
+<a class="jxr_linenumber" name="L572" href="#L572">572</a> <em class="jxr_javadoccomment">     *</em>
+<a class="jxr_linenumber" name="L573" href="#L573">573</a> <em class="jxr_javadoccomment">     * @param shardId the shard to delete.</em>
+<a class="jxr_linenumber" name="L574" href="#L574">574</a> <em class="jxr_javadoccomment">     * @param metaData the shards index metadata. This is required to access the indexes settings etc.</em>
+<a class="jxr_linenumber" name="L575" href="#L575">575</a> <em class="jxr_javadoccomment">     */</em>
+<a class="jxr_linenumber" name="L576" href="#L576">576</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">boolean</strong> canDeleteShardContent(<a href="../../../org/elasticsearch/index/shard/ShardId.html">ShardId</a> shardId, <a href="../../../org/elasticsearch/cluster/metadata/IndexMetaData.html">IndexMetaData</a> metaData) {
+<a class="jxr_linenumber" name="L577" href="#L577">577</a>         <em class="jxr_comment">// we need the metadata here since we have to build the complete settings</em>
+<a class="jxr_linenumber" name="L578" href="#L578">578</a>         <em class="jxr_comment">// to decide where the shard content lives. In the future we might even need more info here ie. for shadow replicas</em>
+<a class="jxr_linenumber" name="L579" href="#L579">579</a>         <em class="jxr_comment">// The plan was to make it harder to miss-use and ask for metadata instead of simple settings</em>
+<a class="jxr_linenumber" name="L580" href="#L580">580</a>         assert shardId.getIndex().equals(metaData.getIndex());
+<a class="jxr_linenumber" name="L581" href="#L581">581</a>         <strong class="jxr_keyword">final</strong> <a href="../../../org/elasticsearch/common/settings/Settings.html">Settings</a> indexSettings = buildIndexSettings(metaData);
+<a class="jxr_linenumber" name="L582" href="#L582">582</a>         <strong class="jxr_keyword">return</strong> canDeleteShardContent(shardId, indexSettings);
+<a class="jxr_linenumber" name="L583" href="#L583">583</a>     }
+<a class="jxr_linenumber" name="L584" href="#L584">584</a> 
+<a class="jxr_linenumber" name="L585" href="#L585">585</a>     <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">boolean</strong> canDeleteShardContent(<a href="../../../org/elasticsearch/index/shard/ShardId.html">ShardId</a> shardId, @IndexSettings <a href="../../../org/elasticsearch/common/settings/Settings.html">Settings</a> indexSettings) {
+<a class="jxr_linenumber" name="L586" href="#L586">586</a>         <strong class="jxr_keyword">final</strong> Tuple&lt;IndexService, Injector&gt; indexServiceInjectorTuple = <strong class="jxr_keyword">this</strong>.indices.get(shardId.getIndex());
+<a class="jxr_linenumber" name="L587" href="#L587">587</a>         <strong class="jxr_keyword">if</strong> (IndexMetaData.isOnSharedFilesystem(indexSettings) == false) {
+<a class="jxr_linenumber" name="L588" href="#L588">588</a>             <strong class="jxr_keyword">if</strong> (indexServiceInjectorTuple != <strong class="jxr_keyword">null</strong> &amp;&amp; nodeEnv.hasNodeFile()) {
+<a class="jxr_linenumber" name="L589" href="#L589">589</a>                 <strong class="jxr_keyword">final</strong> <a href="../../../org/elasticsearch/index/IndexService.html">IndexService</a> indexService = indexServiceInjectorTuple.v1();
+<a class="jxr_linenumber" name="L590" href="#L590">590</a>                 <strong class="jxr_keyword">return</strong> indexService.hasShard(shardId.id()) == false;
+<a class="jxr_linenumber" name="L591" href="#L591">591</a>             } <strong class="jxr_keyword">else</strong> <strong class="jxr_keyword">if</strong> (nodeEnv.hasNodeFile()) {
+<a class="jxr_linenumber" name="L592" href="#L592">592</a>                 <strong class="jxr_keyword">final</strong> Path[] shardLocations = nodeEnv.shardDataPaths(shardId, indexSettings);
+<a class="jxr_linenumber" name="L593" href="#L593">593</a>                 <strong class="jxr_keyword">return</strong> FileSystemUtils.exists(shardLocations);
+<a class="jxr_linenumber" name="L594" href="#L594">594</a>             }
+<a class="jxr_linenumber" name="L595" href="#L595">595</a>         } <strong class="jxr_keyword">else</strong> {
+<a class="jxr_linenumber" name="L596" href="#L596">596</a>             logger.trace(<span class="jxr_string">"{} skipping shard directory deletion due to shadow replicas"</span>, shardId);
+<a class="jxr_linenumber" name="L597" href="#L597">597</a>         }
+<a class="jxr_linenumber" name="L598" href="#L598">598</a>         <strong class="jxr_keyword">return</strong> false;
+<a class="jxr_linenumber" name="L599" href="#L599">599</a>     }
+<a class="jxr_linenumber" name="L600" href="#L600">600</a> 
+<a class="jxr_linenumber" name="L601" href="#L601">601</a>     <strong class="jxr_keyword">private</strong> <a href="../../../org/elasticsearch/common/settings/Settings.html">Settings</a> buildIndexSettings(<a href="../../../org/elasticsearch/cluster/metadata/IndexMetaData.html">IndexMetaData</a> metaData) {
+<a class="jxr_linenumber" name="L602" href="#L602">602</a>         <em class="jxr_comment">// play safe here and make sure that we take node level settings into account.</em>
+<a class="jxr_linenumber" name="L603" href="#L603">603</a>         <em class="jxr_comment">// we might run on nodes where we use shard FS and then in the future don't delete</em>
+<a class="jxr_linenumber" name="L604" href="#L604">604</a>         <em class="jxr_comment">// actual content.</em>
+<a class="jxr_linenumber" name="L605" href="#L605">605</a>         ImmutableSettings.Builder builder = settingsBuilder();
+<a class="jxr_linenumber" name="L606" href="#L606">606</a>         builder.put(settings);
+<a class="jxr_linenumber" name="L607" href="#L607">607</a>         builder.put(metaData.getSettings());
+<a class="jxr_linenumber" name="L608" href="#L608">608</a>         <strong class="jxr_keyword">return</strong> builder.build();
+<a class="jxr_linenumber" name="L609" href="#L609">609</a>     }
+<a class="jxr_linenumber" name="L610" href="#L610">610</a> 
+<a class="jxr_linenumber" name="L611" href="#L611">611</a>     <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="L612" href="#L612">612</a> <em class="jxr_javadoccomment">     * Adds a pending delete for the given index shard.</em>
+<a class="jxr_linenumber" name="L613" href="#L613">613</a> <em class="jxr_javadoccomment">     */</em>
+<a class="jxr_linenumber" name="L614" href="#L614">614</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> addPendingDelete(<a href="../../../org/elasticsearch/index/shard/ShardId.html">ShardId</a> shardId, @IndexSettings <a href="../../../org/elasticsearch/common/settings/Settings.html">Settings</a> settings) {
+<a class="jxr_linenumber" name="L615" href="#L615">615</a>         <strong class="jxr_keyword">if</strong> (shardId == <strong class="jxr_keyword">null</strong>) {
+<a class="jxr_linenumber" name="L616" href="#L616">616</a>             <strong class="jxr_keyword">throw</strong> <strong class="jxr_keyword">new</strong> <a href="../../../org/elasticsearch/ElasticsearchIllegalArgumentException.html">ElasticsearchIllegalArgumentException</a>(<span class="jxr_string">"shardId must not be null"</span>);
+<a class="jxr_linenumber" name="L617" href="#L617">617</a>         }
+<a class="jxr_linenumber" name="L618" href="#L618">618</a>         <strong class="jxr_keyword">if</strong> (settings == <strong class="jxr_keyword">null</strong>) {
+<a class="jxr_linenumber" name="L619" href="#L619">619</a>             <strong class="jxr_keyword">throw</strong> <strong class="jxr_keyword">new</strong> <a href="../../../org/elasticsearch/ElasticsearchIllegalArgumentException.html">ElasticsearchIllegalArgumentException</a>(<span class="jxr_string">"settings must not be null"</span>);
+<a class="jxr_linenumber" name="L620" href="#L620">620</a>         }
+<a class="jxr_linenumber" name="L621" href="#L621">621</a>         <a href="../../../org/elasticsearch/indices/IndicesService.html">PendingDelete</a> pendingDelete = <strong class="jxr_keyword">new</strong> <a href="../../../org/elasticsearch/indices/IndicesService.html">PendingDelete</a>(shardId, settings, false);
+<a class="jxr_linenumber" name="L622" href="#L622">622</a>         addPendingDelete(shardId.index(), pendingDelete);
+<a class="jxr_linenumber" name="L623" href="#L623">623</a>     }
+<a class="jxr_linenumber" name="L624" href="#L624">624</a> 
+<a class="jxr_linenumber" name="L625" href="#L625">625</a>     <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">void</strong> addPendingDelete(<a href="../../../org/elasticsearch/index/Index.html">Index</a> index, <a href="../../../org/elasticsearch/indices/IndicesService.html">PendingDelete</a> pendingDelete) {
+<a class="jxr_linenumber" name="L626" href="#L626">626</a>         <strong class="jxr_keyword">synchronized</strong> (pendingDeletes) {
+<a class="jxr_linenumber" name="L627" href="#L627">627</a>             List&lt;PendingDelete&gt; list = pendingDeletes.get(index);
+<a class="jxr_linenumber" name="L628" href="#L628">628</a>             <strong class="jxr_keyword">if</strong> (list == <strong class="jxr_keyword">null</strong>) {
+<a class="jxr_linenumber" name="L629" href="#L629">629</a>                 list = <strong class="jxr_keyword">new</strong> ArrayList&lt;&gt;();
+<a class="jxr_linenumber" name="L630" href="#L630">630</a>                 pendingDeletes.put(index, list);
+<a class="jxr_linenumber" name="L631" href="#L631">631</a>             }
+<a class="jxr_linenumber" name="L632" href="#L632">632</a>             list.add(pendingDelete);
+<a class="jxr_linenumber" name="L633" href="#L633">633</a>         }
+<a class="jxr_linenumber" name="L634" href="#L634">634</a>     }
+<a class="jxr_linenumber" name="L635" href="#L635">635</a> 
+<a class="jxr_linenumber" name="L636" href="#L636">636</a>     <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="L637" href="#L637">637</a> <em class="jxr_javadoccomment">     * Adds a pending delete for the given index shard.</em>
+<a class="jxr_linenumber" name="L638" href="#L638">638</a> <em class="jxr_javadoccomment">     */</em>
+<a class="jxr_linenumber" name="L639" href="#L639">639</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> addPendingDelete(<a href="../../../org/elasticsearch/index/Index.html">Index</a> index, @IndexSettings <a href="../../../org/elasticsearch/common/settings/Settings.html">Settings</a> settings) {
+<a class="jxr_linenumber" name="L640" href="#L640">640</a>         <a href="../../../org/elasticsearch/indices/IndicesService.html">PendingDelete</a> pendingDelete = <strong class="jxr_keyword">new</strong> <a href="../../../org/elasticsearch/indices/IndicesService.html">PendingDelete</a>(<strong class="jxr_keyword">null</strong>, settings, <strong class="jxr_keyword">true</strong>);
+<a class="jxr_linenumber" name="L641" href="#L641">641</a>         addPendingDelete(index, pendingDelete);
+<a class="jxr_linenumber" name="L642" href="#L642">642</a>     }
+<a class="jxr_linenumber" name="L643" href="#L643">643</a> 
+<a class="jxr_linenumber" name="L644" href="#L644">644</a>     <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">final</strong> <strong class="jxr_keyword">class</strong> <a href="../../../org/elasticsearch/indices/IndicesService.html">PendingDelete</a> <strong class="jxr_keyword">implements</strong> Comparable&lt;PendingDelete&gt; {
+<a class="jxr_linenumber" name="L645" href="#L645">645</a>         <strong class="jxr_keyword">final</strong> <a href="../../../org/elasticsearch/index/shard/ShardId.html">ShardId</a> shardId;
+<a class="jxr_linenumber" name="L646" href="#L646">646</a>         <strong class="jxr_keyword">final</strong> <a href="../../../org/elasticsearch/common/settings/Settings.html">Settings</a> settings;
+<a class="jxr_linenumber" name="L647" href="#L647">647</a>         <strong class="jxr_keyword">final</strong> <strong class="jxr_keyword">boolean</strong> deleteIndex;
+<a class="jxr_linenumber" name="L648" href="#L648">648</a> 
+<a class="jxr_linenumber" name="L649" href="#L649">649</a>         <strong class="jxr_keyword">public</strong> <a href="../../../org/elasticsearch/indices/IndicesService.html">PendingDelete</a>(<a href="../../../org/elasticsearch/index/shard/ShardId.html">ShardId</a> shardId, <a href="../../../org/elasticsearch/common/settings/Settings.html">Settings</a> settings, <strong class="jxr_keyword">boolean</strong> deleteIndex) {
+<a class="jxr_linenumber" name="L650" href="#L650">650</a>             <strong class="jxr_keyword">this</strong>.shardId = shardId;
+<a class="jxr_linenumber" name="L651" href="#L651">651</a>             <strong class="jxr_keyword">this</strong>.settings = settings;
+<a class="jxr_linenumber" name="L652" href="#L652">652</a>             <strong class="jxr_keyword">this</strong>.deleteIndex = deleteIndex;
+<a class="jxr_linenumber" name="L653" href="#L653">653</a>             assert deleteIndex || shardId != <strong class="jxr_keyword">null</strong>;
+<a class="jxr_linenumber" name="L654" href="#L654">654</a>         }
+<a class="jxr_linenumber" name="L655" href="#L655">655</a> 
+<a class="jxr_linenumber" name="L656" href="#L656">656</a>         @Override
+<a class="jxr_linenumber" name="L657" href="#L657">657</a>         <strong class="jxr_keyword">public</strong> String toString() {
+<a class="jxr_linenumber" name="L658" href="#L658">658</a>             <strong class="jxr_keyword">return</strong> shardId.toString();
+<a class="jxr_linenumber" name="L659" href="#L659">659</a>         }
+<a class="jxr_linenumber" name="L660" href="#L660">660</a> 
+<a class="jxr_linenumber" name="L661" href="#L661">661</a>         @Override
+<a class="jxr_linenumber" name="L662" href="#L662">662</a>         <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">int</strong> compareTo(<a href="../../../org/elasticsearch/indices/IndicesService.html">PendingDelete</a> o) {
+<a class="jxr_linenumber" name="L663" href="#L663">663</a>             <strong class="jxr_keyword">int</strong> left = deleteIndex ? -1 : shardId.id();
+<a class="jxr_linenumber" name="L664" href="#L664">664</a>             <strong class="jxr_keyword">int</strong> right = o.deleteIndex ? -1 : o.shardId.id();
+<a class="jxr_linenumber" name="L665" href="#L665">665</a>             <strong class="jxr_keyword">return</strong> Integer.compare(left, right);
+<a class="jxr_linenumber" name="L666" href="#L666">666</a>         }
+<a class="jxr_linenumber" name="L667" href="#L667">667</a>     }
+<a class="jxr_linenumber" name="L668" href="#L668">668</a> 
+<a class="jxr_linenumber" name="L669" href="#L669">669</a>     <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="L670" href="#L670">670</a> <em class="jxr_javadoccomment">     * Processes all pending deletes for the given index. This method will acquire all locks for the given index and will</em>
+<a class="jxr_linenumber" name="L671" href="#L671">671</a> <em class="jxr_javadoccomment">     * process all pending deletes for this index. Pending deletes might occur if the OS doesn't allow deletion of files because</em>
+<a class="jxr_linenumber" name="L672" href="#L672">672</a> <em class="jxr_javadoccomment">     * they are used by a different process ie. on Windows where files might still be open by a virus scanner. On a shared</em>
+<a class="jxr_linenumber" name="L673" href="#L673">673</a> <em class="jxr_javadoccomment">     * filesystem a replica might not have been closed when the primary is deleted causing problems on delete calls so we</em>
+<a class="jxr_linenumber" name="L674" href="#L674">674</a> <em class="jxr_javadoccomment">     * schedule there deletes later.</em>
+<a class="jxr_linenumber" name="L675" href="#L675">675</a> <em class="jxr_javadoccomment">     * @param index the index to process the pending deletes for</em>
+<a class="jxr_linenumber" name="L676" href="#L676">676</a> <em class="jxr_javadoccomment">     * @param timeout the timeout used for processing pending deletes</em>
+<a class="jxr_linenumber" name="L677" href="#L677">677</a> <em class="jxr_javadoccomment">     */</em>
+<a class="jxr_linenumber" name="L678" href="#L678">678</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> processPendingDeletes(<a href="../../../org/elasticsearch/index/Index.html">Index</a> index, @IndexSettings <a href="../../../org/elasticsearch/common/settings/Settings.html">Settings</a> indexSettings, <a href="../../../org/elasticsearch/common/unit/TimeValue.html">TimeValue</a> timeout) <strong class="jxr_keyword">throws</strong> IOException {
+<a class="jxr_linenumber" name="L679" href="#L679">679</a>         logger.debug(<span class="jxr_string">"{} processing pending deletes"</span>, index);
+<a class="jxr_linenumber" name="L680" href="#L680">680</a>         <strong class="jxr_keyword">final</strong> <strong class="jxr_keyword">long</strong> startTime = System.currentTimeMillis();
+<a class="jxr_linenumber" name="L681" href="#L681">681</a>         <strong class="jxr_keyword">final</strong> List&lt;ShardLock&gt; shardLocks = nodeEnv.lockAllForIndex(index, indexSettings, timeout.millis());
+<a class="jxr_linenumber" name="L682" href="#L682">682</a>         <strong class="jxr_keyword">try</strong> {
+<a class="jxr_linenumber" name="L683" href="#L683">683</a>             Map&lt;ShardId, ShardLock&gt; locks = <strong class="jxr_keyword">new</strong> HashMap&lt;&gt;();
+<a class="jxr_linenumber" name="L684" href="#L684">684</a>             <strong class="jxr_keyword">for</strong> (ShardLock lock : shardLocks) {
+<a class="jxr_linenumber" name="L685" href="#L685">685</a>                 locks.put(lock.getShardId(), lock);
+<a class="jxr_linenumber" name="L686" href="#L686">686</a>             }
+<a class="jxr_linenumber" name="L687" href="#L687">687</a>             <strong class="jxr_keyword">final</strong> List&lt;PendingDelete&gt; remove;
+<a class="jxr_linenumber" name="L688" href="#L688">688</a>             <strong class="jxr_keyword">synchronized</strong> (pendingDeletes) {
+<a class="jxr_linenumber" name="L689" href="#L689">689</a>                  remove = pendingDeletes.remove(index);
+<a class="jxr_linenumber" name="L690" href="#L690">690</a>             }
+<a class="jxr_linenumber" name="L691" href="#L691">691</a>             <strong class="jxr_keyword">if</strong> (remove != <strong class="jxr_keyword">null</strong> &amp;&amp; remove.isEmpty() == false) {
+<a class="jxr_linenumber" name="L692" href="#L692">692</a>                 CollectionUtil.timSort(remove); <em class="jxr_comment">// make sure we delete indices first</em>
+<a class="jxr_linenumber" name="L693" href="#L693">693</a>                 <strong class="jxr_keyword">final</strong> <strong class="jxr_keyword">long</strong> maxSleepTimeMs = 10 * 1000; <em class="jxr_comment">// ensure we retry after 10 sec</em>
+<a class="jxr_linenumber" name="L694" href="#L694">694</a>                 <strong class="jxr_keyword">long</strong> sleepTime = 10;
+<a class="jxr_linenumber" name="L695" href="#L695">695</a>                 <strong class="jxr_keyword">do</strong> {
+<a class="jxr_linenumber" name="L696" href="#L696">696</a>                     <strong class="jxr_keyword">if</strong> (remove.isEmpty()) {
+<a class="jxr_linenumber" name="L697" href="#L697">697</a>                         <strong class="jxr_keyword">break</strong>;
+<a class="jxr_linenumber" name="L698" href="#L698">698</a>                     }
+<a class="jxr_linenumber" name="L699" href="#L699">699</a>                     Iterator&lt;PendingDelete&gt; iterator = remove.iterator();
+<a class="jxr_linenumber" name="L700" href="#L700">700</a>                     <strong class="jxr_keyword">while</strong> (iterator.hasNext()) {
+<a class="jxr_linenumber" name="L701" href="#L701">701</a>                         <a href="../../../org/elasticsearch/indices/IndicesService.html">PendingDelete</a> delete = iterator.next();
+<a class="jxr_linenumber" name="L702" href="#L702">702</a> 
+<a class="jxr_linenumber" name="L703" href="#L703">703</a>                         <strong class="jxr_keyword">if</strong> (delete.deleteIndex) {
+<a class="jxr_linenumber" name="L704" href="#L704">704</a>                             logger.debug(<span class="jxr_string">"{} deleting index store reason [{}]"</span>, index, <span class="jxr_string">"pending delete"</span>);
+<a class="jxr_linenumber" name="L705" href="#L705">705</a>                             <strong class="jxr_keyword">try</strong> {
+<a class="jxr_linenumber" name="L706" href="#L706">706</a>                                 nodeEnv.deleteIndexDirectoryUnderLock(index, indexSettings);
+<a class="jxr_linenumber" name="L707" href="#L707">707</a>                                 iterator.remove();
+<a class="jxr_linenumber" name="L708" href="#L708">708</a>                             } <strong class="jxr_keyword">catch</strong> (IOException ex) {
+<a class="jxr_linenumber" name="L709" href="#L709">709</a>                                 logger.debug(<span class="jxr_string">"{} retry pending delete"</span>, ex, index);
+<a class="jxr_linenumber" name="L710" href="#L710">710</a>                             }
+<a class="jxr_linenumber" name="L711" href="#L711">711</a>                         } <strong class="jxr_keyword">else</strong> {
+<a class="jxr_linenumber" name="L712" href="#L712">712</a>                             <a href="../../../org/elasticsearch/env/ShardLock.html">ShardLock</a> shardLock = locks.get(delete.shardId);
+<a class="jxr_linenumber" name="L713" href="#L713">713</a>                             <strong class="jxr_keyword">if</strong> (shardLock != <strong class="jxr_keyword">null</strong>) {
+<a class="jxr_linenumber" name="L714" href="#L714">714</a>                                 <strong class="jxr_keyword">try</strong> {
+<a class="jxr_linenumber" name="L715" href="#L715">715</a>                                     deleteShardStore(<span class="jxr_string">"pending delete"</span>, shardLock, delete.settings);
+<a class="jxr_linenumber" name="L716" href="#L716">716</a>                                     iterator.remove();
+<a class="jxr_linenumber" name="L717" href="#L717">717</a>                                 } <strong class="jxr_keyword">catch</strong> (IOException ex) {
+<a class="jxr_linenumber" name="L718" href="#L718">718</a>                                     logger.debug(<span class="jxr_string">"{} retry pending delete"</span>, ex, shardLock.getShardId());
+<a class="jxr_linenumber" name="L719" href="#L719">719</a>                                 }
+<a class="jxr_linenumber" name="L720" href="#L720">720</a>                             } <strong class="jxr_keyword">else</strong> {
+<a class="jxr_linenumber" name="L721" href="#L721">721</a>                                 logger.warn(<span class="jxr_string">"{} no shard lock for pending delete"</span>, delete.shardId);
+<a class="jxr_linenumber" name="L722" href="#L722">722</a>                                 iterator.remove();
+<a class="jxr_linenumber" name="L723" href="#L723">723</a>                             }
+<a class="jxr_linenumber" name="L724" href="#L724">724</a>                         }
+<a class="jxr_linenumber" name="L725" href="#L725">725</a>                     }
+<a class="jxr_linenumber" name="L726" href="#L726">726</a>                     <strong class="jxr_keyword">if</strong> (remove.isEmpty() == false) {
+<a class="jxr_linenumber" name="L727" href="#L727">727</a>                         logger.warn(<span class="jxr_string">"{} still pending deletes present for shards {} - retrying"</span>, index, remove.toString());
+<a class="jxr_linenumber" name="L728" href="#L728">728</a>                         <strong class="jxr_keyword">try</strong> {
+<a class="jxr_linenumber" name="L729" href="#L729">729</a>                             Thread.sleep(sleepTime);
+<a class="jxr_linenumber" name="L730" href="#L730">730</a>                             sleepTime = Math.min(maxSleepTimeMs, sleepTime * 2); <em class="jxr_comment">// increase the sleep time gradually</em>
+<a class="jxr_linenumber" name="L731" href="#L731">731</a>                             logger.debug(<span class="jxr_string">"{} schedule pending delete retry after {} ms"</span>, index, sleepTime);
+<a class="jxr_linenumber" name="L732" href="#L732">732</a>                         } <strong class="jxr_keyword">catch</strong> (InterruptedException e) {
+<a class="jxr_linenumber" name="L733" href="#L733">733</a>                             Thread.interrupted();
+<a class="jxr_linenumber" name="L734" href="#L734">734</a>                             <strong class="jxr_keyword">return</strong>;
+<a class="jxr_linenumber" name="L735" href="#L735">735</a>                         }
+<a class="jxr_linenumber" name="L736" href="#L736">736</a>                     }
+<a class="jxr_linenumber" name="L737" href="#L737">737</a>                 } <strong class="jxr_keyword">while</strong> ((System.currentTimeMillis() - startTime) &lt; timeout.millis());
+<a class="jxr_linenumber" name="L738" href="#L738">738</a>             }
+<a class="jxr_linenumber" name="L739" href="#L739">739</a>         } <strong class="jxr_keyword">finally</strong> {
+<a class="jxr_linenumber" name="L740" href="#L740">740</a>             IOUtils.close(shardLocks);
+<a class="jxr_linenumber" name="L741" href="#L741">741</a>         }
+<a class="jxr_linenumber" name="L742" href="#L742">742</a>     }
+<a class="jxr_linenumber" name="L743" href="#L743">743</a> 
+<a class="jxr_linenumber" name="L744" href="#L744">744</a>     <strong class="jxr_keyword">int</strong> numPendingDeletes(<a href="../../../org/elasticsearch/index/Index.html">Index</a> index) {
+<a class="jxr_linenumber" name="L745" href="#L745">745</a>         <strong class="jxr_keyword">synchronized</strong> (pendingDeletes) {
+<a class="jxr_linenumber" name="L746" href="#L746">746</a>             List&lt;PendingDelete&gt; deleteList = pendingDeletes.get(index);
+<a class="jxr_linenumber" name="L747" href="#L747">747</a>             <strong class="jxr_keyword">if</strong> (deleteList == <strong class="jxr_keyword">null</strong>) {
+<a class="jxr_linenumber" name="L748" href="#L748">748</a>                 <strong class="jxr_keyword">return</strong> 0;
+<a class="jxr_linenumber" name="L749" href="#L749">749</a>             }
+<a class="jxr_linenumber" name="L750" href="#L750">750</a>             <strong class="jxr_keyword">return</strong> deleteList.size();
+<a class="jxr_linenumber" name="L751" href="#L751">751</a>         }
+<a class="jxr_linenumber" name="L752" href="#L752">752</a>     }
+<a class="jxr_linenumber" name="L753" href="#L753">753</a> }
+</pre>
+<hr/>
+<div id="footer">Copyright &#169; 2015. All rights reserved.</div>
+</body>
+</html>

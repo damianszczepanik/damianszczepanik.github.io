@@ -1,0 +1,146 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head><meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+<title>BasicAnalysisBackwardCompatibilityTests xref</title>
+<link type="text/css" rel="stylesheet" href="../../../stylesheet.css" />
+</head>
+<body>
+<div id="overview"><a href="../../../../../../../../apidocs/org/elasticsearch/bwcompat/BasicAnalysisBackwardCompatibilityTests.html">View Javadoc</a></div><pre>
+<a class="jxr_linenumber" name="L1" href="#L1">1</a>   <em class="jxr_comment">/*</em>
+<a class="jxr_linenumber" name="L2" href="#L2">2</a>   <em class="jxr_comment"> * Licensed to Elasticsearch under one or more contributor</em>
+<a class="jxr_linenumber" name="L3" href="#L3">3</a>   <em class="jxr_comment"> * license agreements. See the NOTICE file distributed with</em>
+<a class="jxr_linenumber" name="L4" href="#L4">4</a>   <em class="jxr_comment"> * this work for additional information regarding copyright</em>
+<a class="jxr_linenumber" name="L5" href="#L5">5</a>   <em class="jxr_comment"> * ownership. Elasticsearch licenses this file to you under</em>
+<a class="jxr_linenumber" name="L6" href="#L6">6</a>   <em class="jxr_comment"> * the Apache License, Version 2.0 (the "License"); you may</em>
+<a class="jxr_linenumber" name="L7" href="#L7">7</a>   <em class="jxr_comment"> * not use this file except in compliance with the License.</em>
+<a class="jxr_linenumber" name="L8" href="#L8">8</a>   <em class="jxr_comment"> * You may obtain a copy of the License at</em>
+<a class="jxr_linenumber" name="L9" href="#L9">9</a>   <em class="jxr_comment"> *</em>
+<a class="jxr_linenumber" name="L10" href="#L10">10</a>  <em class="jxr_comment"> *    <a href="http://www.apache.org/licenses/LICENSE-2." target="alexandria_uri">http://www.apache.org/licenses/LICENSE-2.</a>0</em>
+<a class="jxr_linenumber" name="L11" href="#L11">11</a>  <em class="jxr_comment"> *</em>
+<a class="jxr_linenumber" name="L12" href="#L12">12</a>  <em class="jxr_comment"> * Unless required by applicable law or agreed to in writing,</em>
+<a class="jxr_linenumber" name="L13" href="#L13">13</a>  <em class="jxr_comment"> * software distributed under the License is distributed on an</em>
+<a class="jxr_linenumber" name="L14" href="#L14">14</a>  <em class="jxr_comment"> * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY</em>
+<a class="jxr_linenumber" name="L15" href="#L15">15</a>  <em class="jxr_comment"> * KIND, either express or implied.  See the License for the</em>
+<a class="jxr_linenumber" name="L16" href="#L16">16</a>  <em class="jxr_comment"> * specific language governing permissions and limitations</em>
+<a class="jxr_linenumber" name="L17" href="#L17">17</a>  <em class="jxr_comment"> * under the License.</em>
+<a class="jxr_linenumber" name="L18" href="#L18">18</a>  <em class="jxr_comment"> */</em>
+<a class="jxr_linenumber" name="L19" href="#L19">19</a>  <strong class="jxr_keyword">package</strong> org.elasticsearch.bwcompat;
+<a class="jxr_linenumber" name="L20" href="#L20">20</a>  
+<a class="jxr_linenumber" name="L21" href="#L21">21</a>  <strong class="jxr_keyword">import</strong> com.carrotsearch.randomizedtesting.generators.RandomPicks;
+<a class="jxr_linenumber" name="L22" href="#L22">22</a>  <strong class="jxr_keyword">import</strong> org.apache.lucene.analysis.BaseTokenStreamTestCase;
+<a class="jxr_linenumber" name="L23" href="#L23">23</a>  <strong class="jxr_keyword">import</strong> org.apache.lucene.util.TestUtil;
+<a class="jxr_linenumber" name="L24" href="#L24">24</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.Version;
+<a class="jxr_linenumber" name="L25" href="#L25">25</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.action.admin.indices.analyze.AnalyzeResponse;
+<a class="jxr_linenumber" name="L26" href="#L26">26</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.indices.analysis.PreBuiltAnalyzers;
+<a class="jxr_linenumber" name="L27" href="#L27">27</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.test.ElasticsearchBackwardsCompatIntegrationTest;
+<a class="jxr_linenumber" name="L28" href="#L28">28</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.test.ElasticsearchIntegrationTest;
+<a class="jxr_linenumber" name="L29" href="#L29">29</a>  <strong class="jxr_keyword">import</strong> org.junit.Test;
+<a class="jxr_linenumber" name="L30" href="#L30">30</a>  
+<a class="jxr_linenumber" name="L31" href="#L31">31</a>  <strong class="jxr_keyword">import</strong> java.io.IOException;
+<a class="jxr_linenumber" name="L32" href="#L32">32</a>  <strong class="jxr_keyword">import</strong> java.util.List;
+<a class="jxr_linenumber" name="L33" href="#L33">33</a>  <strong class="jxr_keyword">import</strong> java.util.Locale;
+<a class="jxr_linenumber" name="L34" href="#L34">34</a>  <strong class="jxr_keyword">import</strong> java.util.concurrent.ExecutionException;
+<a class="jxr_linenumber" name="L35" href="#L35">35</a>  <strong class="jxr_keyword">import</strong> java.util.regex.Matcher;
+<a class="jxr_linenumber" name="L36" href="#L36">36</a>  <strong class="jxr_keyword">import</strong> java.util.regex.Pattern;
+<a class="jxr_linenumber" name="L37" href="#L37">37</a>  
+<a class="jxr_linenumber" name="L38" href="#L38">38</a>  <strong class="jxr_keyword">import</strong> <strong class="jxr_keyword">static</strong> org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertAcked;
+<a class="jxr_linenumber" name="L39" href="#L39">39</a>  <strong class="jxr_keyword">import</strong> <strong class="jxr_keyword">static</strong> org.hamcrest.Matchers.equalTo;
+<a class="jxr_linenumber" name="L40" href="#L40">40</a>  
+<a class="jxr_linenumber" name="L41" href="#L41">41</a>  @ElasticsearchIntegrationTest.ClusterScope(numDataNodes = 0, scope = ElasticsearchIntegrationTest.Scope.SUITE, numClientNodes = 0, transportClientRatio = 0.0)
+<a class="jxr_linenumber" name="L42" href="#L42">42</a>  <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">class</strong> <a href="../../../org/elasticsearch/bwcompat/BasicAnalysisBackwardCompatibilityTests.html">BasicAnalysisBackwardCompatibilityTests</a> <strong class="jxr_keyword">extends</strong> <a href="../../../org/elasticsearch/test/ElasticsearchBackwardsCompatIntegrationTest.html">ElasticsearchBackwardsCompatIntegrationTest</a> {
+<a class="jxr_linenumber" name="L43" href="#L43">43</a>  
+<a class="jxr_linenumber" name="L44" href="#L44">44</a>      <em class="jxr_comment">// This pattern match characters with Line_Break = Complex_Content.</em>
+<a class="jxr_linenumber" name="L45" href="#L45">45</a>      <strong class="jxr_keyword">final</strong> <strong class="jxr_keyword">static</strong> Pattern complexUnicodeChars = Pattern.compile(<span class="jxr_string">"[\u17B4\u17B5\u17D3\u17CB-\u17D1\u17DD\u1036\u17C6\u1A74\u1038\u17C7\u0E4E\u0E47-\u0E4D\u0EC8-\u0ECD\uAABF\uAAC1\u1037\u17C8-\u17CA\u1A75-\u1A7C\u1AA8-\u1AAB\uAADE\uAADF\u1AA0-\u1AA6\u1AAC\u1AAD\u109E\u109F\uAA77-\uAA79\u0E46\u0EC6\u17D7\u1AA7\uA9E6\uAA70\uAADD\u19DA\u0E01-\u0E3A\u0E40-\u0E45\u0EDE\u0E81\u0E82\u0E84\u0E87\u0E88\u0EAA\u0E8A\u0EDF\u0E8D\u0E94-\u0E97\u0E99-\u0E9F\u0EA1-\u0EA3\u0EA5\u0EA7\u0EAB\u0EDC\u0EDD\u0EAD-\u0EB9\u0EBB-\u0EBD\u0EC0-\u0EC4\uAA80-\uAABE\uAAC0\uAAC2\uAADB\uAADC\u1000\u1075\u1001\u1076\u1002\u1077\uAA60\uA9E9\u1003\uA9E0\uA9EA\u1004\u105A\u1005\u1078\uAA61\u1006\uA9E1\uAA62\uAA7E\u1007\uAA63\uA9EB\u1079\uAA72\u1008\u105B\uA9E2\uAA64\uA9EC\u1061\uAA7F\u1009\u107A\uAA65\uA9E7\u100A\u100B\uAA66\u100C\uAA67\u100D\uAA68\uA9ED\u100E\uAA69\uA9EE\u100F\u106E\uA9E3\uA9EF\u1010-\u1012\u107B\uA9FB\u1013\uAA6A\uA9FC\u1014\u107C\uAA6B\u105E\u1015\u1016\u107D\u107E\uAA6F\u108E\uA9E8\u1017\u107F\uA9FD\u1018\uA9E4\uA9FE\u1019\u105F\u101A\u103B\u101B\uAA73\uAA7A\u103C\u101C\u1060\u101D\u103D\u1082\u1080\u1050\u1051\u1065\u101E\u103F\uAA6C\u101F\u1081\uAA6D\u103E\uAA6E\uAA71\u1020\uA9FA\u105C\u105D\u106F\u1070\u1066\u1021-\u1026\u1052-\u1055\u1027-\u102A\u102C\u102B\u1083\u1072\u109C\u102D\u1071\u102E\u1033\u102F\u1073\u1074\u1030\u1056-\u1059\u1031\u1084\u1035\u1085\u1032\u109D\u1034\u1062\u1067\u1068\uA9E5\u1086\u1039\u103A\u1063\u1064\u1069-\u106D\u1087\u108B\u1088\u108C\u108D\u1089\u108A\u108F\u109A\u109B\uAA7B-\uAA7D\uAA74-\uAA76\u1780-\u17A2\u17DC\u17A3-\u17B3\u17B6-\u17C5\u17D2\u1950-\u196D\u1970-\u1974\u1980-\u199C\u19DE\u19DF\u199D-\u19AB\u19B0-\u19C9\u1A20-\u1A26\u1A58\u1A59\u1A27-\u1A3B\u1A5A\u1A5B\u1A3C-\u1A46\u1A54\u1A47-\u1A4C\u1A53\u1A6B\u1A55-\u1A57\u1A5C-\u1A5E\u1A4D-\u1A52\u1A61\u1A6C\u1A62-\u1A6A\u1A6E\u1A6F\u1A73\u1A70-\u1A72\u1A6D\u1A60]"</span>);
+<a class="jxr_linenumber" name="L46" href="#L46">46</a>  
+<a class="jxr_linenumber" name="L47" href="#L47">47</a>      <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="L48" href="#L48">48</a>  <em class="jxr_javadoccomment">     * Simple upgrade test for analyzers to make sure they analyze to the same tokens after upgrade</em>
+<a class="jxr_linenumber" name="L49" href="#L49">49</a>  <em class="jxr_javadoccomment">     * TODO we need this for random tokenizers / tokenfilters as well</em>
+<a class="jxr_linenumber" name="L50" href="#L50">50</a>  <em class="jxr_javadoccomment">     */</em>
+<a class="jxr_linenumber" name="L51" href="#L51">51</a>      @Test
+<a class="jxr_linenumber" name="L52" href="#L52">52</a>      <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testAnalyzerTokensAfterUpgrade() <strong class="jxr_keyword">throws</strong> IOException, ExecutionException, InterruptedException {
+<a class="jxr_linenumber" name="L53" href="#L53">53</a>          <strong class="jxr_keyword">int</strong> numFields = randomIntBetween(PreBuiltAnalyzers.values().length, PreBuiltAnalyzers.values().length * 10);
+<a class="jxr_linenumber" name="L54" href="#L54">54</a>          StringBuilder builder = <strong class="jxr_keyword">new</strong> StringBuilder();
+<a class="jxr_linenumber" name="L55" href="#L55">55</a>          String[] fields = <strong class="jxr_keyword">new</strong> String[numFields * 2];
+<a class="jxr_linenumber" name="L56" href="#L56">56</a>          <strong class="jxr_keyword">int</strong> fieldId = 0;
+<a class="jxr_linenumber" name="L57" href="#L57">57</a>          <strong class="jxr_keyword">for</strong> (<strong class="jxr_keyword">int</strong> i = 0; i &lt; fields.length; i++) {
+<a class="jxr_linenumber" name="L58" href="#L58">58</a>              fields[i++] = <span class="jxr_string">"field_"</span> + fieldId++;
+<a class="jxr_linenumber" name="L59" href="#L59">59</a>              String analyzer = randomAnalyzer();
+<a class="jxr_linenumber" name="L60" href="#L60">60</a>              fields[i] = <span class="jxr_string">"type=string,analyzer="</span> + analyzer;
+<a class="jxr_linenumber" name="L61" href="#L61">61</a>          }
+<a class="jxr_linenumber" name="L62" href="#L62">62</a>          assertAcked(prepareCreate(<span class="jxr_string">"test"</span>)
+<a class="jxr_linenumber" name="L63" href="#L63">63</a>                  .addMapping(<span class="jxr_string">"type"</span>, fields)
+<a class="jxr_linenumber" name="L64" href="#L64">64</a>                  .setSettings(indexSettings()));
+<a class="jxr_linenumber" name="L65" href="#L65">65</a>          ensureYellow();
+<a class="jxr_linenumber" name="L66" href="#L66">66</a>          <a href="../../../org/elasticsearch/bwcompat/BasicAnalysisBackwardCompatibilityTests.html">InputOutput</a>[] inout = <strong class="jxr_keyword">new</strong> <a href="../../../org/elasticsearch/bwcompat/BasicAnalysisBackwardCompatibilityTests.html">InputOutput</a>[numFields];
+<a class="jxr_linenumber" name="L67" href="#L67">67</a>          <strong class="jxr_keyword">for</strong> (<strong class="jxr_keyword">int</strong> i = 0; i &lt; numFields; i++) {
+<a class="jxr_linenumber" name="L68" href="#L68">68</a>              String input;
+<a class="jxr_linenumber" name="L69" href="#L69">69</a>              Matcher matcher;
+<a class="jxr_linenumber" name="L70" href="#L70">70</a>              <strong class="jxr_keyword">do</strong> {
+<a class="jxr_linenumber" name="L71" href="#L71">71</a>                  <em class="jxr_comment">// In Lucene 4.10, a bug was fixed in StandardTokenizer which was causing breaks on complex characters.</em>
+<a class="jxr_linenumber" name="L72" href="#L72">72</a>                  <em class="jxr_comment">// The bug was fixed without backcompat Version handling, so testing between &gt;=4.10 vs &lt;= 4.9 can</em>
+<a class="jxr_linenumber" name="L73" href="#L73">73</a>                  <em class="jxr_comment">// cause differences when the random string generated contains these complex characters. To mitigate</em>
+<a class="jxr_linenumber" name="L74" href="#L74">74</a>                  <em class="jxr_comment">// the problem, we skip any strings containing these characters.</em>
+<a class="jxr_linenumber" name="L75" href="#L75">75</a>                  <em class="jxr_comment">// TODO: only skip strings containing complex chars when comparing against ES &lt;= 1.3.x</em>
+<a class="jxr_linenumber" name="L76" href="#L76">76</a>                  input = TestUtil.randomAnalysisString(getRandom(), 100, false);
+<a class="jxr_linenumber" name="L77" href="#L77">77</a>                  matcher = complexUnicodeChars.matcher(input);
+<a class="jxr_linenumber" name="L78" href="#L78">78</a>              } <strong class="jxr_keyword">while</strong> (matcher.find());
+<a class="jxr_linenumber" name="L79" href="#L79">79</a>  
+<a class="jxr_linenumber" name="L80" href="#L80">80</a>              <a href="../../../org/elasticsearch/action/admin/indices/analyze/AnalyzeResponse.html">AnalyzeResponse</a> test = client().admin().indices().prepareAnalyze(<span class="jxr_string">"test"</span>, input).setField(<span class="jxr_string">"field_"</span> + i).get();
+<a class="jxr_linenumber" name="L81" href="#L81">81</a>              inout[i] = <strong class="jxr_keyword">new</strong> <a href="../../../org/elasticsearch/bwcompat/BasicAnalysisBackwardCompatibilityTests.html">InputOutput</a>(test, input, <span class="jxr_string">"field_"</span> + i);
+<a class="jxr_linenumber" name="L82" href="#L82">82</a>          }
+<a class="jxr_linenumber" name="L83" href="#L83">83</a>  
+<a class="jxr_linenumber" name="L84" href="#L84">84</a>          logClusterState();
+<a class="jxr_linenumber" name="L85" href="#L85">85</a>          <strong class="jxr_keyword">boolean</strong> upgraded;
+<a class="jxr_linenumber" name="L86" href="#L86">86</a>          <strong class="jxr_keyword">do</strong> {
+<a class="jxr_linenumber" name="L87" href="#L87">87</a>              logClusterState();
+<a class="jxr_linenumber" name="L88" href="#L88">88</a>              upgraded = backwardsCluster().upgradeOneNode();
+<a class="jxr_linenumber" name="L89" href="#L89">89</a>              ensureYellow();
+<a class="jxr_linenumber" name="L90" href="#L90">90</a>          } <strong class="jxr_keyword">while</strong> (upgraded);
+<a class="jxr_linenumber" name="L91" href="#L91">91</a>  
+<a class="jxr_linenumber" name="L92" href="#L92">92</a>          <strong class="jxr_keyword">for</strong> (<strong class="jxr_keyword">int</strong> i = 0; i &lt; inout.length; i++) {
+<a class="jxr_linenumber" name="L93" href="#L93">93</a>              <a href="../../../org/elasticsearch/bwcompat/BasicAnalysisBackwardCompatibilityTests.html">InputOutput</a> inputOutput = inout[i];
+<a class="jxr_linenumber" name="L94" href="#L94">94</a>              <a href="../../../org/elasticsearch/action/admin/indices/analyze/AnalyzeResponse.html">AnalyzeResponse</a> test = client().admin().indices().prepareAnalyze(<span class="jxr_string">"test"</span>, inputOutput.input).setField(inputOutput.field).get();
+<a class="jxr_linenumber" name="L95" href="#L95">95</a>              List&lt;AnalyzeResponse.AnalyzeToken&gt; tokens = test.getTokens();
+<a class="jxr_linenumber" name="L96" href="#L96">96</a>              List&lt;AnalyzeResponse.AnalyzeToken&gt;  expectedTokens = inputOutput.response.getTokens();
+<a class="jxr_linenumber" name="L97" href="#L97">97</a>              assertThat(<span class="jxr_string">"size mismatch field: "</span> + fields[i*2] + <span class="jxr_string">" analyzer: "</span> + fields[i*2 + 1] + <span class="jxr_string">" input: "</span> + BaseTokenStreamTestCase.escape(inputOutput.input), expectedTokens.size(), equalTo(tokens.size()));
+<a class="jxr_linenumber" name="L98" href="#L98">98</a>              <strong class="jxr_keyword">for</strong> (<strong class="jxr_keyword">int</strong> j = 0; j &lt; tokens.size(); j++) {
+<a class="jxr_linenumber" name="L99" href="#L99">99</a>                  String msg = <span class="jxr_string">"failed for term: "</span> + expectedTokens.get(j).getTerm() + <span class="jxr_string">" field: "</span> + fields[i*2] + <span class="jxr_string">" analyzer: "</span> + fields[i*2 + 1] + <span class="jxr_string">" input: "</span> + BaseTokenStreamTestCase.escape(inputOutput.input);
+<a class="jxr_linenumber" name="L100" href="#L100">100</a>                 assertThat(msg,  BaseTokenStreamTestCase.escape(expectedTokens.get(j).getTerm()), equalTo(BaseTokenStreamTestCase.escape(tokens.get(j).getTerm())));
+<a class="jxr_linenumber" name="L101" href="#L101">101</a>                 assertThat(msg, expectedTokens.get(j).getPosition(), equalTo(tokens.get(j).getPosition()));
+<a class="jxr_linenumber" name="L102" href="#L102">102</a>                 assertThat(msg, expectedTokens.get(j).getStartOffset(), equalTo(tokens.get(j).getStartOffset()));
+<a class="jxr_linenumber" name="L103" href="#L103">103</a>                 assertThat(msg, expectedTokens.get(j).getEndOffset(), equalTo(tokens.get(j).getEndOffset()));
+<a class="jxr_linenumber" name="L104" href="#L104">104</a>                 assertThat(msg, expectedTokens.get(j).getType(), equalTo(tokens.get(j).getType()));
+<a class="jxr_linenumber" name="L105" href="#L105">105</a>             }
+<a class="jxr_linenumber" name="L106" href="#L106">106</a>         }
+<a class="jxr_linenumber" name="L107" href="#L107">107</a>     }
+<a class="jxr_linenumber" name="L108" href="#L108">108</a> 
+<a class="jxr_linenumber" name="L109" href="#L109">109</a>     <strong class="jxr_keyword">private</strong> String randomAnalyzer() {
+<a class="jxr_linenumber" name="L110" href="#L110">110</a>         <strong class="jxr_keyword">while</strong>(<strong class="jxr_keyword">true</strong>) {
+<a class="jxr_linenumber" name="L111" href="#L111">111</a>             <a href="../../../org/elasticsearch/indices/analysis/PreBuiltAnalyzers.html">PreBuiltAnalyzers</a> preBuiltAnalyzers = RandomPicks.randomFrom(getRandom(), PreBuiltAnalyzers.values());
+<a class="jxr_linenumber" name="L112" href="#L112">112</a>             <strong class="jxr_keyword">if</strong> (preBuiltAnalyzers == PreBuiltAnalyzers.SORANI &amp;&amp; compatibilityVersion().before(Version.V_1_3_0)) {
+<a class="jxr_linenumber" name="L113" href="#L113">113</a>                 <strong class="jxr_keyword">continue</strong>; <em class="jxr_comment">// SORANI was added in 1.3.0</em>
+<a class="jxr_linenumber" name="L114" href="#L114">114</a>             }
+<a class="jxr_linenumber" name="L115" href="#L115">115</a>             <strong class="jxr_keyword">return</strong> preBuiltAnalyzers.name().toLowerCase(Locale.ROOT);
+<a class="jxr_linenumber" name="L116" href="#L116">116</a>         }
+<a class="jxr_linenumber" name="L117" href="#L117">117</a> 
+<a class="jxr_linenumber" name="L118" href="#L118">118</a>     }
+<a class="jxr_linenumber" name="L119" href="#L119">119</a> 
+<a class="jxr_linenumber" name="L120" href="#L120">120</a>     <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">final</strong> <strong class="jxr_keyword">class</strong> <a href="../../../org/elasticsearch/bwcompat/BasicAnalysisBackwardCompatibilityTests.html">InputOutput</a> {
+<a class="jxr_linenumber" name="L121" href="#L121">121</a>         <strong class="jxr_keyword">final</strong> <a href="../../../org/elasticsearch/action/admin/indices/analyze/AnalyzeResponse.html">AnalyzeResponse</a> response;
+<a class="jxr_linenumber" name="L122" href="#L122">122</a>         <strong class="jxr_keyword">final</strong> String input;
+<a class="jxr_linenumber" name="L123" href="#L123">123</a>         <strong class="jxr_keyword">final</strong> String field;
+<a class="jxr_linenumber" name="L124" href="#L124">124</a> 
+<a class="jxr_linenumber" name="L125" href="#L125">125</a>         <strong class="jxr_keyword">public</strong> <a href="../../../org/elasticsearch/bwcompat/BasicAnalysisBackwardCompatibilityTests.html">InputOutput</a>(<a href="../../../org/elasticsearch/action/admin/indices/analyze/AnalyzeResponse.html">AnalyzeResponse</a> response, String input, String field) {
+<a class="jxr_linenumber" name="L126" href="#L126">126</a>             <strong class="jxr_keyword">this</strong>.response = response;
+<a class="jxr_linenumber" name="L127" href="#L127">127</a>             <strong class="jxr_keyword">this</strong>.input = input;
+<a class="jxr_linenumber" name="L128" href="#L128">128</a>             <strong class="jxr_keyword">this</strong>.field = field;
+<a class="jxr_linenumber" name="L129" href="#L129">129</a>         }
+<a class="jxr_linenumber" name="L130" href="#L130">130</a> 
+<a class="jxr_linenumber" name="L131" href="#L131">131</a> 
+<a class="jxr_linenumber" name="L132" href="#L132">132</a>     }
+<a class="jxr_linenumber" name="L133" href="#L133">133</a> }
+</pre>
+<hr/>
+<div id="footer">Copyright &#169; 2015. All rights reserved.</div>
+</body>
+</html>

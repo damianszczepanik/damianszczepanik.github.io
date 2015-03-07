@@ -1,0 +1,138 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head><meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+<title>AggregationModule xref</title>
+<link type="text/css" rel="stylesheet" href="../../../../stylesheet.css" />
+</head>
+<body>
+<div id="overview"><a href="../../../../../../../../../apidocs/org/elasticsearch/search/aggregations/AggregationModule.html">View Javadoc</a></div><pre>
+<a class="jxr_linenumber" name="L1" href="#L1">1</a>   <em class="jxr_comment">/*</em>
+<a class="jxr_linenumber" name="L2" href="#L2">2</a>   <em class="jxr_comment"> * Licensed to Elasticsearch under one or more contributor</em>
+<a class="jxr_linenumber" name="L3" href="#L3">3</a>   <em class="jxr_comment"> * license agreements. See the NOTICE file distributed with</em>
+<a class="jxr_linenumber" name="L4" href="#L4">4</a>   <em class="jxr_comment"> * this work for additional information regarding copyright</em>
+<a class="jxr_linenumber" name="L5" href="#L5">5</a>   <em class="jxr_comment"> * ownership. Elasticsearch licenses this file to you under</em>
+<a class="jxr_linenumber" name="L6" href="#L6">6</a>   <em class="jxr_comment"> * the Apache License, Version 2.0 (the "License"); you may</em>
+<a class="jxr_linenumber" name="L7" href="#L7">7</a>   <em class="jxr_comment"> * not use this file except in compliance with the License.</em>
+<a class="jxr_linenumber" name="L8" href="#L8">8</a>   <em class="jxr_comment"> * You may obtain a copy of the License at</em>
+<a class="jxr_linenumber" name="L9" href="#L9">9</a>   <em class="jxr_comment"> *</em>
+<a class="jxr_linenumber" name="L10" href="#L10">10</a>  <em class="jxr_comment"> *    <a href="http://www.apache.org/licenses/LICENSE-2." target="alexandria_uri">http://www.apache.org/licenses/LICENSE-2.</a>0</em>
+<a class="jxr_linenumber" name="L11" href="#L11">11</a>  <em class="jxr_comment"> *</em>
+<a class="jxr_linenumber" name="L12" href="#L12">12</a>  <em class="jxr_comment"> * Unless required by applicable law or agreed to in writing,</em>
+<a class="jxr_linenumber" name="L13" href="#L13">13</a>  <em class="jxr_comment"> * software distributed under the License is distributed on an</em>
+<a class="jxr_linenumber" name="L14" href="#L14">14</a>  <em class="jxr_comment"> * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY</em>
+<a class="jxr_linenumber" name="L15" href="#L15">15</a>  <em class="jxr_comment"> * KIND, either express or implied.  See the License for the</em>
+<a class="jxr_linenumber" name="L16" href="#L16">16</a>  <em class="jxr_comment"> * specific language governing permissions and limitations</em>
+<a class="jxr_linenumber" name="L17" href="#L17">17</a>  <em class="jxr_comment"> * under the License.</em>
+<a class="jxr_linenumber" name="L18" href="#L18">18</a>  <em class="jxr_comment"> */</em>
+<a class="jxr_linenumber" name="L19" href="#L19">19</a>  <strong class="jxr_keyword">package</strong> org.elasticsearch.search.aggregations;
+<a class="jxr_linenumber" name="L20" href="#L20">20</a>  
+<a class="jxr_linenumber" name="L21" href="#L21">21</a>  <strong class="jxr_keyword">import</strong> com.google.common.collect.ImmutableList;
+<a class="jxr_linenumber" name="L22" href="#L22">22</a>  <strong class="jxr_keyword">import</strong> com.google.common.collect.Lists;
+<a class="jxr_linenumber" name="L23" href="#L23">23</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.common.inject.AbstractModule;
+<a class="jxr_linenumber" name="L24" href="#L24">24</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.common.inject.Module;
+<a class="jxr_linenumber" name="L25" href="#L25">25</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.common.inject.SpawnModules;
+<a class="jxr_linenumber" name="L26" href="#L26">26</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.common.inject.multibindings.Multibinder;
+<a class="jxr_linenumber" name="L27" href="#L27">27</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.search.aggregations.bucket.children.ChildrenParser;
+<a class="jxr_linenumber" name="L28" href="#L28">28</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.search.aggregations.bucket.filter.FilterParser;
+<a class="jxr_linenumber" name="L29" href="#L29">29</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.search.aggregations.bucket.filters.FiltersParser;
+<a class="jxr_linenumber" name="L30" href="#L30">30</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.search.aggregations.bucket.geogrid.GeoHashGridParser;
+<a class="jxr_linenumber" name="L31" href="#L31">31</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.search.aggregations.bucket.global.GlobalParser;
+<a class="jxr_linenumber" name="L32" href="#L32">32</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.search.aggregations.bucket.histogram.DateHistogramParser;
+<a class="jxr_linenumber" name="L33" href="#L33">33</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.search.aggregations.bucket.histogram.HistogramParser;
+<a class="jxr_linenumber" name="L34" href="#L34">34</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.search.aggregations.bucket.missing.MissingParser;
+<a class="jxr_linenumber" name="L35" href="#L35">35</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.search.aggregations.bucket.nested.NestedParser;
+<a class="jxr_linenumber" name="L36" href="#L36">36</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.search.aggregations.bucket.nested.ReverseNestedParser;
+<a class="jxr_linenumber" name="L37" href="#L37">37</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.search.aggregations.bucket.range.RangeParser;
+<a class="jxr_linenumber" name="L38" href="#L38">38</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.search.aggregations.bucket.range.date.DateRangeParser;
+<a class="jxr_linenumber" name="L39" href="#L39">39</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.search.aggregations.bucket.range.geodistance.GeoDistanceParser;
+<a class="jxr_linenumber" name="L40" href="#L40">40</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.search.aggregations.bucket.range.ipv4.IpRangeParser;
+<a class="jxr_linenumber" name="L41" href="#L41">41</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.search.aggregations.bucket.significant.SignificantTermsParser;
+<a class="jxr_linenumber" name="L42" href="#L42">42</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.search.aggregations.bucket.significant.heuristics.SignificantTermsHeuristicModule;
+<a class="jxr_linenumber" name="L43" href="#L43">43</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.search.aggregations.bucket.terms.TermsParser;
+<a class="jxr_linenumber" name="L44" href="#L44">44</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.search.aggregations.metrics.avg.AvgParser;
+<a class="jxr_linenumber" name="L45" href="#L45">45</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.search.aggregations.metrics.cardinality.CardinalityParser;
+<a class="jxr_linenumber" name="L46" href="#L46">46</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.search.aggregations.metrics.geobounds.GeoBoundsParser;
+<a class="jxr_linenumber" name="L47" href="#L47">47</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.search.aggregations.metrics.max.MaxParser;
+<a class="jxr_linenumber" name="L48" href="#L48">48</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.search.aggregations.metrics.min.MinParser;
+<a class="jxr_linenumber" name="L49" href="#L49">49</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.search.aggregations.metrics.percentiles.PercentileRanksParser;
+<a class="jxr_linenumber" name="L50" href="#L50">50</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.search.aggregations.metrics.percentiles.PercentilesParser;
+<a class="jxr_linenumber" name="L51" href="#L51">51</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.search.aggregations.metrics.scripted.ScriptedMetricParser;
+<a class="jxr_linenumber" name="L52" href="#L52">52</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.search.aggregations.metrics.stats.StatsParser;
+<a class="jxr_linenumber" name="L53" href="#L53">53</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.search.aggregations.metrics.stats.extended.ExtendedStatsParser;
+<a class="jxr_linenumber" name="L54" href="#L54">54</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.search.aggregations.metrics.sum.SumParser;
+<a class="jxr_linenumber" name="L55" href="#L55">55</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.search.aggregations.metrics.tophits.TopHitsParser;
+<a class="jxr_linenumber" name="L56" href="#L56">56</a>  <strong class="jxr_keyword">import</strong> org.elasticsearch.search.aggregations.metrics.valuecount.ValueCountParser;
+<a class="jxr_linenumber" name="L57" href="#L57">57</a>  
+<a class="jxr_linenumber" name="L58" href="#L58">58</a>  <strong class="jxr_keyword">import</strong> java.util.List;
+<a class="jxr_linenumber" name="L59" href="#L59">59</a>  
+<a class="jxr_linenumber" name="L60" href="#L60">60</a>  <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="L61" href="#L61">61</a>  <em class="jxr_javadoccomment"> * The main module for the get (binding all get components together)</em>
+<a class="jxr_linenumber" name="L62" href="#L62">62</a>  <em class="jxr_javadoccomment"> */</em>
+<a class="jxr_linenumber" name="L63" href="#L63">63</a>  <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">class</strong> <a href="../../../../org/elasticsearch/search/aggregations/AggregationModule.html">AggregationModule</a> <strong class="jxr_keyword">extends</strong> <a href="../../../../org/elasticsearch/common/inject/AbstractModule.html">AbstractModule</a> <strong class="jxr_keyword">implements</strong> <a href="../../../../org/elasticsearch/common/inject/SpawnModules.html">SpawnModules</a>{
+<a class="jxr_linenumber" name="L64" href="#L64">64</a>  
+<a class="jxr_linenumber" name="L65" href="#L65">65</a>      <strong class="jxr_keyword">private</strong> List&lt;Class&lt;? <strong class="jxr_keyword">extends</strong> Aggregator.Parser&gt;&gt; parsers = Lists.newArrayList();
+<a class="jxr_linenumber" name="L66" href="#L66">66</a>  
+<a class="jxr_linenumber" name="L67" href="#L67">67</a>      <strong class="jxr_keyword">public</strong> <a href="../../../../org/elasticsearch/search/aggregations/AggregationModule.html">AggregationModule</a>() {
+<a class="jxr_linenumber" name="L68" href="#L68">68</a>          parsers.add(AvgParser.<strong class="jxr_keyword">class</strong>);
+<a class="jxr_linenumber" name="L69" href="#L69">69</a>          parsers.add(SumParser.<strong class="jxr_keyword">class</strong>);
+<a class="jxr_linenumber" name="L70" href="#L70">70</a>          parsers.add(MinParser.<strong class="jxr_keyword">class</strong>);
+<a class="jxr_linenumber" name="L71" href="#L71">71</a>          parsers.add(MaxParser.<strong class="jxr_keyword">class</strong>);
+<a class="jxr_linenumber" name="L72" href="#L72">72</a>          parsers.add(StatsParser.<strong class="jxr_keyword">class</strong>);
+<a class="jxr_linenumber" name="L73" href="#L73">73</a>          parsers.add(ExtendedStatsParser.<strong class="jxr_keyword">class</strong>);
+<a class="jxr_linenumber" name="L74" href="#L74">74</a>          parsers.add(ValueCountParser.<strong class="jxr_keyword">class</strong>);
+<a class="jxr_linenumber" name="L75" href="#L75">75</a>          parsers.add(PercentilesParser.<strong class="jxr_keyword">class</strong>);
+<a class="jxr_linenumber" name="L76" href="#L76">76</a>          parsers.add(PercentileRanksParser.<strong class="jxr_keyword">class</strong>);
+<a class="jxr_linenumber" name="L77" href="#L77">77</a>          parsers.add(CardinalityParser.<strong class="jxr_keyword">class</strong>);
+<a class="jxr_linenumber" name="L78" href="#L78">78</a>  
+<a class="jxr_linenumber" name="L79" href="#L79">79</a>          parsers.add(GlobalParser.<strong class="jxr_keyword">class</strong>);
+<a class="jxr_linenumber" name="L80" href="#L80">80</a>          parsers.add(MissingParser.<strong class="jxr_keyword">class</strong>);
+<a class="jxr_linenumber" name="L81" href="#L81">81</a>          parsers.add(FilterParser.<strong class="jxr_keyword">class</strong>);
+<a class="jxr_linenumber" name="L82" href="#L82">82</a>          parsers.add(FiltersParser.<strong class="jxr_keyword">class</strong>);
+<a class="jxr_linenumber" name="L83" href="#L83">83</a>          parsers.add(TermsParser.<strong class="jxr_keyword">class</strong>);
+<a class="jxr_linenumber" name="L84" href="#L84">84</a>          parsers.add(SignificantTermsParser.<strong class="jxr_keyword">class</strong>);
+<a class="jxr_linenumber" name="L85" href="#L85">85</a>          parsers.add(RangeParser.<strong class="jxr_keyword">class</strong>);
+<a class="jxr_linenumber" name="L86" href="#L86">86</a>          parsers.add(DateRangeParser.<strong class="jxr_keyword">class</strong>);
+<a class="jxr_linenumber" name="L87" href="#L87">87</a>          parsers.add(IpRangeParser.<strong class="jxr_keyword">class</strong>);
+<a class="jxr_linenumber" name="L88" href="#L88">88</a>          parsers.add(HistogramParser.<strong class="jxr_keyword">class</strong>);
+<a class="jxr_linenumber" name="L89" href="#L89">89</a>          parsers.add(DateHistogramParser.<strong class="jxr_keyword">class</strong>);
+<a class="jxr_linenumber" name="L90" href="#L90">90</a>          parsers.add(GeoDistanceParser.<strong class="jxr_keyword">class</strong>);
+<a class="jxr_linenumber" name="L91" href="#L91">91</a>          parsers.add(GeoHashGridParser.<strong class="jxr_keyword">class</strong>);
+<a class="jxr_linenumber" name="L92" href="#L92">92</a>          parsers.add(NestedParser.<strong class="jxr_keyword">class</strong>);
+<a class="jxr_linenumber" name="L93" href="#L93">93</a>          parsers.add(ReverseNestedParser.<strong class="jxr_keyword">class</strong>);
+<a class="jxr_linenumber" name="L94" href="#L94">94</a>          parsers.add(TopHitsParser.<strong class="jxr_keyword">class</strong>);
+<a class="jxr_linenumber" name="L95" href="#L95">95</a>          parsers.add(GeoBoundsParser.<strong class="jxr_keyword">class</strong>);
+<a class="jxr_linenumber" name="L96" href="#L96">96</a>          parsers.add(ScriptedMetricParser.<strong class="jxr_keyword">class</strong>);
+<a class="jxr_linenumber" name="L97" href="#L97">97</a>          parsers.add(ChildrenParser.<strong class="jxr_keyword">class</strong>);
+<a class="jxr_linenumber" name="L98" href="#L98">98</a>      }
+<a class="jxr_linenumber" name="L99" href="#L99">99</a>  
+<a class="jxr_linenumber" name="L100" href="#L100">100</a>     <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="L101" href="#L101">101</a> <em class="jxr_javadoccomment">     * Enabling extending the get module by adding a custom aggregation parser.</em>
+<a class="jxr_linenumber" name="L102" href="#L102">102</a> <em class="jxr_javadoccomment">     *</em>
+<a class="jxr_linenumber" name="L103" href="#L103">103</a> <em class="jxr_javadoccomment">     * @param parser The parser for the custom aggregator.</em>
+<a class="jxr_linenumber" name="L104" href="#L104">104</a> <em class="jxr_javadoccomment">     */</em>
+<a class="jxr_linenumber" name="L105" href="#L105">105</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> addAggregatorParser(Class&lt;? <strong class="jxr_keyword">extends</strong> Aggregator.Parser&gt; parser) {
+<a class="jxr_linenumber" name="L106" href="#L106">106</a>         parsers.add(parser);
+<a class="jxr_linenumber" name="L107" href="#L107">107</a>     }
+<a class="jxr_linenumber" name="L108" href="#L108">108</a> 
+<a class="jxr_linenumber" name="L109" href="#L109">109</a>     @Override
+<a class="jxr_linenumber" name="L110" href="#L110">110</a>     <strong class="jxr_keyword">protected</strong> <strong class="jxr_keyword">void</strong> configure() {
+<a class="jxr_linenumber" name="L111" href="#L111">111</a>         Multibinder&lt;Aggregator.Parser&gt; multibinder = Multibinder.newSetBinder(binder(), Aggregator.Parser.<strong class="jxr_keyword">class</strong>);
+<a class="jxr_linenumber" name="L112" href="#L112">112</a>         <strong class="jxr_keyword">for</strong> (Class&lt;? <strong class="jxr_keyword">extends</strong> Aggregator.Parser&gt; parser : parsers) {
+<a class="jxr_linenumber" name="L113" href="#L113">113</a>             multibinder.addBinding().to(parser);
+<a class="jxr_linenumber" name="L114" href="#L114">114</a>         }
+<a class="jxr_linenumber" name="L115" href="#L115">115</a>         bind(AggregatorParsers.<strong class="jxr_keyword">class</strong>).asEagerSingleton();
+<a class="jxr_linenumber" name="L116" href="#L116">116</a>         bind(AggregationParseElement.<strong class="jxr_keyword">class</strong>).asEagerSingleton();
+<a class="jxr_linenumber" name="L117" href="#L117">117</a>         bind(AggregationPhase.<strong class="jxr_keyword">class</strong>).asEagerSingleton();
+<a class="jxr_linenumber" name="L118" href="#L118">118</a>     }
+<a class="jxr_linenumber" name="L119" href="#L119">119</a> 
+<a class="jxr_linenumber" name="L120" href="#L120">120</a>     @Override
+<a class="jxr_linenumber" name="L121" href="#L121">121</a>     <strong class="jxr_keyword">public</strong> Iterable&lt;? <strong class="jxr_keyword">extends</strong> Module&gt; spawnModules() {
+<a class="jxr_linenumber" name="L122" href="#L122">122</a>         <strong class="jxr_keyword">return</strong> ImmutableList.of(<strong class="jxr_keyword">new</strong> <a href="../../../../org/elasticsearch/search/aggregations/bucket/significant/heuristics/SignificantTermsHeuristicModule.html">SignificantTermsHeuristicModule</a>());
+<a class="jxr_linenumber" name="L123" href="#L123">123</a>     }
+<a class="jxr_linenumber" name="L124" href="#L124">124</a> 
+<a class="jxr_linenumber" name="L125" href="#L125">125</a> }
+</pre>
+<hr/>
+<div id="footer">Copyright &#169; 2015. All rights reserved.</div>
+</body>
+</html>
