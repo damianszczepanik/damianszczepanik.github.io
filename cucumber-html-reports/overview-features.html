@@ -131,9 +131,6 @@ $(document).ready(function() {
                 fontSize: 20,
                 text: "Scenarios"
             },
-            circumference: Math.PI,
-            rotation: Math.PI,
-            cutoutPercentage: 70,
             responsive: true,
             legend: {
                 display: false
@@ -173,7 +170,7 @@ $(document).ready(function() {
 
     var context = document.getElementById("features-chart");
     window.myBar = new Chart(context, {
-        type: "pie",
+        type: "doughnut",
         data: chartData,
         options: {
             title: {
@@ -235,7 +232,7 @@ $(document).ready(function() {
     <tr class="info">
       <td>Live Demo Project</td>
               <td>101</td>
-            <td>14 Aug 2019, 20:16</td>
+            <td>22 Aug 2019, 21:03</td>
     </tr>
   </tbody>
 </table>
