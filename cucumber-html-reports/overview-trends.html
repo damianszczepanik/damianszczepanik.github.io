@@ -426,32 +426,32 @@ $(document).ready(function() {
         ]
     };
 
-  function formatDuration(duration) {
-    // gets in nanosecs, outs in secs
-    return moment.duration(duration / 1000000).humanize();
-  }
-
-  var durationsContext = document.getElementById("trends-durations-chart");
-  new Chart(durationsContext, {
-    type: "line",
-    data: chartDurationsData,
-    options: {
-      scales: {
-        yAxes: [{
-          ticks: {
-            userCallback: function(value) { return formatDuration(value); }
-          }
-        }]
-      },
-      tooltips: {
-        callbacks: {
-          label: function(tooltipItem, data) {
-            return data.datasets[tooltipItem.datasetIndex].label + ": " + formatDuration(tooltipItem.yLabel);
-          }
-        }
-      }
+    function formatDuration(duration) {
+        // gets in nanosecs, outs in secs
+        return moment.duration(duration / 1000000).humanize();
     }
-  });
+
+    var durationsContext = document.getElementById("trends-durations-chart");
+    new Chart(durationsContext, {
+        type: "line",
+        data: chartDurationsData,
+        options: {
+            scales: {
+                yAxes: [{
+                    ticks: {
+                        userCallback: function(value) { return formatDuration(value); }
+                    }
+                }]
+            },
+            tooltips: {
+                callbacks: {
+                    label: function(tooltipItem, data) {
+                        return data.datasets[tooltipItem.datasetIndex].label + ": " + formatDuration(tooltipItem.yLabel);
+                    }
+                }
+            }
+        }
+    });
 });
   </script>
 </head>
@@ -488,7 +488,7 @@ $(document).ready(function() {
     <tr class="info">
       <td>Live Demo Project</td>
         <td>101</td>
-      <td>06 Apr 2026, 21:04</td>
+      <td>08 Apr 2026, 19:21</td>
     </tr>
   </tbody>
 </table>
